@@ -1,0 +1,151 @@
+'use client';
+
+import React from 'react';
+import { UserPlus, LogIn, Wifi, LogOut, User, History } from 'lucide-react';
+import ThemeToggle from '@/components/public/ThemeToggle';
+import CardBoxLogo from '@/components/common/CardBoxLogo';
+import Button from '@/components/common/Button';
+import { UserAccount, PublicNetworkInfo } from '@/types';
+
+interface HeaderProps {
+  user: UserAccount | null;
+  onOpenAuth: (mode: 'login' | 'register') => void;
+  onLogout: () => void;
+  network?: PublicNetworkInfo;
+  activeTab?: string;
+  onNavigate?: (tab: string) => void;
+  onOpenPurchases?: () => void;
+  onOpenProfile?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({
+  user,
+  onOpenAuth,
+  onLogout,
+  network,
+  onNavigate,
+  onOpenPurchases,
+  onOpenProfile,
+}) => {
+  const isLoggedIn = Boolean(user?.isLoggedIn);
+
+  return (
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
+      <div className="max-w-6xl mx-auto px-4 py-2.5 sm:py-3 dir-rtl">
+        {isLoggedIn ? (
+          /* ================= LOGGED IN STATE ================= */
+          <div className="flex flex-col gap-2.5">
+            {/* Top Row: Network Breadcrumb on Right, Theme Toggle on Left */}
+            <div className="flex items-center justify-between gap-2 shrink-0">
+              {/* Network Breadcrumb (Right side in RTL) */}
+              <div className="flex items-center gap-2 text-sm sm:text-base">
+                <span className="text-slate-800 dark:text-slate-100 font-black text-sm sm:text-base md:text-lg truncate">
+                  {network?.nameAr || 'الشبكات'}
+                </span>
+                <span className="text-slate-300 dark:text-slate-700">/</span>
+                <button
+                  onClick={() => onNavigate && onNavigate('home')}
+                  className="text-purple-600 dark:text-purple-400 font-bold hover:underline flex items-center gap-1 shrink-0 text-xs sm:text-sm cursor-pointer"
+                >
+                  <Wifi className="w-3.5 h-3.5 animate-pulse" />
+                  <span>الشبكات</span>
+                </button>
+              </div>
+
+              {/* Theme Toggle (Left side in RTL) */}
+              <div className="shrink-0">
+                <ThemeToggle />
+              </div>
+            </div>
+
+            {/* Bottom Row: 3 Pill Buttons (Username on Right, My Purchases in Middle, Logout on Left) */}
+            <div className="flex items-center justify-start gap-1.5 sm:gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 overflow-x-auto no-scrollbar">
+              {/* 1. Username Pill Button (Right side in RTL) */}
+              <button
+                onClick={onOpenProfile}
+                className="flex items-center justify-center gap-1 bg-slate-900 text-slate-100 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-slate-800 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
+              >
+                <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-400 shrink-0" />
+                <span className="whitespace-nowrap">{user?.fullName || 'مستخدم'}</span>
+              </button>
+
+              {/* 2. My Purchases Pill Button (Middle in RTL) */}
+              <button
+                onClick={onOpenPurchases}
+                className="flex items-center justify-center gap-1 bg-slate-900 text-slate-100 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-slate-800 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
+              >
+                <History className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-400 shrink-0" />
+                <span className="whitespace-nowrap">مشترياتي</span>
+              </button>
+
+              {/* 3. Logout Pill Button (Left side in RTL) */}
+              <button
+                onClick={onLogout}
+                className="flex items-center justify-center gap-1 bg-slate-900 text-slate-100 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-red-950/40 hover:text-red-400 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-800 hover:border-red-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
+              >
+                <LogOut className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" />
+                <span className="whitespace-nowrap">تسجيل خروج</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ================= LOGGED OUT STATE ================= */
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
+            {/* Auth buttons & Theme Switcher (Right side in RTL) */}
+            <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
+              <ThemeToggle />
+
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onOpenAuth('login')}
+                  icon={<LogIn className="w-3.5 h-3.5" />}
+                  className="rounded-xl font-bold text-xs"
+                >
+                  تسجيل الدخول
+                </Button>
+
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => onOpenAuth('register')}
+                  icon={<UserPlus className="w-3.5 h-3.5" />}
+                  className="rounded-xl font-bold text-xs bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
+                >
+                  حساب جديد
+                </Button>
+              </div>
+            </div>
+
+            {/* Brand Logo & Network Breadcrumb (Left side in RTL) */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/60 sm:pt-0">
+              <div className="flex items-center gap-2 text-xs sm:text-sm border-l border-slate-200 dark:border-slate-800 pl-3 ml-1">
+                <button
+                  onClick={() => onNavigate && onNavigate('home')}
+                  className="text-purple-600 dark:text-purple-400 font-semibold hover:underline flex items-center gap-1 shrink-0 text-xs cursor-pointer"
+                >
+                  <Wifi className="w-3.5 h-3.5 animate-pulse" />
+                  <span>الشبكات</span>
+                </button>
+                <span className="text-slate-300 dark:text-slate-700">/</span>
+                <span className="text-slate-800 dark:text-slate-100 font-black text-sm sm:text-base md:text-lg truncate">
+                  {network?.nameAr || 'البحث عن شبكة'}
+                </span>
+              </div>
+
+              <button
+                onClick={() => onNavigate && onNavigate('home')}
+                className="text-right cursor-pointer hover:opacity-90 transition-opacity"
+              >
+                <CardBoxLogo size="md" showText={true} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+};
+
+export default Header;
