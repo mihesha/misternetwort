@@ -42,6 +42,7 @@ interface NetworkDetailsViewProps {
   networkPhone?: string;
   onNavigateView?: (view: string) => void;
   networkId?: string | number;
+  globalUpdateTick?: number;
 }
 
 export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
@@ -52,6 +53,7 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
   networkPhone = '777310606',
   onNavigateView,
   networkId,
+  globalUpdateTick = 0,
 }) => {
   const router = useRouter();
   const [jaibConfirmed, setJaibConfirmed] = useState(false);
@@ -110,7 +112,7 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
       }
     };
     fetchNetworkData();
-  }, [networkCode, networkName]);
+  }, [networkCode, networkName, globalUpdateTick]);
 
   React.useEffect(() => {
     setCurrentPage(1);
@@ -141,44 +143,6 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
           
 
           
-        </div>
-
-        {/* 1. Yellow/Amber Jaib Wallet Confirmation Box */}
-        <div
-          className={`rounded-2xl p-5 border transition-colors relative overflow-hidden ${
-            isDarkMode
-              ? 'bg-[#2a1b00]/90 border-amber-600/70 text-amber-200'
-              : 'bg-amber-50 border-amber-300 text-amber-900'
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
-            <div className="space-y-2 text-right flex-1">
-              <h3 className="font-bold text-base md:text-lg">تأكيد محفظة جيب</h3>
-              <p className="text-xs md:text-sm leading-relaxed opacity-90">
-                تم تسجيل رقم محفظة <strong className="underline">جيب</strong> التالي{' '}
-                <span className="font-mono font-bold dir-ltr inline-block px-1 bg-amber-500/20 rounded text-amber-300">
-                  775945393
-                </span>{' '}
-                لحساب شبكتكم. وهذا الحساب هو الذي ستصل إليه مبالغ مبيعاتكم المالية اليدوية والآلية لمحفظة جيب.
-                يرجى التأكد من أن هذا الحساب تابع لكم والضغط على موافق للتأكد.
-              </p>
-
-              <div className="pt-2">
-                <button
-                  onClick={() => setJaibConfirmed(!jaibConfirmed)}
-                  className={`px-5 py-2.5 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer flex items-center gap-2 ${
-                    jaibConfirmed
-                      ? 'bg-emerald-600 text-white shadow-md'
-                      : 'bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-900/30'
-                  }`}
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{jaibConfirmed ? 'تم تأكيد الحساب بنجاح ✓' : 'موافق - أؤكد أن هذا حسابي'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* 2. Network Header Banner (Blue Card) */}
@@ -456,12 +420,12 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
             {/* Latest Sold Cards */}
             <div className={`p-6 rounded-2xl border transition-colors ${isDarkMode ? 'bg-[#141d2b] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
               <div className="flex items-center justify-between mb-4">
-                <button
-                  onClick={() => {}}
+                <Link
+                  href="/owner/cards"
                   className="text-xs text-blue-400 hover:underline font-bold cursor-pointer"
                 >
                   عرض الكل ←
-                </button>
+                </Link>
                 <h3 className="text-base font-extrabold flex items-center gap-2">
                   <span>🎴 آخر الكروت المباعة</span>
                 </h3>
@@ -565,18 +529,17 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
 
         {/* 8. Bottom Section: Search in Cards */}
         <div className={`p-6 rounded-2xl border transition-colors space-y-5 ${isDarkMode ? 'bg-[#141d2b] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-          <h3 className="text-base md:text-lg font-extrabold text-right flex items-center gap-2 justify-start">
-            <Search className="w-5 h-5 text-blue-500" />
-            <span>البحث في الكروت</span>
-          </h3>
-
-          {/* Delete Warning Notice */}
-          <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-600/40 text-amber-300 text-xs text-right leading-relaxed flex items-start gap-2.5">
-            <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-            <div>
-              <strong className="block text-amber-200 font-bold mb-1">تنبيه مهم قبل الحذف:</strong>
-              يمكن حذف الكروت المتاحة فقط. أي كرت مباع أو غير متاح سيبقي محميًا، وسيتم التحقق من الحالة داخل الخادم قبل تنفيذ الحذف.
-            </div>
+          <div className="flex items-center justify-between">
+            <h3 className="text-base md:text-lg font-extrabold text-right flex items-center gap-2 justify-start">
+              <Search className="w-5 h-5 text-blue-500" />
+              <span>البحث في الكروت المتقدم</span>
+            </h3>
+            <Link
+              href="/owner/cards"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md shadow-blue-900/30 flex items-center gap-2 cursor-pointer"
+            >
+              <span>فتح صفحة الكروت الكاملة</span>
+            </Link>
           </div>
 
           {/* Controls Bar */}
@@ -604,15 +567,18 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
               <option value="all">كل الحالات</option>
               <option value="available">متاح</option>
               <option value="sold">مباع</option>
-              <option value="reserved">محجوز</option>
             </select>
 
             <button
-              onClick={() => alert('تم تحديث قائمة الكروت')}
+              onClick={() => {
+                // To force re-fetch, we could mutate global update tick if we had a dispatcher, or just alert for now.
+                // Since this view is reactive to globalUpdateTick anyway, the best approach is to re-render.
+                setCardSearchQuery(cardSearchQuery);
+              }}
               className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-blue-900/30"
             >
               <RefreshCw className="w-4 h-4" />
-              <span>تحديث</span>
+              <span>تحديث الفلتر</span>
             </button>
           </div>
 

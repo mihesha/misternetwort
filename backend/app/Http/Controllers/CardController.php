@@ -16,47 +16,103 @@ class CardController extends Controller
             'network_code' => 'required|string|exists:networks,network_code',
             'category_id' => 'required|exists:card_categories,id',
             'customer_phone' => 'nullable|string',
-            'wallet_type' => 'required|string|in:jaib,jawali',
-            'transaction_ref' => 'required|string'
+            'wallet_type' => 'required|string',
+            'transaction_ref' => 'required|string',
+            'quantity' => 'nullable|integer|min:1'
         ]);
 
+        $quantity = $validated['quantity'] ?? 1;
+
         $network = Network::where('network_code', $validated['network_code'])->first();
+        /** @var \App\Models\CardCategory $category */
         $category = $network->cardCategories()->where('id', $validated['category_id'])->first();
 
-        if (!$category || $category->stock <= 0) {
-            return response()->json(['error' => 'عذراً، نفذت كروت هذه الفئة'], 400);
+        if (!$category || $category->stock < $quantity) {
+            return response()->json(['error' => 'عذراً، الكروت المطلوبة لهذه الفئة غير متوفرة بالكمية الكافية'], 400);
+        }
+
+        // Verify deposit with flexible wallet name matching
+        $deposit = \App\Models\AppDeposit::where('reference_number', $validated['transaction_ref'])
+            ->where(function ($query) use ($validated) {
+                $walletType = strtolower($validated['wallet_type']);
+                
+                $walletMapAr = [
+                    'jaib' => 'جيب',
+                    'jawali' => 'جوالي',
+                    'saba_cash' => 'سبأ',
+                    'one_cash' => 'ون كاش',
+                    'pyes' => 'بيس',
+                    'floosak' => 'فلوسك',
+                    'easy' => 'ايزي',
+                    'cash_wallet' => 'كاش',
+                    'jawwal' => 'جوال'
+                ];
+                
+                $walletSearchAr = $walletMapAr[$walletType] ?? $walletType;
+
+                $query->where('wallet_name', 'LIKE', "%{$walletType}%")
+                      ->orWhere('wallet_name', 'LIKE', "%{$walletSearchAr}%");
+            })
+            ->first();
+
+        if (!$deposit) {
+            return response()->json(['error' => 'لم يتم العثور على عملية الإيداع. تأكد من صحة رقم المرجع والمحفظة.'], 400);
+        }
+
+        if ($deposit->status === 'used') {
+            return response()->json(['error' => 'عذراً، رقم المرجع هذا تم استخدامه مسبقاً لشراء كرت آخر.'], 400);
+        }
+
+        $totalPrice = $category->price * $quantity;
+
+        if ($deposit->amount != $totalPrice) {
+            return response()->json(['error' => 'عذراً، مبلغ الإيداع لا يطابق إجمالي سعر الكروت المطلوبة. مبلغ الإيداع: ' . $deposit->amount . ' ريال، إجمالي السعر المطلوب: ' . $totalPrice . ' ريال.'], 400);
         }
 
         DB::beginTransaction();
         try {
             // Deduct stock
-            $category->decrement('stock');
+            $category->decrement('stock', $quantity);
 
             // Financial math
-            $commission = $category->price * 0.025; // 2.5% platform fee
-            $netEarnings = $category->price - $commission;
+            $commission = $totalPrice * 0.025; // 2.5% platform fee
+            $netEarnings = $totalPrice - $commission;
             
             // Add to network balance
-            $network->increment('balance', $netEarnings);
-            $network->increment('total_sales', $category->price);
+            $network->increment('balance', (float)$netEarnings);
+            $network->increment('total_sales', (float)$totalPrice);
 
-            // Generate Card Details
-            $card = Card::create([
-                'card_category_id' => $category->id,
-                'serial_number' => 'SN-' . date('Ymd') . '-' . rand(10000, 99999),
-                'card_code' => rand(10000000, 99999999),
-                'password' => $category->card_type === 'user_password' ? rand(1000, 9999) : null,
+            // Get available cards from stock with row lock
+            $cards = Card::where('card_category_id', $category->id)
+                ->where('status', 'available')
+                ->lockForUpdate()
+                ->limit($quantity)
+                ->get();
+
+            if ($cards->count() < $quantity) {
+                DB::rollBack();
+                return response()->json(['error' => 'نعتذر، لقد نفدت كروت هذه الفئة بشكل فعلي.'], 400);
+            }
+
+            // Mark cards as sold
+            $cardIds = $cards->pluck('id')->toArray();
+            Card::whereIn('id', $cardIds)->update([
                 'customer_phone' => $validated['customer_phone'] ?? null,
                 'status' => 'sold',
                 'purchased_at' => now(),
             ]);
 
+            // Mark deposit as used
+            $deposit->status = 'used';
+            $deposit->used_for_card_id = $cards->first()->id; // link to the first card
+            $deposit->save();
+
             // Log Transaction
             Transaction::create([
                 'network_id' => $network->id,
                 'type' => 'sale',
-                'amount' => $category->price,
-                'description' => "شراء كرت عبر محفظة {$validated['wallet_type']}",
+                'amount' => $totalPrice,
+                'description' => "شراء عدد $quantity كرت عبر محفظة {$validated['wallet_type']}",
                 'reference_number' => $validated['transaction_ref']
             ]);
 
@@ -64,7 +120,7 @@ class CardController extends Controller
 
             return response()->json([
                 'message' => 'تمت عملية الشراء بنجاح',
-                'card' => $card,
+                'cards' => $cards,
                 'network' => $network->name
             ], 201);
             

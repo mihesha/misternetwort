@@ -82,7 +82,8 @@ type AdminTab =
   | 'wallets_api'
   | 'users'
   | 'customers'
-  | 'settings';
+  | 'settings'
+  | 'app_deposits';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -231,6 +232,12 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           icon: Wallet,
           badge: withdrawals.filter((w) => w.status === 'pending').length || null,
           badgeColor: 'bg-rose-500',
+        },
+        {
+          id: 'app_deposits' as AdminTab,
+          label: 'إيداعات التطبيق',
+          icon: CreditCard,
+          badge: null,
         },
         { id: 'ledger' as AdminTab, label: 'كشف الحساب والسجل المالي', icon: BarChart3, badge: null },
       ],
@@ -428,6 +435,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                   {activeTab === 'wallets_api' && '💳 ربط وتكامل واجهات محفظتي جيب وجوالي (API)'}
                   {activeTab === 'users' && '👥 إدارة مستخدمين وحسابات المشرفين والمالكين'}
                   {activeTab === 'customers' && '👥 قاعدة بيانات العملاء والمشترين'}
+                  {activeTab === 'app_deposits' && '📱 إيداعات المحافظ وتطبيق الهاتف'}
                   {activeTab === 'settings' && '⚙️ الإعدادات العامة وعمولات المنظومة'}
                 </span>
               </h2>

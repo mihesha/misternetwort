@@ -33,6 +33,7 @@ interface CheckoutModalProps {
   totalCards: number;
   onClearCart: () => void;
   onOrderComplete?: (order: OrderDetails) => void;
+  networkCode?: string;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -43,11 +44,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   totalCards,
   onClearCart,
   onOrderComplete,
+  networkCode,
 }) => {
   const [step, setStep] = useState<OrderStep>('payment');
   const [selectedWallet, setSelectedWallet] = useState<WalletOption | null>(null);
   const [isSummaryOpen, setIsSummaryOpen] = useState(true);
-  const [senderPhone, setSenderPhone] = useState('');
   const [transactionRef, setTransactionRef] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -76,10 +77,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setError('يرجى اختيار طريقة الدفع أولاً');
       return;
     }
-    if (!senderPhone || senderPhone.length < 8) {
-      setError('يرجى إدخال رقم الهاتف المحول منه بشكل صحيح');
-      return;
-    }
     if (!transactionRef || transactionRef.length < 4) {
       setError('يرجى إدخال رقم مرجع العملية المولد من تطبيق المحفظة');
       return;
@@ -89,49 +86,75 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setIsLoading(true);
     setStep('verification');
 
-    // Simulate verification check
-    setTimeout(() => {
-      // Generate cards
-      const generatedCards: GeneratedCard[] = [];
-      cartItems.forEach((item) => {
-        for (let i = 0; i < item.quantity; i++) {
-          const randomPin = Math.floor(100000000000 + Math.random() * 900000000000).toString();
-          const formattedPin = randomPin;
-          generatedCards.push({
+    // Call actual backend API
+    const purchaseCard = async () => {
+      try {
+        if (!networkCode) throw new Error('Network code missing');
+        if (cartItems.length === 0) throw new Error('Cart is empty');
+        
+        // We currently support buying 1 type of card per transaction in the backend
+        const item = cartItems[0]; 
+
+        const res = await fetch('/api/wallet/purchase-card', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            network_code: networkCode,
+            category_id: item.wifiPackage.id,
+            quantity: item.quantity,
+            wallet_type: selectedWallet?.id || 'jaib',
+            transaction_ref: transactionRef
+          })
+        });
+
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || 'فشلت عملية الشراء');
+        }
+
+        const generatedCards: GeneratedCard[] = (data.cards || []).map((c: any) => ({
             packageId: item.wifiPackage.id,
             packageName: item.wifiPackage.name,
-            serialNumber: `SN-${Math.floor(100000 + Math.random() * 900000)}`,
-            pinCode: formattedPin,
+            serialNumber: c.serial_number,
+            pinCode: c.card_code,
             dataSize: item.wifiPackage.dataSize,
             duration: item.wifiPackage.duration,
             expireDate: item.wifiPackage.validity,
-          });
+        }));
+
+        const newOrder: OrderDetails = {
+          orderId: `ORD-${Date.now().toString().slice(-6)}`,
+          items: cartItems,
+          totalAmount,
+          totalCards,
+          paymentMethod: selectedWallet as WalletOption,
+          senderPhone: '',
+          senderName: 'عميل كارد بوكس',
+          transactionRef,
+          date: new Date().toLocaleString('ar-YE'),
+          status: 'completed',
+          generatedCards,
+        };
+
+        setOrderDetails(newOrder);
+        if (onOrderComplete) {
+          onOrderComplete(newOrder);
         }
-      });
 
-      const newOrder: OrderDetails = {
-        orderId: `ORD-${Date.now().toString().slice(-6)}`,
-        items: cartItems,
-        totalAmount,
-        totalCards,
-        paymentMethod: selectedWallet,
-        senderPhone,
-        senderName: 'عميل كارد بوكس',
-        transactionRef,
-        date: new Date().toLocaleString('ar-YE'),
-        status: 'completed',
-        generatedCards,
-      };
-
-      setOrderDetails(newOrder);
-      if (onOrderComplete) {
-        onOrderComplete(newOrder);
+        setIsLoading(false);
+        setStep('receipt');
+        onClearCart();
+      } catch (err: any) {
+        setError(err.message || 'حدث خطأ غير معروف');
+        setStep('payment');
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
-      setStep('receipt');
-      onClearCart();
-    }, 2000);
+    };
+    
+    purchaseCard();
   };
 
   const handleCopyPin = (pin: string) => {
@@ -351,15 +374,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
                     بيانات عملية التحويل
                   </h4>
-
-                  <Input
-                    label="رقم الهاتف المحول منه"
-                    placeholder="7XXXXXXXX"
-                    value={senderPhone}
-                    onChange={(e) => setSenderPhone(e.target.value)}
-                    leadingIcon={<Phone className="w-4 h-4" />}
-                    helperText="أدخل رقم المحفظة أو الهاتف الذي قمت بالتحويل منه"
-                  />
 
                   <Input
                     label="رقم مرجع العملية"

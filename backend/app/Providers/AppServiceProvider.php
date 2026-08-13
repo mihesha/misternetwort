@@ -19,6 +19,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Removed global listener to prevent infinite loops and severe performance issues
     }
 }

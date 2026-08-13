@@ -43,6 +43,7 @@ interface NetworkSettingsViewProps {
   networkPhone?: string;
   onNavigateView?: (view: string) => void;
   onOpenMikrotikWizard?: () => void;
+  globalUpdateTick?: number;
 }
 
 interface CategorySetting {
@@ -64,6 +65,7 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
   networkPhone = '777310606',
   onNavigateView,
   onOpenMikrotikWizard,
+  globalUpdateTick = 0,
 }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -119,7 +121,7 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
     if (networkCode || networkName) {
       fetchNetworkData();
     }
-  }, [networkCode, networkName]);
+  }, [networkCode, networkName, globalUpdateTick]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

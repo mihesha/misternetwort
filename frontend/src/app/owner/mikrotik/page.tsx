@@ -15,7 +15,7 @@ export default function MikrotikSetupWizardViewPage() {
     if (savedId) {
       setIdStr(savedId);
     } else {
-      router.push('/owner/overview');
+      router.push('/owner');
     }
   }, [router]);
 

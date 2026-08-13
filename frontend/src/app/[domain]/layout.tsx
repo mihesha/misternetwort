@@ -33,12 +33,21 @@ export default function DomainLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('cardbox_user');
-      if (savedUser) setUser(JSON.parse(savedUser));
-      const savedOrders = localStorage.getItem('cardbox_orders');
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
-    } catch {}
+    const loadData = () => {
+      try {
+        const savedUser = localStorage.getItem('cardbox_user');
+        if (savedUser) setUser(JSON.parse(savedUser));
+        const savedOrders = localStorage.getItem('cardbox_orders');
+        if (savedOrders) setOrders(JSON.parse(savedOrders));
+      } catch {}
+    };
+
+    loadData();
+
+    // Listen for custom event when order is placed
+    const handleOrderUpdate = () => loadData();
+    window.addEventListener('cardbox_orders_updated', handleOrderUpdate);
+    return () => window.removeEventListener('cardbox_orders_updated', handleOrderUpdate);
   }, []);
 
   useEffect(() => {
@@ -102,7 +111,7 @@ export default function DomainLayout({
         network={currentNetwork || undefined}
         activeTab={pathname.split('/').pop() || 'home'}
         onNavigate={(path) => router.push(`/${domain}${path === 'home' ? '' : '/' + path}`)}
-        onOpenPurchases={() => router.push(`/${domain}/purchases`)}
+        onOpenPurchases={() => setIsPurchasesOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
       />
 
@@ -122,7 +131,10 @@ export default function DomainLayout({
         isOpen={isPurchasesOpen}
         onClose={() => setIsPurchasesOpen(false)}
         orders={orders}
-        onStartShopping={() => router.push(`/${domain}`)}
+        onStartShopping={() => {
+          setIsPurchasesOpen(false);
+          router.push(`/${domain}`);
+        }}
       />
 
       <ProfileModal
@@ -132,7 +144,7 @@ export default function DomainLayout({
         onLogout={handleLogout}
         onOpenPurchases={() => {
           setIsProfileOpen(false);
-          router.push(`/${domain}/purchases`);
+          setIsPurchasesOpen(true);
         }}
       />
 

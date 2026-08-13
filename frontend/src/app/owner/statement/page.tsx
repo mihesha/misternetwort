@@ -15,12 +15,12 @@ export default function NetworkAccountStatementViewPage() {
     if (savedId) {
       setIdStr(savedId);
     } else {
-      router.push('/owner/overview');
+      router.push('/owner');
     }
   }, [router]);
 
   const { isDarkMode, setIsDarkMode } = useAppContext();
-  const { ownerName, networks } = useOwnerContext();
+  const { ownerName, networks, globalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
 
   useEffect(() => {
@@ -53,8 +53,7 @@ export default function NetworkAccountStatementViewPage() {
         ownerName={ownerName}
         networkName={network.name}
         networkCode={network.code}
-        
-        
+        globalUpdateTick={globalUpdateTick}
       />
     </>
   );

@@ -218,7 +218,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const fetchAdminData = async () => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('admin_auth_token') : null;
-      const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
+      if (!token) return; // Prevent polling if not logged in as admin
+      const headers: HeadersInit = { 'Authorization': `Bearer ${token}` };
 
       const [statsRes, networksRes, withdrawalsRes, logsRes, dataEditsRes, usersRes, settingsRes] = await Promise.all([
         fetch('/api/admin/stats', { headers }),
@@ -335,6 +336,24 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     fetchAdminData();
+    
+    // WebSockets Event-Driven Refresh
+    let channel: any = null;
+    import('../lib/echo').then(({ default: echo }) => {
+      if (echo) {
+        channel = echo.channel('global-updates')
+          .listen('DataUpdated', (e: any) => {
+            console.log('Real-time data update received (Admin)');
+            fetchAdminData();
+          });
+      }
+    });
+
+    return () => {
+      if (channel && typeof channel.stopListening === 'function') {
+        channel.stopListening('DataUpdated');
+      }
+    };
   }, []);
 
   return (

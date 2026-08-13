@@ -39,7 +39,9 @@ export default function LoginRoute() {
       if (data.user.must_change_password || data.user.mustChangePassword) {
         window.location.href = '/owner/change-password';
       } else {
-        window.location.href = '/owner/overview';
+        const params = new URLSearchParams(window.location.search);
+        const redirectUrl = params.get('redirect') || '/owner';
+        window.location.href = redirectUrl;
       }
     } else {
       throw new Error('عفواً، هذا الحساب غير مسجل كمالك شبكة');

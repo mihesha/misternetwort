@@ -38,6 +38,7 @@ conn.on('ready', () => {
         'cd /var/www/backend && php artisan migrate --force',
         'cd /var/www/frontend && npm install',
         'cd /var/www/backend && pm2 restart backend || pm2 start "php artisan serve --host=0.0.0.0 --port=8000" --name "backend"',
+        'cd /var/www/backend && pm2 restart reverb || pm2 start "php artisan reverb:start" --name "reverb"',
         'cd /var/www/frontend && PORT=3000 pm2 restart frontend || PORT=3000 pm2 start "npm run start" --name "frontend"',
         'pm2 save'
       ].join(' && ');

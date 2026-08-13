@@ -78,8 +78,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const fetchRequests = async () => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('admin_auth_token') : null;
+      if (!token) return; // Prevent polling if not logged in as admin
+      
       const res = await fetch('/api/requests', {
-        headers: (token ? { 'Authorization': `Bearer ${token}` } : {}) as HeadersInit
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
@@ -92,6 +94,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     fetchRequests();
+    
+    let channel: any = null;
+    import('../lib/echo').then(({ default: echo }) => {
+      if (echo) {
+        channel = echo.channel('global-updates')
+          .listen('DataUpdated', () => {
+            console.log('Real-time updates received (Apps)');
+            fetchRequests();
+          });
+      }
+    });
+
+    return () => {
+      if (channel && typeof channel.stopListening === 'function') {
+        channel.stopListening('DataUpdated');
+      }
+    };
   }, []);
 
   useEffect(() => {

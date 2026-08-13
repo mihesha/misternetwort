@@ -52,6 +52,7 @@ interface NetworkAccountStatementViewProps {
   networkName?: string;
   networkCode?: string;
   onNavigateView?: (view: string) => void;
+  globalUpdateTick?: number;
 }
 
 interface StatementTransaction {
@@ -74,6 +75,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
   ownerName = 'هشام محمد الجايفي',
   networkName = 'برق نت',
   networkCode = '22744',
+  globalUpdateTick = 0,
   onNavigateView,
 }) => {
   const router = useRouter();
@@ -136,7 +138,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
       }
     };
     fetchNetworkAndTransactions();
-  }, [networkCode, networkName]);
+  }, [networkCode, networkName, globalUpdateTick]);
 
   // Quick period change handler
   const handleQuickPeriodChange = (periodId: string) => {

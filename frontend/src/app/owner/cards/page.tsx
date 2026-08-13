@@ -1,16 +1,16 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOwnerContext } from '../../../context/OwnerContext';
 import { useAppContext } from '../../../context/AppContext';
 import { useOwnerActions } from '../../../hooks/useOwnerActions';
-import { NetworkDetailsView } from '../../../components/owner/views/NetworkDetailsView';
+import { CardsManagementView } from '../../../components/owner/views/CardsManagementView';
 
-export default function NetworkDetailsViewPage() {
+export default function CardsManagementPage() {
   const router = useRouter();
-  const [idStr, setIdStr] = React.useState<string | null>(null);
+  const [idStr, setIdStr] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const savedId = localStorage.getItem('ownerActiveNetworkId');
     if (savedId) {
       setIdStr(savedId);
@@ -19,7 +19,7 @@ export default function NetworkDetailsViewPage() {
     }
   }, [router]);
 
-  const { isDarkMode, setIsDarkMode } = useAppContext();
+  const { isDarkMode } = useAppContext();
   const { ownerName, networks, globalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
 
@@ -27,35 +27,28 @@ export default function NetworkDetailsViewPage() {
     if (networks.length === 0) {
       fetchOwnerNetworks();
     }
-  }, [networks.length]);
+  }, [networks.length, fetchOwnerNetworks]);
 
-  if (!idStr) {
-    return <div className="p-8 text-center text-red-500 font-bold">لم يتم تحديد الشبكة (مفقود: id)</div>;
-  }
+  if (!idStr) return null;
+  const activeNetwork = networks.find(n => n.id.toString() === idStr);
 
-  const network = networks.find((n) => n.id.toString() === idStr);
-
-  if (!network && networks.length > 0) {
+  if (!activeNetwork && networks.length > 0) {
     return <div className="p-8 text-center text-red-500 font-bold">الشبكة غير موجودة</div>;
   }
 
-  if (!network) {
+  if (!activeNetwork) {
     return <div className="p-8 text-center text-slate-500 font-bold">جاري تحميل بيانات الشبكة...</div>;
   }
 
-  
-
   return (
-    <>
-      
-      <NetworkDetailsView
-        isDarkMode={isDarkMode}
-        ownerName={ownerName}
-        networkName={network.name}
-        networkCode={network.code}
-        globalUpdateTick={globalUpdateTick}
-        networkId={network.id}
-      />
-    </>
+    <CardsManagementView
+      isDarkMode={isDarkMode}
+      ownerName={ownerName}
+      networkName={activeNetwork.name}
+      networkCode={activeNetwork.code}
+      networkId={activeNetwork.id}
+      globalUpdateTick={globalUpdateTick}
+    />
   );
 }
+

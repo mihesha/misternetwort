@@ -231,9 +231,9 @@ export const YEMENI_WALLETS: WalletOption[] = [
     ],
   },
   {
-    id: 'jawwal',
-    name: 'Jawwal Pay',
-    nameAr: 'محفظة جوال',
+    id: 'jawali',
+    name: 'Jawali Pay',
+    nameAr: 'محفظة جوالي',
     category: 'wallet',
     icon: 'jawwal',
     bgColor: 'bg-purple-500/10 dark:bg-purple-500/20',
@@ -242,7 +242,7 @@ export const YEMENI_WALLETS: WalletOption[] = [
     accountNumber: '777310606',
     accountName: 'Card Box كارد بوكس',
     steps: [
-      'افتح تطبيق جوال.',
+      'افتح تطبيق جوالي.',
       'اختر إرسال حوالة ماليّة إلى رقم 777310606.',
       'أدخل البيانات وأكد السند.',
     ],

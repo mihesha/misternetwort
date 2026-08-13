@@ -15,12 +15,12 @@ export default function OwnerSettingsPage() {
     if (savedId) {
       setIdStr(savedId);
     } else {
-      router.push('/owner/overview');
+      router.push('/owner');
     }
   }, [router]);
 
   const { isDarkMode } = useAppContext();
-  const { ownerName, networks, setMikrotikNetwork } = useOwnerContext();
+  const { ownerName, networks, setMikrotikNetwork, globalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
 
   useEffect(() => {
@@ -44,6 +44,7 @@ export default function OwnerSettingsPage() {
         onOpenMikrotikWizard={() => {
           setMikrotikNetwork(activeNetwork);
         }}
+        globalUpdateTick={globalUpdateTick}
       />
     </>
   );

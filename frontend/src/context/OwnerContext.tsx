@@ -6,6 +6,7 @@ export interface OwnerNetworkCard {
   name: string;
   code: string;
   balance: number;
+  total_sales: number;
   status: 'active' | 'inactive';
   categories: { value: string; remaining: number }[];
 }
@@ -34,6 +35,9 @@ interface OwnerContextProps {
   
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  
+  globalUpdateTick: number;
+  setGlobalUpdateTick: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const OwnerContext = createContext<OwnerContextProps | undefined>(undefined);
@@ -49,6 +53,8 @@ export const OwnerProvider = ({ children }: { children: ReactNode }) => {
   const [mikrotikNetwork, setMikrotikNetwork] = useState<OwnerNetworkCard | null>(null);
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  const [globalUpdateTick, setGlobalUpdateTick] = useState<number>(0);
 
   return (
     <OwnerContext.Provider
@@ -60,7 +66,8 @@ export const OwnerProvider = ({ children }: { children: ReactNode }) => {
         editDataNetwork, setEditDataNetwork,
         mikrotikNetwork, setMikrotikNetwork,
         showSearchModal, setShowSearchModal,
-        searchQuery, setSearchQuery
+        searchQuery, setSearchQuery,
+        globalUpdateTick, setGlobalUpdateTick
       }}
     >
       {children}

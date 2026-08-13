@@ -10,6 +10,25 @@ use App\Http\Controllers\CardController;
 Route::get('/wallet/network/{networkCode}', [NetworkController::class, 'getByCode']);
 Route::post('/wallet/purchase-card', [CardController::class, 'purchase']);
 
+// App Deposits API
+Route::post('/app/deposits', function (Request $request) {
+    // In a real app, protect this with API Key or Sanctum.
+    // Assuming simple secret or just open for now based on requirements.
+    if ($request->header('X-App-Secret') !== 'mobile-app-secret-123') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $validated = $request->validate([
+        'reference_number' => 'required|string|unique:app_deposits,reference_number',
+        'amount' => 'required|numeric|min:0',
+        'wallet_name' => 'required|string'
+    ]);
+
+    $deposit = \App\Models\AppDeposit::create($validated);
+    
+    return response()->json(['message' => 'Deposit received', 'data' => $deposit], 201);
+});
+
 Route::get('/networks/search', function (Request $request) {
     $q = $request->query('q');
     if (!$q) return response()->json([]);
@@ -36,6 +55,7 @@ Route::get('/networks/{code}/packages', function ($code) {
     
     $packages = \App\Models\CardCategory::where('network_id', $network->id)
         ->where('status', '!=', 'inactive')
+        ->where('stock', '>', 0) // Hide out of stock cards completely from the store
         ->get();
         
     return response()->json($packages->map(function($p) {
@@ -221,6 +241,19 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Admin endpoints (Mocking to support simulator UI without auth)
+Route::get('/admin/app-deposits', function () {
+    return response()->json(\App\Models\AppDeposit::orderBy('created_at', 'desc')->get());
+});
+Route::patch('/admin/app-deposits/{id}/status', function ($id, Request $request) {
+    $request->validate(['status' => 'required|in:confirmed,pending']);
+    $deposit = \App\Models\AppDeposit::findOrFail($id);
+    if ($deposit->status !== 'used') {
+        $deposit->status = $request->status;
+        $deposit->save();
+    }
+    return response()->json(['message' => 'Status updated']);
+});
+
 Route::get('/admin/edit-requests', function () {
     return response()->json(\App\Models\NetworkDataEditRequest::all());
 });

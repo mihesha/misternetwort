@@ -37,8 +37,8 @@ interface EditNetworkDataViewProps {
   ownerName?: string;
   networkName?: string;
   networkCode?: string;
-  networkPhone?: string;
   onNavigateView?: (view: string) => void;
+  globalUpdateTick?: number;
   onSubmitEditRequest?: (req: NetworkDataEditRequest) => void;
 }
 
@@ -47,8 +47,8 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
   ownerName,
   networkName,
   networkCode,
-  networkPhone,
   onNavigateView,
+  globalUpdateTick = 0,
   onSubmitEditRequest,
 }) => {
   const router = useRouter();
@@ -93,7 +93,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
             }));
 
             setNetName(found.name || '');
-            setContactPhone(found.owner_phone || networkPhone || '');
+            setContactPhone(found.owner_phone || '');
             setGovernorate(found.governorate || '');
             setCity(found.city || '');
             setDistrict(found.neighborhood || '');
@@ -103,7 +103,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
             // Save a snapshot of original data for comparison in previousData
             setOriginalData({
               networkName: found.name || '',
-              contactPhone: found.owner_phone || networkPhone || '',
+              contactPhone: found.owner_phone || '',
               governorate: found.governorate || '',
               city: found.city || '',
               district: found.neighborhood || '',
@@ -117,7 +117,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
       }
     };
     loadNetworkData();
-  }, [networkCode, networkName]);
+  }, [networkCode, networkName, globalUpdateTick]);
 
 
   const handleCategoryChange = (id: string, field: keyof CategoryItem, value: any) => {

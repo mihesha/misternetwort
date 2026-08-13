@@ -79,8 +79,8 @@ export default function HomePage({ params }: { params: Promise<{ domain: string 
       let currentOrders = savedOrders ? JSON.parse(savedOrders) : [];
       currentOrders = [order, ...currentOrders];
       localStorage.setItem('cardbox_orders', JSON.stringify(currentOrders));
+      window.dispatchEvent(new Event('cardbox_orders_updated'));
     } catch {}
-    setIsCheckoutOpen(false);
     handleClearCart();
   };
 
@@ -100,6 +100,7 @@ export default function HomePage({ params }: { params: Promise<{ domain: string 
           totalCards={totalCards}
           onClearCart={handleClearCart}
           onOrderComplete={onOrderComplete}
+          networkCode={domain}
         />
       ) : (
         <>

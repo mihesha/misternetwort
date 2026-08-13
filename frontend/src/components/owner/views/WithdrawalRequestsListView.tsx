@@ -29,6 +29,7 @@ interface WithdrawalRequestsListViewProps {
   isDarkMode: boolean;
   ownerName?: string;
   networkName?: string;
+  globalUpdateTick?: number;
   onNewRequest: () => void;
   onNavigateView?: (view: string) => void;
 }
@@ -37,6 +38,7 @@ export const WithdrawalRequestsListView: React.FC<WithdrawalRequestsListViewProp
   isDarkMode,
   ownerName = 'هشام محمد الجايفي',
   networkName = 'برق نت',
+  globalUpdateTick = 0,
   onNewRequest,
   onNavigateView,
 }) => {
@@ -69,7 +71,7 @@ export const WithdrawalRequestsListView: React.FC<WithdrawalRequestsListViewProp
     if (networkName) {
       fetchWithdrawals();
     }
-  }, [networkName]);
+  }, [networkName, globalUpdateTick]);
 
   const filteredWithdrawals = withdrawals.filter(w => statusFilter === 'all' || w.status === statusFilter);
   

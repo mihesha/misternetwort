@@ -269,7 +269,7 @@ export default function App() {
 
   if (currentView === 'owner_dashboard') {
     if (typeof window !== 'undefined') {
-      window.location.href = '/owner/overview';
+      window.location.href = '/owner';
     }
     return null;
   }
