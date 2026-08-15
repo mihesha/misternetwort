@@ -82,6 +82,8 @@ type AdminTab =
   | 'wallets_api'
   | 'users'
   | 'customers'
+  | 'pos_management'
+  | 'pos_recharges'
   | 'settings'
   | 'app_deposits';
 
@@ -128,12 +130,11 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setIsAuthenticated(null); // Reset while checking
-
     const token = typeof window !== 'undefined' ? localStorage.getItem('admin_auth_token') : null;
     const userStr = typeof window !== 'undefined' ? localStorage.getItem('admin_user') : null;
     
     if (!token || !userStr) {
+      setIsAuthenticated(null);
       router.replace('/admin/login');
       return;
     }
@@ -141,11 +142,13 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     try {
       const user = JSON.parse(userStr);
       if (user.role !== 'admin' && user.role !== 'super_admin') {
+        setIsAuthenticated(null);
         router.replace('/admin/login');
       } else {
-        setIsAuthenticated(true);
+        setIsAuthenticated(prev => prev !== true ? true : prev);
       }
     } catch (e) {
+      setIsAuthenticated(null);
       router.replace('/admin/login');
     }
   }, [pathname, isLoginPage, router]);
@@ -251,10 +254,17 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       ],
     },
     {
+      title: 'نقاط البيع والعملاء',
+      items: [
+        { id: 'customers' as AdminTab, label: 'قاعدة بيانات العملاء', icon: Users, badge: null },
+        { id: 'pos_management' as AdminTab, label: 'إدارة نقاط البيع', icon: Wallet, badge: null },
+        { id: 'pos_recharges' as AdminTab, label: 'طلبات شحن نقاط البيع', icon: CreditCard, badge: null, badgeColor: 'bg-amber-500' },
+      ],
+    },
+    {
       title: 'الأمان والمنظومة',
       items: [
         { id: 'users' as AdminTab, label: 'المستخدمين والصلاحيات', icon: Users, badge: null },
-        { id: 'customers' as AdminTab, label: 'قاعدة بيانات العملاء', icon: Users, badge: null },
         { id: 'settings' as AdminTab, label: 'إعدادات المنظومة الشاملة', icon: Settings, badge: null },
       ],
     },
@@ -435,6 +445,8 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                   {activeTab === 'wallets_api' && '💳 ربط وتكامل واجهات محفظتي جيب وجوالي (API)'}
                   {activeTab === 'users' && '👥 إدارة مستخدمين وحسابات المشرفين والمالكين'}
                   {activeTab === 'customers' && '👥 قاعدة بيانات العملاء والمشترين'}
+                  {activeTab === 'pos_management' && '🛒 إدارة حسابات وأرصدة نقاط البيع (POS)'}
+                  {activeTab === 'pos_recharges' && '💰 طلبات شحن محافظ نقاط البيع'}
                   {activeTab === 'app_deposits' && '📱 إيداعات المحافظ وتطبيق الهاتف'}
                   {activeTab === 'settings' && '⚙️ الإعدادات العامة وعمولات المنظومة'}
                 </span>

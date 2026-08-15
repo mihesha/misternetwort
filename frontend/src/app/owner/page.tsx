@@ -16,6 +16,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 
+
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 export default function OwnerDashboardPage() {
@@ -27,6 +28,7 @@ export default function OwnerDashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTx, setLoadingTx] = useState(true);
+
 
   const network = networks[0];
 
@@ -180,9 +182,11 @@ export default function OwnerDashboardPage() {
               <TrendingUp className="w-5 h-5" />
               <span>طلب سحب</span>
             </button>
+
           </div>
         </div>
       </div>
+
 
       {/* 2. KPIs (Real Data) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -200,7 +204,7 @@ export default function OwnerDashboardPage() {
           <div>
             <h3 className={`text-sm font-bold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>الرصيد المتاح</h3>
             <div className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              {stats.balance.toLocaleString()} <span className="text-base font-bold text-slate-500">ر.ي</span>
+              {stats.balance.toLocaleString('en-US')} <span className="text-base font-bold text-slate-500">ر.ي</span>
             </div>
           </div>
         </div>
@@ -215,7 +219,7 @@ export default function OwnerDashboardPage() {
           <div>
             <h3 className={`text-sm font-bold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>إجمالي المبيعات (تراكمي)</h3>
             <div className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              {stats.totalSales.toLocaleString()} <span className="text-base font-bold text-slate-500">ر.ي</span>
+              {stats.totalSales.toLocaleString('en-US')} <span className="text-base font-bold text-slate-500">ر.ي</span>
             </div>
           </div>
         </div>
@@ -233,7 +237,7 @@ export default function OwnerDashboardPage() {
           <div>
             <h3 className={`text-sm font-bold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>مخزون الكروت المتوفر</h3>
             <div className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              {stats.totalCards.toLocaleString()} <span className="text-base font-bold text-slate-500">كرت</span>
+              {stats.totalCards.toLocaleString('en-US')} <span className="text-base font-bold text-slate-500">كرت</span>
             </div>
           </div>
         </div>
@@ -253,7 +257,7 @@ export default function OwnerDashboardPage() {
           <div>
             <h3 className={`text-sm font-bold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>طلبات السحب المعلقة</h3>
             <div className={`text-3xl font-black tracking-tight ${pendingRequestsCount > 0 ? 'text-amber-500' : (isDarkMode ? 'text-white' : 'text-slate-900')}`}>
-              {pendingRequestsCount} <span className="text-base font-bold text-slate-500">طلبات سحب</span>
+              {pendingRequestsCount.toLocaleString('en-US')} <span className="text-base font-bold text-slate-500">طلبات سحب</span>
             </div>
           </div>
         </div>
@@ -392,9 +396,21 @@ export default function OwnerDashboardPage() {
                       <td className="py-4 px-4 font-mono text-xs font-bold text-slate-500">{trx.reference || trx.id}</td>
                       <td className={`py-4 px-4 font-bold text-sm ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{trx.typeLabel || trx.type}</td>
                       <td className={`py-4 px-4 text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{trx.description || '-'}</td>
-                      <td className={`py-4 px-4 font-black text-sm ${trx.type === 'withdrawal' ? 'text-amber-500' : 'text-emerald-500'}`}>
-                        {trx.type === 'withdrawal' ? '-' : '+'}
-                        {Number(trx.amount).toLocaleString()} <span className="text-[10px]">ر.ي</span>
+                      <td className={`py-4 px-4 font-black text-sm ${trx.type === 'withdrawal' || trx.type === 'commission' ? 'text-amber-500' : 'text-emerald-500'}`}>
+                        <div>
+                          {trx.type === 'withdrawal' || trx.type === 'commission' ? '-' : '+'}
+                          {Number(trx.amount).toLocaleString()} <span className="text-[10px]">ر.ي</span>
+                        </div>
+                        {(trx.creditAmount ?? 0) > 0 && (
+                          <div className="text-[10px] text-amber-500 mt-0.5 font-bold">
+                            آجل: {Number(trx.creditAmount).toLocaleString()}
+                          </div>
+                        )}
+                        {(trx.cashAmount ?? 0) > 0 && (trx.creditAmount ?? 0) > 0 && (
+                          <div className="text-[10px] text-emerald-500 font-bold">
+                            نقدي: {Number(trx.cashAmount).toLocaleString()}
+                          </div>
+                        )}
                       </td>
                       <td className={`py-4 px-4 text-xs font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} dir="ltr">
                         {trx.date} {trx.time}
@@ -489,6 +505,8 @@ export default function OwnerDashboardPage() {
         </div>
 
       </div>
+
+
     </div>
   );
 }

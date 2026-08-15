@@ -2,6 +2,8 @@ import React from 'react';
 
 interface SettingsViewProps {
   isDarkMode: boolean;
+  platformCommissionType?: 'fixed' | 'percentage';
+  setPlatformCommissionType?: (val: 'fixed' | 'percentage') => void;
   platformCommissionRate: number;
   setPlatformCommissionRate: (val: number) => void;
   supportPhone: string;
@@ -15,6 +17,8 @@ interface SettingsViewProps {
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   isDarkMode,
+  platformCommissionType,
+  setPlatformCommissionType,
   platformCommissionRate,
   setPlatformCommissionRate,
   supportPhone,
@@ -39,17 +43,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
           <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/60 space-y-3">
-            <label className="block text-slate-200 font-bold">نسبة عمولة المنظومة (%):</label>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-slate-200 font-bold">نوع العمولة:</label>
+              <select
+                value={platformCommissionType || 'fixed'}
+                onChange={(e) => setPlatformCommissionType && setPlatformCommissionType(e.target.value as 'fixed' | 'percentage')}
+                className={`px-2 py-1 rounded-lg border text-[11px] font-bold ${
+                  isDarkMode ? 'bg-[#1d273a] border-slate-700 text-white' : 'bg-slate-50 border-slate-300'
+                }`}
+              >
+                <option value="fixed">مبلغ ثابت (ر.ي)</option>
+                <option value="percentage">نسبة مئوية (%)</option>
+              </select>
+            </div>
+            <label className="block text-slate-200 font-bold">
+              {platformCommissionType === 'fixed' ? 'قيمة العمولة (لكل عملية):' : 'نسبة العمولة من إجمالي البيع:'}
+            </label>
             <input
               type="number"
-              step="0.5"
+              step={platformCommissionType === 'fixed' ? '1' : '0.5'}
               value={platformCommissionRate}
               onChange={(e) => setPlatformCommissionRate(Number(e.target.value))}
               className={`w-full px-3.5 py-2.5 rounded-xl border ${
                 isDarkMode ? 'bg-[#1d273a] border-slate-700 text-white' : 'bg-slate-50 border-slate-300'
               }`}
             />
-            <p className="text-[11px] text-slate-400">يتم اقتطاع هذه النسبة تلقائياً من إجمالي عمليات البيع.</p>
+            <p className="text-[11px] text-slate-400">يتم اقتطاع هذه القيمة تلقائياً من إجمالي عمليات البيع بناءً على النوع المختار.</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/60 space-y-3">

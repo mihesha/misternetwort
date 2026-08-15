@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { UserPlus, LogIn, Wifi, LogOut, User, History } from 'lucide-react';
+import { UserPlus, LogIn, Wifi, LogOut, User, History, Wallet, Eye, EyeOff } from 'lucide-react';
 import ThemeToggle from '@/components/public/ThemeToggle';
 import CardBoxLogo from '@/components/common/CardBoxLogo';
 import Button from '@/components/common/Button';
@@ -16,6 +16,7 @@ interface HeaderProps {
   onNavigate?: (tab: string) => void;
   onOpenPurchases?: () => void;
   onOpenProfile?: () => void;
+  onOpenWallet?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,8 +27,10 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   onOpenPurchases,
   onOpenProfile,
+  onOpenWallet,
 }) => {
   const isLoggedIn = Boolean(user?.isLoggedIn);
+  const [showBalance, setShowBalance] = React.useState(false);
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
@@ -78,6 +81,15 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="whitespace-nowrap">مشترياتي</span>
               </button>
 
+              {/* 3. Wallet Pill Button */}
+              <button
+                onClick={onOpenWallet}
+                className="flex items-center justify-center gap-1 bg-slate-900 text-slate-100 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-slate-800 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
+              >
+                <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" />
+                <span className="whitespace-nowrap">محفظتي</span>
+              </button>
+
               {/* 3. Logout Pill Button (Left side in RTL) */}
               <button
                 onClick={onLogout}
@@ -86,6 +98,30 @@ export const Header: React.FC<HeaderProps> = ({
                 <LogOut className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" />
                 <span className="whitespace-nowrap">تسجيل خروج</span>
               </button>
+            </div>
+
+            {/* Secondary Header: Wallet Balance */}
+            <div className="flex items-center justify-between bg-purple-50 dark:bg-purple-900/20 p-2 sm:p-2.5 rounded-xl border border-purple-100 dark:border-purple-800/50 mt-1">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-800/80 flex items-center justify-center">
+                  <Wallet className="w-3.5 h-3.5 text-purple-600 dark:text-purple-300" />
+                </div>
+                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                  رصيد المحفظة:
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm sm:text-base font-black text-purple-700 dark:text-purple-400 tracking-wider">
+                  {showBalance ? `${(user?.wallet_balance || 0).toFixed(2)} ر.ي` : '••••••••'}
+                </span>
+                <button
+                  onClick={() => setShowBalance(!showBalance)}
+                  className="p-1 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer"
+                  title={showBalance ? 'إخفاء الرصيد' : 'إظهار الرصيد'}
+                >
+                  {showBalance ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
         ) : (

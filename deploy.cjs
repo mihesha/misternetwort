@@ -32,6 +32,7 @@ conn.on('ready', () => {
       
       const commands = [
         'pm2 stop all',
+        'rm -rf /var/www/frontend/.next',
         'unzip -o /root/deploy.zip -d /var/www/',
         'rm -f /root/deploy.zip',
         'cd /var/www/backend && composer update --optimize-autoloader',

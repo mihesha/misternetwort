@@ -44,10 +44,20 @@ export default function DomainLayout({
 
     loadData();
 
-    // Listen for custom event when order is placed
     const handleOrderUpdate = () => loadData();
+    const handleAuthEvent = (e: any) => {
+      setAuthMode(e.detail || 'login');
+      setIsAuthOpen(true);
+    };
+    
     window.addEventListener('cardbox_orders_updated', handleOrderUpdate);
-    return () => window.removeEventListener('cardbox_orders_updated', handleOrderUpdate);
+    window.addEventListener('cardbox_user_updated', handleOrderUpdate);
+    window.addEventListener('open_auth', handleAuthEvent);
+    return () => {
+      window.removeEventListener('cardbox_orders_updated', handleOrderUpdate);
+      window.removeEventListener('cardbox_user_updated', handleOrderUpdate);
+      window.removeEventListener('open_auth', handleAuthEvent);
+    };
   }, []);
 
   useEffect(() => {
@@ -113,6 +123,7 @@ export default function DomainLayout({
         onNavigate={(path) => router.push(`/${domain}${path === 'home' ? '' : '/' + path}`)}
         onOpenPurchases={() => setIsPurchasesOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenWallet={() => router.push(`/${domain}/wallet`)}
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 pt-2 sm:pt-3 pb-6">

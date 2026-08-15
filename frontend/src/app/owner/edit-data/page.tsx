@@ -11,13 +11,8 @@ export default function EditNetworkDataViewPage() {
   const [idStr, setIdStr] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const savedId = localStorage.getItem('ownerActiveNetworkId');
-    if (savedId) {
-      setIdStr(savedId);
-    } else {
-      router.push('/owner');
-    }
-  }, [router]);
+    setIdStr(localStorage.getItem('ownerActiveNetworkId'));
+  }, []);
 
   const { isDarkMode, setIsDarkMode } = useAppContext();
   const { ownerName, networks, globalUpdateTick } = useOwnerContext();
@@ -29,15 +24,11 @@ export default function EditNetworkDataViewPage() {
     }
   }, [networks.length]);
 
-  if (!idStr) {
-    return <div className="p-8 text-center text-red-500 font-bold">لم يتم تحديد الشبكة (مفقود: id)</div>;
-  }
+  
 
-  const network = networks.find((n) => n.id.toString() === idStr);
+  const network = networks.find((n) => n.id.toString() === idStr) || networks[0];
 
-  if (!network && networks.length > 0) {
-    return <div className="p-8 text-center text-red-500 font-bold">الشبكة غير موجودة</div>;
-  }
+  
 
   if (!network) {
     return <div className="p-8 text-center text-slate-500 font-bold">جاري تحميل بيانات الشبكة...</div>;

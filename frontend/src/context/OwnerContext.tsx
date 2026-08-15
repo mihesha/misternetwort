@@ -43,8 +43,40 @@ interface OwnerContextProps {
 const OwnerContext = createContext<OwnerContextProps | undefined>(undefined);
 
 export const OwnerProvider = ({ children }: { children: ReactNode }) => {
-  const [ownerName, setOwnerName] = useState<string>('هشام محمد الجايفي');
+  const [ownerName, setOwnerName] = useState<string>('صاحب شبكة');
   const [networks, setNetworks] = useState<OwnerNetworkCard[]>([]);
+
+  React.useEffect(() => {
+    try {
+      const userStr = typeof window !== 'undefined' ? localStorage.getItem('owner_user') : null;
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user && user.name) {
+          setOwnerName(user.name);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load owner name from localStorage:', e);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (networks.length > 0) {
+      try {
+        const savedId = typeof window !== 'undefined' ? localStorage.getItem('ownerActiveNetworkId') : null;
+        const isValid = networks.some(n => n.id.toString() === savedId);
+        if (!isValid) {
+          localStorage.setItem('ownerActiveNetworkId', networks[0].id.toString());
+          // Dispatch a custom event to notify components that might be using the ID
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('ownerActiveNetworkIdChanged'));
+          }
+        }
+      } catch (e) {
+        console.error('Failed to update ownerActiveNetworkId:', e);
+      }
+    }
+  }, [networks]);
 
   // Modals
   const [detailedNetwork, setDetailedNetwork] = useState<OwnerNetworkCard | null>(null);

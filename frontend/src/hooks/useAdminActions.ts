@@ -393,11 +393,12 @@ export const useAdminActions = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          platformCommissionRate,
-          supportPhone,
-          maintenanceMode,
-          autoApproveApplications,
-          mikrotikGlobalPort
+          platformCommissionType: ctx.platformCommissionType,
+          platformCommissionRate: ctx.platformCommissionRate,
+          supportPhone: ctx.supportPhone,
+          maintenanceMode: ctx.maintenanceMode,
+          autoApproveApplications: ctx.autoApproveApplications,
+          mikrotikGlobalPort: ctx.mikrotikGlobalPort
         })
       });
       if (res.ok) {

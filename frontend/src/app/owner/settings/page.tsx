@@ -11,13 +11,8 @@ export default function OwnerSettingsPage() {
   const [idStr, setIdStr] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedId = localStorage.getItem('ownerActiveNetworkId');
-    if (savedId) {
-      setIdStr(savedId);
-    } else {
-      router.push('/owner');
-    }
-  }, [router]);
+    setIdStr(localStorage.getItem('ownerActiveNetworkId'));
+  }, []);
 
   const { isDarkMode } = useAppContext();
   const { ownerName, networks, setMikrotikNetwork, globalUpdateTick } = useOwnerContext();
@@ -29,9 +24,9 @@ export default function OwnerSettingsPage() {
     }
   }, [networks.length, fetchOwnerNetworks]);
 
-  const activeNetwork = networks.find(n => n.id.toString() === idStr);
+  const activeNetwork = networks.find(n => n.id.toString() === idStr) || networks[0];
 
-  if (!idStr) return null;
+  
   if (!activeNetwork) return <div className="p-8 text-center text-slate-500 font-bold">جاري تحميل إعدادات الشبكة...</div>;
 
   return (

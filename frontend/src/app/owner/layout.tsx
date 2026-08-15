@@ -9,7 +9,7 @@ import { useOwnerActions } from '../../hooks/useOwnerActions';
 import { 
   Moon, Sun, Globe, Settings, ChevronDown, Key, Shield, LogOut, 
   Menu, X, LayoutDashboard, Home, Info, Edit, Wifi, CreditCard, 
-  PlusCircle, Receipt, Download, Layers
+  PlusCircle, Receipt, Download, Layers, Wallet
 } from 'lucide-react';
 import { GlobalOwnerModals } from '../../components/owner/GlobalOwnerModals';
 
@@ -62,6 +62,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
       }
       localStorage.removeItem('auth_token');
       localStorage.removeItem('owner_user');
+      localStorage.removeItem('ownerActiveNetworkId');
       router.replace('/owner/login');
       alert('تم تسجيل خروجك تلقائياً بسبب عدم وجود أي نشاط لفترة طويلة.');
     }
@@ -73,12 +74,11 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    setIsAuthenticated(null);
-
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     const userStr = typeof window !== 'undefined' ? localStorage.getItem('owner_user') : null;
 
     if (!token || !userStr) {
+      setIsAuthenticated(null);
       router.replace(`/owner/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
@@ -86,11 +86,13 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
     try {
       const user = JSON.parse(userStr);
       if (user.role !== 'network_owner') {
+        setIsAuthenticated(null);
         router.replace(`/owner/login?redirect=${encodeURIComponent(pathname)}`);
       } else {
-        setIsAuthenticated(true);
+        setIsAuthenticated(prev => prev !== true ? true : prev);
       }
     } catch (e) {
+      setIsAuthenticated(null);
       router.replace(`/owner/login?redirect=${encodeURIComponent(pathname)}`);
     }
   }, [pathname, isAuthPage, router]);
@@ -128,6 +130,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
 
   const sidebarLinks = [
     { href: '/owner', label: 'الرئيسية', icon: Home },
+    { href: '/owner/pos', label: 'إدارة نقاط البيع (POS)', icon: Wallet },
     { href: '/owner/details', label: 'تفاصيل الشبكة', icon: Info },
     { href: '/owner/statement', label: 'كشف الحساب', icon: Receipt },
     { href: '/owner/cards', label: 'إدارة الكروت', icon: Layers },
@@ -202,6 +205,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
                       }
                       localStorage.removeItem('auth_token');
                       localStorage.removeItem('owner_user');
+                      localStorage.removeItem('ownerActiveNetworkId');
                       router.replace('/owner/login');
                     }}
                     className={`w-full text-right px-4 py-2.5 text-xs rounded-xl font-bold transition-colors flex items-center justify-start gap-3 ${isDarkMode ? 'text-red-400 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'}`}

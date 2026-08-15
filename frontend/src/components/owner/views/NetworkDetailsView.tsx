@@ -71,6 +71,7 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
   const [categories, setCategories] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
   const [cardBatches, setCardBatches] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
 
   React.useEffect(() => {
     const fetchNetworkData = async () => {
@@ -102,6 +103,13 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
                 const batchesData = await batchesRes.json();
                 setCardBatches(batchesData);
               }
+              const txRes = await fetch(`/api/networks/${found.id}/transactions`, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+              });
+              if (txRes.ok) {
+                const txData = await txRes.json();
+                setTransactions(txData);
+              }
             } catch (cardsErr) {
               console.error('Failed to fetch network cards or batches', cardsErr);
             }
@@ -128,6 +136,22 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
   const totalPages = Math.ceil(filteredCards.length / cardsPerPage);
   const paginatedCards = filteredCards.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage);
 
+  // Calculate Totals
+  const soldCards = cards.filter(c => c.status !== 'available');
+  const totalCards = cards.length;
+  const availableCards = totalCards - soldCards.length;
+
+  const totalSales = transactions.filter(t => t.type === 'sale' || t.type === 'commission').reduce((sum, t) => sum + (t.amount || 0), 0);
+  const totalWithdrawals = Math.abs(transactions.filter(t => t.type === 'withdrawal').reduce((sum, t) => sum + (t.amount || 0), 0));
+  
+  const filterDate = new Date();
+  if (salesFilter === '1day') filterDate.setDate(filterDate.getDate() - 1);
+  else if (salesFilter === '7days') filterDate.setDate(filterDate.getDate() - 7);
+  else if (salesFilter === '30days') filterDate.setDate(filterDate.getDate() - 30);
+  
+  const recentSales = transactions.filter(t => (t.type === 'sale') && new Date(t.date) >= filterDate);
+  const recentSoldCards = soldCards.slice(0, 5);
+  const recentWithdrawalsList = transactions.filter(t => t.type === 'withdrawal').slice(0, 5);
 
   return (
     <div
@@ -256,22 +280,22 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className={`p-4 rounded-2xl border text-center ${isDarkMode ? 'bg-[#141d2b] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
             <span className="text-xs font-bold text-slate-400 block mb-1">إجمالي الكروت</span>
-            <span className="text-2xl font-black text-slate-200">{categories.reduce((acc, cat) => acc + (cat.stock || 0), 0)}</span>
+            <span className="text-2xl font-black text-slate-200">{totalCards.toLocaleString('en-US')}</span>
           </div>
 
           <div className={`p-4 rounded-2xl border text-center ${isDarkMode ? 'bg-[#141d2b] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
             <span className="text-xs font-bold text-slate-400 block mb-1">الكروت المتاحة</span>
-            <span className="text-2xl font-black text-emerald-500">{categories.reduce((acc, cat) => acc + (cat.stock || 0), 0)}</span>
+            <span className="text-2xl font-black text-emerald-500">{availableCards.toLocaleString('en-US')}</span>
           </div>
 
           <div className={`p-4 rounded-2xl border text-center ${isDarkMode ? 'bg-[#141d2b] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
             <span className="text-xs font-bold text-slate-400 block mb-1">الكروت المباعة</span>
-            <span className="text-2xl font-black text-blue-500">0</span>
+            <span className="text-2xl font-black text-blue-500">{soldCards.length.toLocaleString('en-US')}</span>
           </div>
 
           <div className={`p-4 rounded-2xl border text-center ${isDarkMode ? 'bg-[#141d2b] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
             <span className="text-xs font-bold text-slate-400 block mb-1">الرصيد</span>
-            <span className="text-2xl font-black text-slate-100">{Number(networkData?.balance || 0).toLocaleString()} ر.ي</span>
+            <span className="text-2xl font-black text-slate-100">{Number(networkData?.balance || 0).toLocaleString('en-US')} ر.ي</span>
           </div>
         </div>
 
@@ -279,22 +303,22 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: Total Balance */}
           <div className="p-6 rounded-2xl bg-indigo-700 text-white shadow-xl flex flex-col justify-between space-y-4">
-            <span className="text-xs font-bold opacity-80 block text-right">الرصيد الكلي</span>
-            <div className="text-3xl font-black text-right dir-ltr">{Number(networkData?.balance || 0).toLocaleString()} ر.ي</div>
-            <span className="text-[11px] font-medium opacity-80 text-right">صافي المبيعات بعد العمولة (10.00%)</span>
+            <span className="text-xs font-bold opacity-80 block text-right">المبيعات الكلية</span>
+            <div className="text-3xl font-black text-right dir-ltr">{totalSales.toLocaleString('en-US')} ر.ي</div>
+            <span className="text-[11px] font-medium opacity-80 text-right">إجمالي المبيعات المكتملة</span>
           </div>
 
           {/* Card 2: Withdrawn Amount */}
           <div className="p-6 rounded-2xl bg-amber-600 text-white shadow-xl flex flex-col justify-between space-y-4">
             <span className="text-xs font-bold opacity-80 block text-right">المبالغ المسحوبة</span>
-            <div className="text-3xl font-black text-right dir-ltr">0.00 ر.ي</div>
+            <div className="text-3xl font-black text-right dir-ltr">{totalWithdrawals.toLocaleString('en-US')} ر.ي</div>
             <span className="text-[11px] font-medium opacity-80 text-right">إجمالي السحوبات المكتملة</span>
           </div>
 
           {/* Card 3: Remaining Balance */}
           <div className="p-6 rounded-2xl bg-emerald-600 text-white shadow-xl flex flex-col justify-between space-y-4">
             <span className="text-xs font-bold opacity-80 block text-right">الرصيد المتبقي</span>
-            <div className="text-3xl font-black text-right dir-ltr">{Number(networkData?.balance || 0).toLocaleString()} ر.ي</div>
+            <div className="text-3xl font-black text-right dir-ltr">{Number(networkData?.balance || 0).toLocaleString('en-US')} ر.ي</div>
             <span className="text-[11px] font-medium opacity-80 text-right">متاح للسحب</span>
           </div>
         </div>
@@ -336,9 +360,18 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className={isDarkMode ? 'border-b border-slate-800/50 text-slate-300' : 'border-b border-slate-100 text-slate-700'}>
-                      <td colSpan={4} className="py-8 text-center text-slate-500">لا توجد مبيعات</td>
-                    </tr>
+                    {recentSales.length === 0 ? (
+                      <tr className={isDarkMode ? 'border-b border-slate-800/50 text-slate-300' : 'border-b border-slate-100 text-slate-700'}>
+                        <td colSpan={4} className="py-8 text-center text-slate-500">لا توجد مبيعات في هذه الفترة</td>
+                      </tr>
+                    ) : recentSales.slice(0, 10).map((sale, i) => (
+                      <tr key={i} className={isDarkMode ? 'border-b border-slate-800/50 text-slate-300' : 'border-b border-slate-100 text-slate-700'}>
+                        <td className="py-2.5 px-3 font-mono">{sale.date}</td>
+                        <td className="py-2.5 px-3">{sale.provider}</td>
+                        <td className="py-2.5 px-3">1</td>
+                        <td className="py-2.5 px-3 text-emerald-500 font-bold">{sale.amount.toLocaleString('en-US')} ر.ي</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -372,8 +405,8 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
                       <tr key={i} className={isDarkMode ? 'text-slate-300' : 'text-slate-700'}>
                         <td className="py-3 px-3 font-bold font-mono">{c.name || c.price}</td>
                         <td className="py-3 px-3">{c.price} ر.ي</td>
-                        <td className="py-3 px-3 font-mono text-emerald-500 font-bold">{c.stock || 0}</td>
-                        <td className="py-3 px-3 font-mono text-blue-500">0</td>
+                        <td className="py-3 px-3 font-mono text-emerald-500 font-bold">{(c.stock || 0).toLocaleString('en-US')}</td>
+                        <td className="py-3 px-3 font-mono text-blue-500">{soldCards.filter(sc => sc.card_category_id === c.id).length.toLocaleString('en-US')}</td>
                         <td className="py-3 px-3">
                           {c.status === 'inactive' ? (
                             <span className="text-red-400 font-bold flex items-center gap-1">
@@ -412,9 +445,23 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
                 </h3>
               </div>
 
-              <div className={`py-12 text-center text-xs md:text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                لا توجد طلبات سحب
-              </div>
+              {recentWithdrawalsList.length === 0 ? (
+                <div className={`py-12 text-center text-xs md:text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                  لا توجد طلبات سحب
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentWithdrawalsList.map((tx, i) => (
+                    <div key={i} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'border-slate-800 bg-[#1e293b]' : 'border-slate-200 bg-slate-50'}`}>
+                      <div>
+                        <div className="text-sm font-bold text-amber-500">{Math.abs(tx.amount).toLocaleString('en-US')} ر.ي</div>
+                        <div className="text-[10px] text-slate-400 font-mono">{tx.date}</div>
+                      </div>
+                      <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold rounded">مكتمل</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Latest Sold Cards */}
@@ -431,9 +478,23 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
                 </h3>
               </div>
 
-              <div className={`py-12 text-center text-xs md:text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                لا توجد كروت
-              </div>
+              {recentSoldCards.length === 0 ? (
+                <div className={`py-12 text-center text-xs md:text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                  لا توجد كروت
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentSoldCards.map((card, i) => (
+                    <div key={i} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'border-slate-800 bg-[#1e293b]' : 'border-slate-200 bg-slate-50'}`}>
+                      <div>
+                        <div className="text-sm font-bold font-mono">{card.card_code}</div>
+                        <div className="text-[10px] text-slate-400">{card.cardCategory?.name || card.cardCategory?.price}</div>
+                      </div>
+                      <span className="px-2 py-1 bg-blue-500/10 text-blue-500 text-[10px] font-bold rounded">مباع</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

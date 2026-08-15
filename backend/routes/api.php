@@ -5,9 +5,61 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\NetworkController;
 use App\Http\Controllers\CardController;
+use App\Http\Controllers\PosController;
 
 // Public Wallet / Purchase Endpoints
 Route::get('/wallet/network/{networkCode}', [NetworkController::class, 'getByCode']);
+
+Route::get('/networks/{network_id}/pos-memberships', function (Request $request, $network_id) {
+    return \App\Models\NetworkPosMembership::where('network_id', $network_id)
+        ->with('user')
+        ->orderBy('created_at', 'desc')
+        ->get();
+});
+
+Route::post('/networks/{network_id}/pos-memberships', function (Request $request, $network_id) {
+    $validated = $request->validate(['phone' => 'required|string']);
+    $user = \App\Models\User::where('phone', $validated['phone'])->where('role', 'pos')->first();
+    if (!$user) return response()->json(['error' => 'لا يوجد نقطة بيع بهذا الرقم'], 404);
+
+    $exists = \App\Models\NetworkPosMembership::where('network_id', $network_id)->where('user_id', $user->id)->first();
+    if ($exists) return response()->json(['error' => 'نقطة البيع منضمة مسبقاً لهذه الشبكة'], 400);
+
+    $membership = \App\Models\NetworkPosMembership::create([
+        'network_id' => $network_id,
+        'user_id' => $user->id,
+        'credit_limit' => 0,
+        'current_debt' => 0,
+        'status' => 'active'
+    ]);
+    return response()->json($membership, 201);
+});
+
+Route::patch('/networks/{network_id}/pos-memberships/{id}', function (Request $request, $network_id, $id) {
+    $membership = \App\Models\NetworkPosMembership::where('network_id', $network_id)->findOrFail($id);
+    if ($request->has('credit_limit')) {
+        $membership->credit_limit = $request->credit_limit;
+    }
+    if ($request->has('status')) {
+        $membership->status = $request->status;
+    }
+    $membership->save();
+    return response()->json($membership);
+});
+
+Route::post('/networks/{network_id}/pos-memberships/{id}/pay-debt', function (Request $request, $network_id, $id) {
+    $validated = $request->validate(['amount' => 'required|numeric|min:1']);
+    $membership = \App\Models\NetworkPosMembership::where('network_id', $network_id)->findOrFail($id);
+    
+    if ($membership->current_debt < $validated['amount']) {
+        return response()->json(['error' => 'المبلغ المدخل أكبر من الدين الحالي'], 400);
+    }
+
+    $membership->decrement('current_debt', $validated['amount']);
+    return response()->json(['message' => 'تم السداد بنجاح', 'current_debt' => $membership->current_debt]);
+});
+
+Route::post('/cards/generate-batch', [CardController::class, 'generateBatch']);
 Route::post('/wallet/purchase-card', [CardController::class, 'purchase']);
 
 // App Deposits API
@@ -194,6 +246,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/networks', [NetworkController::class, 'index']);
     Route::get('/networks/{network}', [NetworkController::class, 'show']);
 
+
+
     // Data Edit Requests
     Route::post('/edit-requests', function (Request $request) {
         $validated = $request->validate([
@@ -237,6 +291,18 @@ Route::middleware('auth:sanctum')->group(function () {
         // Wait, AdminDashboard doesn't use Sanctum! It relies on open endpoints!
         // We will move the GET to outside of auth:sanctum for the admin to see them.
         return response()->json(\App\Models\NetworkDataEditRequest::where('user_id', $request->user()->id)->get());
+    });
+
+    // POS Endpoints
+    Route::prefix('pos')->group(function () {
+        Route::get('/networks', [PosController::class, 'getNetworks']);
+        Route::get('/networks/my-networks', [PosController::class, 'getMyNetworks']);
+        Route::post('/networks/join', [PosController::class, 'joinNetwork']);
+        Route::get('/networks/{id}/packages', [PosController::class, 'getNetworkPackages']);
+        Route::post('/vouchers/purchase', [PosController::class, 'purchaseVoucher']);
+        Route::get('/wallet/balance', [PosController::class, 'getWalletBalance']);
+        Route::post('/wallet/recharge', [PosController::class, 'rechargeWallet']);
+        Route::get('/sales/history', [PosController::class, 'getSalesHistory']);
     });
 });
 
@@ -596,28 +662,106 @@ Route::patch('/admin/networks/{id}/balance', function ($id, Request $request) {
 });
     // Card generation system has been disabled per user request.
 Route::get('/networks/{id}/transactions', function ($id) {
+    $network = \App\Models\Network::find($id);
+    $currentBalance = $network ? $network->balance : 0;
+    
     $transactions = \App\Models\Transaction::where('network_id', $id)->orderBy('created_at', 'desc')->get();
-    return response()->json($transactions->map(function($t) {
+    
+    $runningBalance = $currentBalance;
+    $result = [];
+    
+    // We want to calculate the running balance exactly.
+    // If we go backwards from newest to oldest, we subtract the delta to find the balance BEFORE that transaction.
+    
+    foreach ($transactions as $t) {
         $typeLabel = 'معاملة';
-        if ($t->type === 'sale') $typeLabel = 'مبيعات كروت';
-        elseif ($t->type === 'withdrawal') $typeLabel = 'سحب مالي';
-        elseif ($t->type === 'balance_adjustment') $typeLabel = 'تعديل رصيد';
-        elseif ($t->type === 'commission') $typeLabel = 'عمولة بيع';
+        $creditAmount = 0;
+        $cashAmount = 0;
+        $commissionAmount = 0;
+        $balanceDelta = 0; // Amount added to or subtracted from the network balance
+        
+        $provider = 'النظام';
+        $categoryName = null;
+        
+        if (str_contains($t->description, 'جيب') || stripos($t->description, 'jaib') !== false) $provider = 'جيب';
+        elseif (str_contains($t->description, 'تداولات') || stripos($t->description, 'tadawulat') !== false) $provider = 'تداولات';
+        elseif (str_contains($t->description, 'POS') || str_contains($t->description, 'نقطة بيع')) $provider = 'POS';
 
-        return [
+        if ($t->type === 'sale') {
+            $typeLabel = 'مبيعات كروت';
+            
+            // Check for credit sale in description (POS)
+            if (preg_match('/\(آجل:\s*([0-9.]+)\)/u', $t->description, $matches)) {
+                $creditAmount = (float) $matches[1];
+            }
+            
+            $cashAmount = $t->amount - $creditAmount;
+            
+            if (preg_match('/\(عمولة:\s*([0-9.]+)\)/u', $t->description, $matches)) {
+                $commissionAmount = (float) $matches[1];
+            } else {
+                $commissionAmount = $t->amount * 0.025; // Legacy support
+            }
+            
+            // Balance increases only by the wallet portion minus commission
+            $balanceDelta = $cashAmount - $commissionAmount;
+
+            if (preg_match('/فئة (.+?) -/u', $t->description, $matches) || preg_match('/فئة (.*)/u', $t->description, $matches)) {
+                $categoryName = trim($matches[1]);
+            } else {
+                $categoryName = 'مبيعات كروت';
+            }
+        }
+        elseif ($t->type === 'credit_sale') {
+            $typeLabel = 'مبيعات آجلة';
+            $creditAmount = $t->amount;
+            $balanceDelta = 0; // Pure credit sale doesn't increase platform cash balance
+            if (preg_match('/فئة (.+?) \(/u', $t->description, $matches)) {
+                $categoryName = trim($matches[1]);
+            }
+        }
+        elseif ($t->type === 'debt_settlement') {
+            $typeLabel = 'سداد مديونية (نقداً)';
+            $balanceDelta = 0; // Hand-to-hand cash does not affect the platform's electronic balance
+            $cashAmount = $t->amount;
+        }
+        elseif ($t->type === 'withdrawal') {
+            $typeLabel = 'سحب مالي';
+            $balanceDelta = -abs($t->amount);
+        }
+        elseif ($t->type === 'balance_adjustment') {
+            $typeLabel = 'تعديل رصيد';
+            $balanceDelta = $t->amount; 
+        }
+        elseif ($t->type === 'commission') {
+            $typeLabel = 'عمولة منصة';
+            $balanceDelta = -abs($t->amount);
+        }
+
+        $result[] = [
             'id' => (string) $t->id,
             'date' => $t->created_at->format('Y-m-d'),
             'time' => $t->created_at->format('h:i A'),
             'type' => $t->type,
             'typeLabel' => $typeLabel,
-            'provider' => 'النظام',
+            'provider' => $provider,
+            'category' => $categoryName,
             'reference' => $t->reference_number ?? '',
             'amount' => (float) $t->amount,
-            'balanceAfter' => 0, // In a real system, we'd store running balance
+            'creditAmount' => $creditAmount,
+            'cashAmount' => $cashAmount,
+            'commissionAmount' => $commissionAmount,
+            'balanceDelta' => $balanceDelta,
+            'balanceAfter' => $runningBalance,
             'status' => 'completed',
             'statusLabel' => 'ناجح'
         ];
-    }));
+        
+        // Go back in time: subtract the delta to find the balance BEFORE this transaction
+        $runningBalance -= $balanceDelta;
+    }
+    
+    return response()->json($result);
 });
 Route::get('/admin/transactions', function () {
     $transactions = \App\Models\Transaction::with('network.user')->orderBy('created_at', 'desc')->take(20)->get();
@@ -657,12 +801,20 @@ Route::get('/withdrawals', function () {
     }));
 });
 Route::post('/withdrawals', function (Request $request) {
-    $user = clone $request->user();
+    // Attempt to get user from Sanctum if authenticated
+    $user = $request->user();
+    
+    // If not authenticated (or token missing), fallback to network name lookup
     if (!$user) {
         $network = \App\Models\Network::where('name', $request->networkName)->first();
-        if ($network) $user = $network->user;
+        if ($network) {
+            $user = $network->user;
+        }
     }
-    if (!$user) return response()->json(['error' => 'User not found'], 404);
+    
+    if (!$user) {
+        return response()->json(['error' => 'Network/User not found'], 404);
+    }
     
     $network = \App\Models\Network::where('user_id', $user->id)->first();
     
@@ -871,7 +1023,8 @@ Route::post('/admin/users', function (Request $request) {
 Route::get('/admin/settings', function () {
     $settings = \App\Models\SystemSetting::all()->pluck('value', 'key');
     return response()->json([
-        'platformCommissionRate' => (float) ($settings['platformCommissionRate'] ?? 2.5),
+        'platformCommissionType' => $settings['platformCommissionType'] ?? 'fixed',
+        'platformCommissionRate' => (float) ($settings['platformCommissionRate'] ?? 5),
         'supportPhone' => $settings['supportPhone'] ?? '784999804',
         'maintenanceMode' => filter_var($settings['maintenanceMode'] ?? 'false', FILTER_VALIDATE_BOOLEAN),
         'autoApproveApplications' => filter_var($settings['autoApproveApplications'] ?? 'false', FILTER_VALIDATE_BOOLEAN),
@@ -881,11 +1034,270 @@ Route::get('/admin/settings', function () {
 Route::post('/admin/settings', function (Request $request) {
     $data = $request->all();
     foreach ($data as $key => $value) {
-        if (in_array($key, ['platformCommissionRate', 'supportPhone', 'maintenanceMode', 'autoApproveApplications', 'mikrotikGlobalPort'])) {
+        if (in_array($key, ['platformCommissionType', 'platformCommissionRate', 'supportPhone', 'maintenanceMode', 'autoApproveApplications', 'mikrotikGlobalPort'])) {
             $valStr = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
             \App\Models\SystemSetting::updateOrCreate(['key' => $key], ['value' => $valStr]);
         }
     }
     return response()->json(['message' => 'Settings updated successfully']);
 });
+
+// Admin POS Management Endpoints
+Route::get('/admin/pos', function () {
+    $posUsers = \App\Models\User::where('role', 'pos')->with('posProfile')->get();
+    return response()->json($posUsers->map(function ($u) {
+        return [
+            'id' => $u->id,
+            'name' => $u->name,
+            'phone' => $u->phone,
+            'wallet_balance' => $u->wallet_balance,
+            'shop_name' => $u->posProfile ? $u->posProfile->shop_name : null,
+            'otp_code' => $u->posProfile ? $u->posProfile->otp_code : null,
+            'status' => $u->posProfile ? $u->posProfile->status : 'active',
+            'created_at' => $u->created_at,
+        ];
+    }));
+});
+Route::patch('/admin/pos/{id}/balance', function ($id, Request $request) {
+    $validated = $request->validate(['balance' => 'required|numeric|min:0']);
+    $user = \App\Models\User::where('role', 'pos')->findOrFail($id);
+    $user->wallet_balance = $validated['balance'];
+    $user->save();
+    return response()->json(['message' => 'تم تحديث رصيد المحفظة', 'balance' => $user->wallet_balance]);
+});
+Route::get('/admin/pos-recharges', function () {
+    return response()->json(\App\Models\WalletRecharge::with('user')->orderBy('created_at', 'desc')->get());
+});
+Route::patch('/admin/pos-recharges/{id}/status', function ($id, Request $request) {
+    $validated = $request->validate(['status' => 'required|in:approved,rejected']);
+    $recharge = \App\Models\WalletRecharge::findOrFail($id);
+    if ($recharge->status !== 'pending') return response()->json(['error' => 'تم التعامل مع هذا الطلب مسبقاً'], 400);
+    
+    $recharge->status = $validated['status'];
+    $recharge->save();
+
+    if ($validated['status'] === 'approved') {
+        $user = clone $recharge->user;
+        $user->increment('wallet_balance', $recharge->amount);
+    }
+    return response()->json(['message' => 'تم تحديث حالة الطلب']);
+});
+
+// Network Owner POS Memberships Endpoints
+Route::get('/networks/{id}/pos-memberships', function ($id) {
+    $memberships = \App\Models\NetworkPosMembership::where('network_id', $id)->with('user')->get();
+    return response()->json($memberships);
+});
+
+Route::get('/networks/{id}/pos-packages', function ($id) {
+    $packages = \App\Models\CardCategory::where('network_id', $id)->get();
+    return response()->json($packages);
+});
+
+Route::patch('/networks/{id}/pos-packages/{package_id}/price', function ($id, $package_id, Request $request) {
+    $package = \App\Models\CardCategory::where('network_id', $id)->findOrFail($package_id);
+    $package->pos_price = $request->pos_price;
+    $package->save();
+    return response()->json(['message' => 'تم تحديث السعر الخاص بنقاط البيع بنجاح']);
+});
+Route::post('/networks/{id}/pos-memberships', function ($id, Request $request) {
+    $validated = $request->validate([
+        'phone' => 'required|string',
+    ]);
+    $user = \App\Models\User::where('phone', $validated['phone'])->where('role', 'pos')->first();
+    if (!$user) return response()->json(['error' => 'لم يتم العثور على نقطة البيع بهذا الرقم'], 404);
+
+    $membership = \App\Models\NetworkPosMembership::firstOrCreate([
+        'network_id' => $id,
+        'user_id' => $user->id
+    ], [
+        'credit_limit' => 0,
+        'current_debt' => 0,
+        'status' => 'active'
+    ]);
+    return response()->json(['message' => 'تم إضافة نقطة البيع', 'membership' => $membership->load('user')]);
+});
+Route::patch('/networks/{id}/pos-memberships/{membership_id}', function ($id, $membership_id, Request $request) {
+    $membership = \App\Models\NetworkPosMembership::where('network_id', $id)->findOrFail($membership_id);
+    if ($request->has('credit_limit')) $membership->credit_limit = $request->credit_limit;
+    if ($request->has('status')) $membership->status = $request->status;
+    $membership->save();
+    return response()->json(['message' => 'تم تحديث بيانات نقطة البيع']);
+});
+Route::post('/networks/{id}/pos-memberships/{membership_id}/pay-debt', function ($id, $membership_id, Request $request) {
+    $validated = $request->validate(['amount' => 'required|numeric|min:1']);
+    $membership = \App\Models\NetworkPosMembership::where('network_id', $id)->findOrFail($membership_id);
+    
+    if ($membership->current_debt < $validated['amount']) {
+        return response()->json(['error' => 'المبلغ المدفوع أكبر من الديون الحالية'], 400);
+    }
+    
+    $membership->decrement('current_debt', $validated['amount']);
+
+    $userName = $membership->user ? $membership->user->name : 'غير معروف';
+
+    // إنشاء قيد محاسبي يوثق العملية (سداد ديون يداً بيد)
+    \App\Models\Transaction::create([
+        'network_id' => $id,
+        'type' => 'debt_settlement',
+        'amount' => $validated['amount'],
+        'description' => "تسديد مديونية نقداً (يداً بيد) من نقطة البيع: {$userName}",
+        'reference_number' => 'SETTLEMENT-' . time(),
+    ]);
+
+    return response()->json(['message' => 'تم سداد الدفعة بنجاح', 'current_debt' => $membership->current_debt]);
+});
+
+// POS Auth Endpoints
+Route::post('/pos/auth/register', function (Request $request) {
+    $validated = $request->validate([
+        'name' => 'required|string',
+        'phone' => 'required|string|unique:users',
+        'password' => 'required|string|min:6',
+        'shop_name' => 'required|string',
+        'address' => 'nullable|string',
+    ]);
+
+    $user = \App\Models\User::create([
+        'name' => $validated['name'],
+        'phone' => $validated['phone'],
+        'email' => 'pos_' . $validated['phone'] . '@misternetwork.local', // Dummy email to satisfy DB constraints
+        'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+        'role' => 'pos',
+    ]);
+
+    $otpCode = (string) rand(100000, 999999);
+
+    \App\Models\PosProfile::create([
+        'user_id' => $user->id,
+        'shop_name' => $validated['shop_name'],
+        'address' => $validated['address'],
+        'status' => 'pending',
+        'otp_code' => $otpCode,
+    ]);
+
+    // Return OTP in response temporarily to help the mobile dev during testing
+    return response()->json([
+        'message' => 'تم إنشاء الحساب، يرجى إدخال رمز التحقق OTP.',
+        'test_otp_code' => $otpCode, // Only for testing phase
+        'user' => $user
+    ]);
+});
+
+Route::post('/pos/auth/verify-otp', function (Request $request) {
+    $validated = $request->validate([
+        'phone' => 'required|string',
+        'otp_code' => 'required|string'
+    ]);
+
+    $user = \App\Models\User::where('phone', $validated['phone'])->where('role', 'pos')->first();
+    if (!$user) return response()->json(['error' => 'حساب غير موجود'], 404);
+
+    $profile = \App\Models\PosProfile::where('user_id', $user->id)->first();
+    if (!$profile || $profile->otp_code !== $validated['otp_code']) {
+        return response()->json(['error' => 'رمز التحقق غير صحيح'], 400);
+    }
+
+    $profile->status = 'active';
+    $profile->otp_code = null; // clear OTP after success
+    $profile->save();
+
+    $token = $user->createToken('pos-token')->plainTextToken;
+    return response()->json(['message' => 'تم التحقق بنجاح', 'token' => $token, 'user' => $user]);
+});
+
+Route::post('/pos/auth/login', function (Request $request) {
+    $validated = $request->validate([
+        'phone' => 'required|string',
+        'password' => 'required|string',
+    ]);
+
+    $user = \App\Models\User::where('phone', $validated['phone'])->where('role', 'pos')->first();
+
+    if (!$user || !\Illuminate\Support\Facades\Hash::check($validated['password'], $user->password)) {
+        return response()->json(['error' => 'رقم الهاتف أو كلمة المرور غير صحيحة'], 401);
+    }
+
+    $token = $user->createToken('pos-token')->plainTextToken;
+    return response()->json(['token' => $token, 'user' => $user]);
+});
+
+Route::post('/pos/auth/forgot-password', function (Request $request) {
+    $request->validate(['phone' => 'required|string']);
+    $user = \App\Models\User::where('phone', $request->phone)->where('role', 'pos')->first();
+    if (!$user) return response()->json(['error' => 'الحساب غير موجود'], 404);
+    
+    // In production, send SMS. For now, generate and return test OTP.
+    $otp = (string) rand(100000, 999999);
+    $profile = $user->posProfile;
+    if($profile) {
+        $profile->otp_code = $otp;
+        $profile->save();
+    }
+    return response()->json(['message' => 'تم إرسال كود الاستعادة', 'test_otp_code' => $otp]);
+});
+
+Route::post('/pos/auth/reset-password', function (Request $request) {
+    $request->validate(['phone' => 'required|string', 'otp_code' => 'required|string', 'new_password' => 'required|string|min:6']);
+    $user = \App\Models\User::where('phone', $request->phone)->where('role', 'pos')->first();
+    if (!$user) return response()->json(['error' => 'الحساب غير موجود'], 404);
+    
+    $profile = $user->posProfile;
+    if (!$profile || $profile->otp_code !== $request->otp_code) {
+        return response()->json(['error' => 'كود التحقق غير صحيح'], 400);
+    }
+    
+    $user->password = \Illuminate\Support\Facades\Hash::make($request->new_password);
+    $user->save();
+    $profile->otp_code = null;
+    $profile->save();
+    
+    return response()->json(['message' => 'تم إعادة تعيين كلمة المرور بنجاح']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/pos/auth/change-password', function (Request $request) {
+        $request->validate(['current_password' => 'required', 'new_password' => 'required|min:6']);
+        $user = $request->user();
+        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+            return response()->json(['error' => 'كلمة المرور الحالية غير صحيحة'], 400);
+        }
+        $user->password = \Illuminate\Support\Facades\Hash::make($request->new_password);
+        $user->save();
+        return response()->json(['message' => 'تم تغيير كلمة المرور بنجاح']);
+    });
+
+    Route::get('/pos/profile', function (Request $request) {
+        $user = $request->user()->load('posProfile');
+        return response()->json([
+            'name' => $user->name,
+            'phone' => $user->phone,
+            'shop_name' => $user->posProfile->shop_name ?? '',
+            'address' => $user->posProfile->address ?? '',
+            'commercial_reg' => $user->posProfile->commercial_reg ?? ''
+        ]);
+    });
+
+    Route::post('/pos/profile', function (Request $request) {
+        $user = $request->user();
+        $validated = $request->validate([
+            'name' => 'nullable|string',
+            'shop_name' => 'nullable|string',
+            'address' => 'nullable|string',
+            'commercial_reg' => 'nullable|string'
+        ]);
+
+        if (isset($validated['name'])) {
+            $user->name = $validated['name'];
+            $user->save();
+        }
+
+        if ($user->posProfile) {
+            $user->posProfile->update($request->only(['shop_name', 'address', 'commercial_reg']));
+        }
+        
+        return response()->json(['message' => 'تم تحديث الملف الشخصي بنجاح']);
+    });
+});
+
 

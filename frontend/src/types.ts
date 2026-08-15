@@ -235,6 +235,8 @@ export interface UserAccount {
   countryCode: string;
   isLoggedIn: boolean;
   balance?: number;
+  wallet_balance?: number;
+  token?: string;
 }
 
 export interface GuideStep {

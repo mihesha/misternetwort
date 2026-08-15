@@ -15,6 +15,8 @@ interface AdminContextType {
   withdrawals: WithdrawalRequest[];
   auditLogs: CentralAuditLog[];
   dataEditRequests: NetworkDataEditRequest[];
+  platformCommissionType: 'fixed' | 'percentage';
+  setPlatformCommissionType: (type: 'fixed' | 'percentage') => void;
   platformCommissionRate: number;
   setPlatformCommissionRate: (rate: number) => void;
   supportPhone: string;
@@ -153,7 +155,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [auditLogs, setAuditLogs] = useState<CentralAuditLog[]>([]);
   const [dataEditRequests, setDataEditRequests] = useState<NetworkDataEditRequest[]>([]);
   
-  const [platformCommissionRate, setPlatformCommissionRate] = useState<number>(2.5);
+  const [platformCommissionType, setPlatformCommissionType] = useState<'fixed' | 'percentage'>('fixed');
+  const [platformCommissionRate, setPlatformCommissionRate] = useState<number>(5);
   const [supportPhone, setSupportPhone] = useState<string>('784999804');
 
   // Modal States
@@ -267,7 +270,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       }
       if (settingsRes.ok) {
         const set = await settingsRes.json();
-        setPlatformCommissionRate(set.platformCommissionRate ?? 2.5);
+        setPlatformCommissionType(set.platformCommissionType ?? 'fixed');
+        setPlatformCommissionRate(set.platformCommissionRate ?? 5);
         setSupportPhone(set.supportPhone ?? '784999804');
         setMaintenanceMode(set.maintenanceMode ?? false);
         setAutoApproveApplications(set.autoApproveApplications ?? false);
@@ -359,9 +363,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AdminContext.Provider
       value={{
-        stats, activeNetworks, withdrawals, auditLogs, dataEditRequests, platformCommissionRate, setPlatformCommissionRate, supportPhone, setSupportPhone, fetchAdminData, setActiveNetworks, setWithdrawals, setDataEditRequests,
+        stats, activeNetworks, withdrawals, auditLogs, dataEditRequests, platformCommissionType, setPlatformCommissionType, platformCommissionRate, setPlatformCommissionRate, supportPhone, setSupportPhone, fetchAdminData, setActiveNetworks, setWithdrawals, setDataEditRequests,
     
-    inspectDataEditReq, setInspectDataEditReq,
+        inspectDataEditReq, setInspectDataEditReq,
     adminUsers, setAdminUsers,
     maintenanceMode, setMaintenanceMode,
     autoApproveApplications, setAutoApproveApplications,

@@ -137,6 +137,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         countryCode: '+967',
         isLoggedIn: true,
         balance: 1000,
+        token: data.token,
+        wallet_balance: data.user.wallet_balance || 0,
       };
 
       onSuccess(userAccount);

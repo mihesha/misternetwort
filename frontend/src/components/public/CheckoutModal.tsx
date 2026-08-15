@@ -23,7 +23,7 @@ import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
 import StepProgress from '@/components/public/StepProgress';
 import WalletSelector from '@/components/public/WalletSelector';
-import { CartItem, OrderStep, WalletOption, GeneratedCard, OrderDetails } from '@/types';
+import { CartItem, OrderStep, WalletOption, GeneratedCard, OrderDetails, UserAccount } from '@/types';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -34,6 +34,7 @@ interface CheckoutModalProps {
   onClearCart: () => void;
   onOrderComplete?: (order: OrderDetails) => void;
   networkCode?: string;
+  onOpenAuth?: (mode: 'login' | 'register') => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -45,7 +46,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   onClearCart,
   onOrderComplete,
   networkCode,
+  onOpenAuth
 }) => {
+  const [user, setUser] = useState<UserAccount | null>(null);
+  const [overpaymentData, setOverpaymentData] = useState<any>(null);
   const [step, setStep] = useState<OrderStep>('payment');
   const [selectedWallet, setSelectedWallet] = useState<WalletOption | null>(null);
   const [isSummaryOpen, setIsSummaryOpen] = useState(true);
@@ -58,6 +62,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      try {
+        const savedUser = localStorage.getItem('cardbox_user');
+        if (savedUser) setUser(JSON.parse(savedUser));
+      } catch {}
     }
   }, [isOpen, step, selectedWallet]);
 
@@ -71,19 +79,21 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }, 20);
   };
 
-  const handleProceedToVerification = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleProceedToVerification = (e?: React.FormEvent, confirmOverpayment = false) => {
+    if (e) e.preventDefault();
     if (!selectedWallet) {
       setError('يرجى اختيار طريقة الدفع أولاً');
       return;
     }
-    if (!transactionRef || transactionRef.length < 4) {
+    const isInternal = selectedWallet.id === 'internal_wallet';
+    if (!isInternal && (!transactionRef || transactionRef.length < 4)) {
       setError('يرجى إدخال رقم مرجع العملية المولد من تطبيق المحفظة');
       return;
     }
 
     setError('');
     setIsLoading(true);
+    setOverpaymentData(null);
     setStep('verification');
 
     // Call actual backend API
@@ -95,22 +105,39 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         // We currently support buying 1 type of card per transaction in the backend
         const item = cartItems[0]; 
 
+        let currentToken = user?.token;
+        if (!currentToken) {
+          try {
+            const savedUser = localStorage.getItem('cardbox_user');
+            if (savedUser) currentToken = JSON.parse(savedUser).token;
+          } catch {}
+        }
+
         const res = await fetch('/api/wallet/purchase-card', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {})
           },
           body: JSON.stringify({
             network_code: networkCode,
             category_id: item.wifiPackage.id,
             quantity: item.quantity,
             wallet_type: selectedWallet?.id || 'jaib',
-            transaction_ref: transactionRef
+            transaction_ref: transactionRef,
+            confirm_overpayment: confirmOverpayment
           })
         });
 
         const data = await res.json();
         
+        if (res.status === 400 && data.error === 'overpayment_warning') {
+          setOverpaymentData(data);
+          setStep('payment');
+          setIsLoading(false);
+          return;
+        }
+
         if (!res.ok) {
           throw new Error(data.error || 'فشلت عملية الشراء');
         }
@@ -281,6 +308,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   selectedWallet={selectedWallet}
                   onSelectWallet={handleSelectWallet}
                   totalAmount={totalAmount}
+                  user={user}
                 />
               </div>
             ) : (
@@ -370,20 +398,22 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 })()}
 
                 {/* 2. Inputs Container (Phone & Transaction Reference) */}
-                <div className="p-5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
-                  <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
-                    بيانات عملية التحويل
-                  </h4>
+                {selectedWallet.id !== 'internal_wallet' && (
+                  <div className="p-5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4 animate-slide-up">
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
+                      بيانات عملية التحويل
+                    </h4>
 
-                  <Input
-                    label="رقم مرجع العملية"
-                    placeholder="أدخل رقم العملية المولد من المحفظة (مثال: 9812401)"
-                    value={transactionRef}
-                    onChange={(e) => setTransactionRef(e.target.value)}
-                    leadingIcon={<Hash className="w-4 h-4" />}
-                    helperText="ستجد رقم مرجع العملية في الرسالة النصية أو إشعار التحويل المباشر"
-                  />
-                </div>
+                    <Input
+                      label="رقم مرجع العملية"
+                      placeholder="أدخل رقم العملية المولد من المحفظة (مثال: 9812401)"
+                      value={transactionRef}
+                      onChange={(e) => setTransactionRef(e.target.value)}
+                      leadingIcon={<Hash className="w-4 h-4" />}
+                      helperText="ستجد رقم مرجع العملية في الرسالة النصية أو إشعار التحويل المباشر"
+                    />
+                  </div>
+                )}
 
                 {error && (
                   <p className="text-xs sm:text-sm font-bold text-red-500 bg-red-50 dark:bg-red-950/50 p-4 rounded-xl border border-red-200 dark:border-red-800">
@@ -403,6 +433,73 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
             )}
           </form>
+        )}
+
+        {/* OVERPAYMENT POPUP */}
+        {overpaymentData && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-amber-200 dark:border-amber-800 text-center space-y-5 animate-slide-up">
+              <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center mx-auto mb-2 text-amber-600 dark:text-amber-400">
+                <Info className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">
+                تنبيه: إيداع زائد
+              </h3>
+              
+              {overpaymentData.is_guest ? (
+                <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
+                  <p>
+                    لقد قمت بإيداع مبلغ <strong className="text-amber-600 dark:text-amber-400">{overpaymentData.deposited_amount} ر.ي</strong> وهو أكبر من قيمة الكرت المطلوب (<strong className="text-slate-800 dark:text-slate-200">{overpaymentData.card_price} ر.ي</strong>).
+                  </p>
+                  <p className="font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 p-3 rounded-xl border border-purple-100 dark:border-purple-800">
+                    يرجى تسجيل الدخول أو إنشاء حساب لكي يتم حفظ المبلغ المتبقي ({overpaymentData.remaining_amount} ر.ي) في محفظتك لدينا!
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
+                  <p>
+                    لقد قمت بإيداع مبلغ <strong className="text-amber-600 dark:text-amber-400">{overpaymentData.deposited_amount} ر.ي</strong>.
+                  </p>
+                  <p>
+                    سيتم خصم قيمة الكرت (<strong className="text-slate-800 dark:text-slate-200">{overpaymentData.card_price} ر.ي</strong>) والمبلغ المتبقي (<strong className="text-emerald-600 dark:text-emerald-400 font-bold">{overpaymentData.remaining_amount} ر.ي</strong>) سيتم إيداعه تلقائياً لمحفظتك!
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-4 flex flex-col gap-3">
+                {overpaymentData.is_guest ? (
+                  <Button
+                    variant="primary"
+                    className="w-full bg-purple-600 hover:bg-purple-700 font-bold py-3 rounded-xl"
+                    onClick={() => {
+                      setOverpaymentData(null);
+                      onClose();
+                      if (onOpenAuth) onOpenAuth('login');
+                      else window.dispatchEvent(new CustomEvent('open_auth', { detail: 'login' }));
+                    }}
+                  >
+                    تسجيل الدخول / إنشاء حساب
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold py-3 rounded-xl"
+                    onClick={() => handleProceedToVerification(undefined, true)}
+                  >
+                    موافق، إتمام الشراء
+                  </Button>
+                )}
+                
+                <button
+                  type="button"
+                  onClick={() => setOverpaymentData(null)}
+                  className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-semibold transition-colors"
+                >
+                  إلغاء العملية
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* STEP 3: VERIFICATION LOADING SCREEN */}

@@ -59,12 +59,16 @@ interface StatementTransaction {
   id: string;
   date: string;
   time: string;
-  type: 'sale' | 'withdrawal' | 'commission';
+  type: 'sale' | 'withdrawal' | 'commission' | 'credit_sale' | 'balance_adjustment';
   typeLabel: string;
   provider: string;
   category?: string;
   reference: string;
   amount: number;
+  creditAmount?: number;
+  cashAmount?: number;
+  commissionAmount?: number;
+  balanceDelta?: number;
   balanceAfter: number;
   status: 'completed' | 'pending' | 'rejected';
   statusLabel: string;
@@ -92,8 +96,15 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
   const [showDocumentPreview, setShowDocumentPreview] = useState(false);
 
   // Dates
-  const [fromDate, setFromDate] = useState('2026-08-01');
-  const [toDate, setToDate] = useState('2026-08-02');
+  const [fromDate, setFromDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [toDate, setToDate] = useState(() => {
+    const d = new Date();
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    return `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+  });
 
   // General Filters (No Date From/To inside filter panel per user request)
   const [txType, setTxType] = useState('all');
@@ -143,18 +154,27 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
   // Quick period change handler
   const handleQuickPeriodChange = (periodId: string) => {
     setQuickPeriod(periodId);
+    const today = new Date();
+    const getFormatted = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    
     if (periodId === 'today') {
-      setFromDate('2026-08-02');
-      setToDate('2026-08-02');
+      setFromDate(getFormatted(today));
+      setToDate(getFormatted(today));
     } else if (periodId === 'last_7_days') {
-      setFromDate('2026-07-26');
-      setToDate('2026-08-02');
+      const past = new Date(today);
+      past.setDate(today.getDate() - 6);
+      setFromDate(getFormatted(past));
+      setToDate(getFormatted(today));
     } else if (periodId === 'current_month') {
-      setFromDate('2026-08-01');
-      setToDate('2026-08-31');
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      setFromDate(getFormatted(start));
+      setToDate(getFormatted(end));
     } else if (periodId === 'last_month') {
-      setFromDate('2026-07-01');
-      setToDate('2026-07-31');
+      const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const end = new Date(today.getFullYear(), today.getMonth(), 0);
+      setFromDate(getFormatted(start));
+      setToDate(getFormatted(end));
     }
   };
 
@@ -180,23 +200,126 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
       ) {
         return false;
       }
+      
+      // Date filter
+      if (tx.date) {
+        if (fromDate && tx.date < fromDate) return false;
+        if (toDate && tx.date > toDate) return false;
+      }
+      
       return true;
     });
-  }, [transactions, txType, provider, searchQuery]);
+  }, [transactions, txType, provider, searchQuery, fromDate, toDate]);
 
-  // Calculate totals
+  // Calculate totals for the filtered view
   const totalSales = filteredTransactions
-    .filter((t) => t.type === 'sale' || t.type === 'commission')
-    .reduce((acc, t) => acc + t.amount, 0);
+    .filter((t) => t.type === 'sale' || t.type === 'credit_sale')
+    .reduce((acc, t) => acc + (t.amount || 0), 0);
+
+  const totalCashSales = filteredTransactions
+    .filter((t) => t.type === 'sale')
+    .reduce((acc, t) => acc + (t.cashAmount || 0), 0);
+
+  const totalCreditSales = filteredTransactions
+    .filter((t) => t.type === 'sale' || t.type === 'credit_sale')
+    .reduce((acc, t) => acc + (t.creditAmount || 0), 0);
 
   const totalWithdrawals = Math.abs(
     filteredTransactions
       .filter((t) => t.type === 'withdrawal')
-      .reduce((acc, t) => acc + t.amount, 0)
+      .reduce((acc, t) => acc + (t.amount || 0), 0)
   );
 
-  const closingBalance = currentBalance;
-  const computedOpeningBalance = closingBalance - totalSales + totalWithdrawals;
+  const totalCommissions = filteredTransactions
+    .reduce((acc, t) => acc + (t.commissionAmount || (t.type === 'commission' ? Math.abs(t.amount || 0) : 0)), 0);
+
+  const { computedOpeningBalance, computedClosingBalance } = useMemo(() => {
+    if (transactions.length === 0) {
+      return { computedOpeningBalance: 0, computedClosingBalance: 0 };
+    }
+
+    const initialNetworkBalance = transactions.length > 0 
+      ? (transactions[transactions.length - 1].balanceAfter || 0) - (transactions[transactions.length - 1].amount || 0)
+      : currentBalance;
+
+    // 1. Get transactions within or before the date range
+    const txBeforeOrDuring = transactions.filter((tx) => !toDate || tx.date <= toDate);
+    
+    // The most recent transaction on or before toDate
+    const periodClosing = txBeforeOrDuring.length > 0 ? (txBeforeOrDuring[0].balanceAfter || 0) : initialNetworkBalance;
+
+    // To find opening balance, find the transaction right before fromDate
+    let periodOpening = 0;
+    const txBeforeFrom = transactions.find((tx) => fromDate && tx.date < fromDate);
+    
+    if (txBeforeFrom) {
+      periodOpening = txBeforeFrom.balanceAfter || 0;
+    } else if (txBeforeOrDuring.length > 0) {
+      // If no prior transactions, calculate balance before the oldest transaction in this period
+      const oldestTx = txBeforeOrDuring[txBeforeOrDuring.length - 1];
+      periodOpening = (oldestTx.balanceAfter || 0) - (oldestTx.amount || 0);
+    } else {
+      periodOpening = initialNetworkBalance;
+    }
+
+    return { computedOpeningBalance: periodOpening, computedClosingBalance: periodClosing };
+  }, [transactions, fromDate, toDate]);
+
+  const summaryStats = useMemo(() => {
+    let systemSales = 0;
+    let systemCount = 0;
+    let apiSales = 0;
+    let apiCount = 0;
+    let withdrawals = 0;
+    let withdrawalsCount = 0;
+
+    filteredTransactions.forEach((tx) => {
+      if (tx.type === 'sale') {
+        if (tx.provider === 'النظام' || tx.provider?.toLowerCase() === 'system') {
+          systemSales += tx.amount || 0;
+          systemCount++;
+        } else {
+          apiSales += tx.amount || 0;
+          apiCount++;
+        }
+      } else if (tx.type === 'withdrawal') {
+        withdrawals += Math.abs(tx.amount || 0);
+        withdrawalsCount++;
+      }
+    });
+
+    return { systemSales, systemCount, apiSales, apiCount, withdrawals, withdrawalsCount };
+  }, [filteredTransactions]);
+
+  const dynamicSummaryCards = useMemo(() => {
+    const groups: Record<string, { amount: number, count: number }> = {};
+    
+    filteredTransactions.forEach(tx => {
+      let key = 'غير محدد';
+      let amount = tx.amount || 0;
+      
+      if (summarySubTab === 'day') {
+        key = tx.date;
+      } else if (summarySubTab === 'category') {
+        key = tx.category || 'بدون فئة';
+      } else if (summarySubTab === 'provider') {
+        key = tx.provider || 'النظام';
+      } else if (summarySubTab === 'type') {
+        key = tx.typeLabel || 'معاملة';
+        if (tx.type === 'withdrawal') amount = Math.abs(amount);
+      }
+      
+      if (!groups[key]) {
+        groups[key] = { amount: 0, count: 0 };
+      }
+      groups[key].amount += amount;
+      groups[key].count += 1;
+    });
+
+    return Object.entries(groups)
+      .map(([label, data]) => ({ label, amount: data.amount, count: data.count }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [filteredTransactions, summarySubTab]);
 
   const handleExportPDF = async () => {
     if (isExporting) return;
@@ -469,8 +592,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                   <button
                     type="button"
                     onClick={() => {
-                      setFromDate('2026-08-01');
-                      setToDate('2026-08-02');
+                      setQuickPeriod('custom');
                     }}
                     className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
                   >
@@ -683,7 +805,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
               </div>
             </div>
             <div className={`text-xl md:text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              {computedOpeningBalance.toLocaleString()} <span className="text-xs font-normal text-slate-400">ر.ي</span>
+              {computedOpeningBalance.toLocaleString('en-US')} <span className="text-xs font-normal text-slate-400">ر.ي</span>
             </div>
           </div>
 
@@ -701,8 +823,20 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
               </div>
             </div>
             <div className="text-xl md:text-2xl font-black tracking-tight text-emerald-500">
-              +{totalSales.toLocaleString()} <span className="text-xs font-normal opacity-70">ر.ي</span>
+              +{totalSales.toLocaleString('en-US')} <span className="text-xs font-normal opacity-70">ر.ي</span>
             </div>
+            {(totalCreditSales > 0 || totalCashSales > 0) && (
+              <div className={`flex flex-col gap-1 mt-2 border-t pt-2 ${isDarkMode ? 'border-emerald-500/10' : 'border-emerald-100'}`}>
+                <div className={`flex items-center justify-between text-[11px] font-bold ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>
+                  <span>نقدي / محفظة:</span>
+                  <span>{totalCashSales.toLocaleString('en-US')} ر.ي</span>
+                </div>
+                <div className={`flex items-center justify-between text-[11px] font-bold ${isDarkMode ? 'text-amber-400/80' : 'text-amber-600/80'}`}>
+                  <span>مبيعات آجلة (ذمم):</span>
+                  <span>{totalCreditSales.toLocaleString('en-US')} ر.ي</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div
@@ -719,8 +853,16 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
               </div>
             </div>
             <div className="text-xl md:text-2xl font-black tracking-tight text-amber-500">
-              -{totalWithdrawals.toLocaleString()} <span className="text-xs font-normal opacity-70">ر.ي</span>
+              -{totalWithdrawals.toLocaleString('en-US')} <span className="text-xs font-normal opacity-70">ر.ي</span>
             </div>
+            {totalCommissions > 0 && (
+              <div className={`flex flex-col gap-1 mt-2 border-t pt-2 ${isDarkMode ? 'border-amber-500/10' : 'border-amber-100'}`}>
+                <div className={`flex items-center justify-between text-[11px] font-bold ${isDarkMode ? 'text-red-400/80' : 'text-red-600/80'}`}>
+                  <span>عمولات المنصة المخصومة:</span>
+                  <span>-{totalCommissions.toLocaleString('en-US')} ر.ي</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div
@@ -737,32 +879,32 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
               </div>
             </div>
             <div className={`text-xl md:text-2xl font-black tracking-tight ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-              {closingBalance.toLocaleString()} <span className="text-xs font-normal text-slate-400">ر.ي</span>
+              {computedClosingBalance.toLocaleString('en-US')} <span className="text-xs font-normal text-slate-400">ر.ي</span>
             </div>
           </div>
         </div>
 
         {/* Green Export PDF Banner */}
-        <div className="rounded-2xl p-5 bg-emerald-950/80 border border-emerald-800/80 text-emerald-100 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+        <div className="rounded-2xl p-5 bg-gradient-to-r from-emerald-800 to-emerald-950 border border-emerald-700/50 text-emerald-100 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
           <div className="space-y-1 text-right w-full sm:w-auto">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
-                <Download className="w-4 h-4" />
+                <Printer className="w-4 h-4" />
               </div>
-              <h3 className="text-sm font-black text-emerald-300">تصدير PDF وتوثيق الكشف</h3>
+              <h3 className="text-sm font-black text-emerald-300">توثيق الكشف (PDF)</h3>
             </div>
             <p className="text-xs text-emerald-200/80">
-              تصدير كشف الحساب كملف PDF شامل حسب الفلاتر والنطاق الزمني الحالي.
+              سيتم تصدير كشف الحساب وفق النطاق الزمني والفلاتر الحالية كوثيقة رسمية.
             </p>
           </div>
 
           <button
             onClick={handleExportPDF}
             disabled={isExporting}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition-all shadow-lg shadow-emerald-900/50 cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-70"
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-900/50 cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-70"
           >
-            {isExporting ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : <FileText className="w-4 h-4" />}
-            <span>{isExporting ? 'جاري التوليد...' : 'تصدير ملف PDF'}</span>
+            {isExporting ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : <Download className="w-4 h-4" />}
+            <span>تنزيل ملف PDF</span>
           </button>
         </div>
 
@@ -858,12 +1000,27 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                         </td>
                         <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">{tx.reference}</td>
                         <td className="py-3.5 px-4 font-extrabold font-mono text-xs whitespace-nowrap">
-                          <span className={(tx.amount ?? 0) > 0 ? 'text-emerald-500' : 'text-amber-500'}>
-                            {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString()}` : (tx.amount ?? 0).toLocaleString()} ر.ي
-                          </span>
+                          <div className={(tx.amount ?? 0) > 0 ? 'text-emerald-500' : 'text-amber-500'}>
+                            {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString('en-US')}` : (tx.amount ?? 0).toLocaleString('en-US')} ر.ي
+                          </div>
+                          {(tx.creditAmount ?? 0) > 0 && (
+                            <div className="text-[10px] text-amber-500 mt-0.5" title="هذا المبلغ آجل ولم يُضف لرصيدك">
+                              آجل: {(tx.creditAmount ?? 0).toLocaleString('en-US')} ر.ي
+                            </div>
+                          )}
+                          {(tx.cashAmount ?? 0) > 0 && (tx.creditAmount ?? 0) > 0 && (
+                            <div className="text-[10px] text-emerald-500" title="هذا المبلغ مدفوع نقداً/بالمحفظة">
+                              نقدي: {(tx.cashAmount ?? 0).toLocaleString('en-US')} ر.ي
+                            </div>
+                          )}
+                          {(tx.commissionAmount ?? 0) > 0 && (
+                            <div className="text-[10px] text-red-500 mt-0.5" title="العمولة المخصومة من الرصيد">
+                              عمولة مخصومة: -{(tx.commissionAmount ?? 0).toLocaleString('en-US')} ر.ي
+                            </div>
+                          )}
                         </td>
                         <td className="py-3.5 px-4 font-bold font-mono text-slate-300">
-                          {(tx.balanceAfter ?? 0).toLocaleString()} ر.ي
+                          {(tx.balanceAfter ?? 0).toLocaleString('en-US')} ر.ي
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
@@ -930,45 +1087,30 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
             </div>
 
             {/* Summary Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div
-                className={`p-5 rounded-2xl border ${
-                  isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-3 text-xs font-bold text-blue-400">
-                  <Banknote className="w-4 h-4" />
-                  <span>مبيعات جيب (Jaib)</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+              {dynamicSummaryCards.length > 0 ? dynamicSummaryCards.map((card, idx) => (
+                <div
+                  key={idx}
+                  className={`p-5 rounded-2xl border transition-all ${
+                    isDarkMode ? 'bg-[#121926] border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
+                  }`}
+                >
+                  <div className={`flex items-center gap-2 mb-3 text-xs font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                    <BarChart3 className="w-4 h-4" />
+                    <span>{card.label}</span>
+                  </div>
+                  <div className={`text-xl font-black mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    {card.amount.toLocaleString('en-US')} ر.ي
+                  </div>
+                  <div className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {card.count.toLocaleString('en-US')} عملية
+                  </div>
                 </div>
-                <div className="text-xl font-black mb-1">1,000 ر.ي</div>
-                <div className="text-[11px] text-slate-400">1 عملية ناجحة</div>
-              </div>
-
-              <div
-                className={`p-5 rounded-2xl border ${
-                  isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-3 text-xs font-bold text-indigo-400">
-                  <Coins className="w-4 h-4" />
-                  <span>مبيعات تداولات</span>
+              )) : (
+                <div className={`col-span-full py-12 text-center text-xs font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                  لا توجد بيانات مجمّعة لعرضها في هذا التصنيف.
                 </div>
-                <div className="text-xl font-black mb-1">500 ر.ي</div>
-                <div className="text-[11px] text-slate-400">1 عملية ناجحة</div>
-              </div>
-
-              <div
-                className={`p-5 rounded-2xl border ${
-                  isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-3 text-xs font-bold text-amber-400">
-                  <ArrowUpRight className="w-4 h-4" />
-                  <span>السحوبات المكتملة</span>
-                </div>
-                <div className="text-xl font-black mb-1 text-amber-500">5,000 ر.ي</div>
-                <div className="text-[11px] text-slate-400">سحب يدوي إلى محفظة جيب</div>
-              </div>
+              )}
             </div>
           </div>
         )}
@@ -1068,10 +1210,10 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
               </thead>
               <tbody>
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
-                  <td style={{ padding: '10px', border: '1px solid #cbd5e1' }}>{computedOpeningBalance.toLocaleString()} ر.ي</td>
-                  <td style={{ padding: '10px', border: '1px solid #cbd5e1', color: '#15803d' }}>+{totalSales.toLocaleString()} ر.ي</td>
-                  <td style={{ padding: '10px', border: '1px solid #cbd5e1', color: '#b91c1c' }}>-{totalWithdrawals.toLocaleString()} ر.ي</td>
-                  <td style={{ padding: '10px', border: '1px solid #cbd5e1', backgroundColor: '#eff6ff', color: '#1e40af', fontSize: '14px' }}>{closingBalance.toLocaleString()} ر.ي</td>
+                  <td style={{ padding: '10px', border: '1px solid #cbd5e1' }}>{computedOpeningBalance.toLocaleString('en-US')} ر.ي</td>
+                  <td style={{ padding: '10px', border: '1px solid #cbd5e1', color: '#15803d' }}>+{totalSales.toLocaleString('en-US')} ر.ي</td>
+                  <td style={{ padding: '10px', border: '1px solid #cbd5e1', color: '#b91c1c' }}>-{totalWithdrawals.toLocaleString('en-US')} ر.ي</td>
+                  <td style={{ padding: '10px', border: '1px solid #cbd5e1', backgroundColor: '#eff6ff', color: '#1e40af', fontSize: '14px' }}>{computedClosingBalance.toLocaleString('en-US')} ر.ي</td>
                 </tr>
               </tbody>
             </table>
@@ -1094,7 +1236,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                 </tr>
               </thead>
               <tbody>
-                {filteredTransactions.map((tx, idx) => (
+                {[...filteredTransactions].reverse().map((tx, idx) => (
                   <tr key={tx.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{tx.date} - {tx.time}</td>
@@ -1104,10 +1246,10 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{tx.provider} ({tx.category})</td>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1', fontFamily: 'monospace' }}>{tx.reference}</td>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: (tx.amount ?? 0) > 0 ? '#15803d' : '#b91c1c' }}>
-                      {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString()}` : (tx.amount ?? 0).toLocaleString()} ر.ي
+                      {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString('en-US')}` : (tx.amount ?? 0).toLocaleString('en-US')} ر.ي
                     </td>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold' }}>
-                      {(tx.balanceAfter ?? 0).toLocaleString()} ر.ي
+                      {(tx.balanceAfter ?? 0).toLocaleString('en-US')} ر.ي
                     </td>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#15803d' }}>
                       مكتمل
@@ -1230,10 +1372,10 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                     </thead>
                     <tbody>
                       <tr className="font-extrabold bg-slate-50">
-                        <td className="p-2 border border-slate-300">{computedOpeningBalance.toLocaleString()} ر.ي</td>
-                        <td className="p-2 border border-slate-300 text-emerald-700">+{totalSales.toLocaleString()} ر.ي</td>
-                        <td className="p-2 border border-slate-300 text-red-700">-{totalWithdrawals.toLocaleString()} ر.ي</td>
-                        <td className="p-2 border border-slate-300 bg-blue-50 text-blue-900">{closingBalance.toLocaleString()} ر.ي</td>
+                        <td className="p-2 border border-slate-300">{computedOpeningBalance.toLocaleString('en-US')} ر.ي</td>
+                        <td className="p-2 border border-slate-300 text-emerald-700">+{totalSales.toLocaleString('en-US')} ر.ي</td>
+                        <td className="p-2 border border-slate-300 text-red-700">-{totalWithdrawals.toLocaleString('en-US')} ر.ي</td>
+                        <td className="p-2 border border-slate-300 bg-blue-50 text-blue-900">{computedClosingBalance.toLocaleString('en-US')} ر.ي</td>
                       </tr>
                     </tbody>
                   </table>
@@ -1254,16 +1396,16 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredTransactions.map((tx, idx) => (
+                      {[...filteredTransactions].reverse().map((tx, idx) => (
                         <tr key={tx.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                           <td className="p-1.5 border border-slate-300 text-center font-bold">{idx + 1}</td>
                           <td className="p-1.5 border border-slate-300">{tx.date}</td>
                           <td className="p-1.5 border border-slate-300 font-bold">{tx.type === 'sale' ? 'مبيعات' : tx.type === 'withdrawal' ? 'سحب' : 'عمولة'}</td>
                           <td className="p-1.5 border border-slate-300">{tx.provider}</td>
                           <td className={`p-1.5 border border-slate-300 text-center font-bold ${(tx.amount ?? 0) > 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                            {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString()}` : (tx.amount ?? 0).toLocaleString()} ر.ي
+                            {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString('en-US')}` : (tx.amount ?? 0).toLocaleString('en-US')} ر.ي
                           </td>
-                          <td className="p-1.5 border border-slate-300 text-center font-bold">{(tx.balanceAfter ?? 0).toLocaleString()} ر.ي</td>
+                          <td className="p-1.5 border border-slate-300 text-center font-bold">{(tx.balanceAfter ?? 0).toLocaleString('en-US')} ر.ي</td>
                         </tr>
                       ))}
                     </tbody>
