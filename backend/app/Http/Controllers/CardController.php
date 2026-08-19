@@ -164,7 +164,7 @@ class CardController extends Controller
                 'network_id' => $network->id,
                 'type' => 'sale',
                 'amount' => $totalPrice,
-                'description' => "شراء عدد $quantity كرت عبر محفظة {$validated['wallet_type']} (عمولة: {$commission})",
+                'description' => "فئة {$category->name} - شراء عدد $quantity كرت عبر محفظة {$validated['wallet_type']} (عمولة: {$commission})",
                 'reference_number' => $validated['transaction_ref']
             ]);
 

@@ -22,9 +22,13 @@ export const useOwnerActions = () => {
           balance: n.balance,
           total_sales: n.total_sales || 0,
           status: n.status,
+          notif_out_of_stock: n.notif_out_of_stock ?? true,
+          notif_low_stock: n.notif_low_stock ?? true,
           categories: n.card_categories?.filter((c: any) => c.status !== 'inactive').map((c: any) => ({
+            id: c.id,
             value: String(c.price),
-            remaining: c.stock
+            remaining: c.stock,
+            min_threshold: c.min_threshold ?? 10
           })) || []
         }));
         setNetworks(mappedNetworks);

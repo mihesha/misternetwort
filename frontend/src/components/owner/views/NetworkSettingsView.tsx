@@ -89,6 +89,7 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
   const [fetchingRouterCategory, setFetchingRouterCategory] = useState<string | null>(null);
   const [savingCategory, setSavingCategory] = useState<string | null>(null);
   const [categories, setCategories] = useState<CategorySetting[]>([]);
+  const [networkExtraInfo, setNetworkExtraInfo] = useState<{ phone: string, jaib_wallet: string } | null>(null);
 
   React.useEffect(() => {
     const fetchNetworkData = async () => {
@@ -100,18 +101,29 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
         if (res.ok) {
           const data = await res.json();
           const found = data.find((n: any) => n.network_code === networkCode || n.name === networkName);
-          if (found && found.card_categories) {
+          if (found) {
+            setNetworkExtraInfo({
+              phone: found.owner_phone || networkPhone || 'غير متوفر',
+              jaib_wallet: found.jaib_wallet || 'غير متوفر'
+            });
+            
+            // Set notification toggles
+            setNotifOutOfStock(found.notif_out_of_stock ?? true);
+            setNotifLowStock(found.notif_low_stock ?? true);
+
+            if (found.card_categories) {
             const mappedCategories = found.card_categories.map((c: any) => ({
               id: c.id?.toString() || `cat-${c.price}`,
               category: c.name || c.price?.toString(),
               price: c.price || 0,
               available: c.stock || 0,
-              minThreshold: 100,
+              minThreshold: c.min_threshold ?? 10,
               mikrotikProfile: '',
-              prefix: '',
-              suffix: '',
+              prefix: c.prefix ?? '',
+              suffix: c.suffix ?? '',
             }));
             setCategories(mappedCategories);
+            }
           }
         }
       } catch (err) {
@@ -130,12 +142,33 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
     }, 3500);
   };
 
-  const handleSaveNotifications = () => {
+  const handleSaveNotifications = async () => {
     setIsSavingNotifs(true);
-    setTimeout(() => {
+    try {
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const res = await fetch(`/api/networks/${networkCode}/settings`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          notif_out_of_stock: notifOutOfStock,
+          notif_low_stock: notifLowStock
+        })
+      });
+
+      if (res.ok) {
+        showToast('تم حفظ إعدادات الإشعارات وقنوات التنبيه بنجاح! ✓');
+      } else {
+        const data = await res.json();
+        showToast(`فشل الحفظ: ${data.error || data.message || 'حدث خطأ مجهول'}`);
+      }
+    } catch (e) {
+      showToast('حدث خطأ أثناء الاتصال بالخادم.');
+    } finally {
       setIsSavingNotifs(false);
-      showToast('تم حفظ إعدادات الإشعارات وقنوات التنبيه بنجاح! ✓');
-    }, 600);
+    }
   };
 
   const handleSaveAutoWithdraw = () => {
@@ -159,12 +192,37 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
     }, 1000);
   };
 
-  const handleSaveCategorySettings = (id: string, categoryName: string) => {
+  const handleSaveCategorySettings = async (id: string, categoryName: string) => {
     setSavingCategory(id);
-    setTimeout(() => {
+    try {
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const category = categories.find(c => c.id === id);
+      if (!category) return;
+      
+      const res = await fetch(`/api/categories/${id}/settings`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          min_threshold: category.minThreshold,
+          prefix: category.prefix,
+          suffix: category.suffix
+        })
+      });
+
+      if (res.ok) {
+        showToast(`تم حفظ التعديلات والحد الأدنى للفئة ${categoryName} بنجاح! ✓`);
+      } else {
+        const data = await res.json();
+        showToast(`فشل الحفظ: ${data.error || data.message || 'حدث خطأ مجهول'}`);
+      }
+    } catch (e) {
+      showToast('حدث خطأ أثناء الاتصال بالخادم.');
+    } finally {
       setSavingCategory(null);
-      showToast(`تم حفظ التعديلات والبادئة/اللاحقة للفئة ${categoryName} بنجاح! ✓`);
-    }, 500);
+    }
   };
 
   const handleCategoryInputChange = (
@@ -250,12 +308,12 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
 
             <div className={`p-3.5 rounded-xl border ${isDarkMode ? 'bg-[#182234] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
               <span className="text-[11px] font-bold text-slate-400 block mb-1">رقم التواصل</span>
-              <span className="text-sm font-black font-mono dir-ltr inline-block">{networkPhone}</span>
+              <span className="text-sm font-black font-mono dir-ltr inline-block">{networkExtraInfo ? networkExtraInfo.phone : networkPhone}</span>
             </div>
 
             <div className={`p-3.5 rounded-xl border ${isDarkMode ? 'bg-[#182234] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
               <span className="text-[11px] font-bold text-slate-400 block mb-1">رقم محفظة جيب</span>
-              <span className="text-sm font-black font-mono text-amber-400 dir-ltr inline-block">777310606</span>
+              <span className="text-sm font-black font-mono text-amber-400 dir-ltr inline-block">{networkExtraInfo ? networkExtraInfo.jaib_wallet : '...'}</span>
             </div>
           </div>
         </div>
@@ -335,30 +393,11 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
                     <div className="text-[11px] opacity-80 mt-0.5">عند وصول مخزون فئة إلى الحد الأدنى</div>
                   </div>
                 </div>
-
-                {/* New stock */}
-                <div
-                  className={`p-4 rounded-xl border transition-all opacity-80 relative flex items-start gap-3 ${
-                    isDarkMode ? 'bg-[#182234] border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-600'
-                  }`}
-                >
-                  <div className="mt-0.5 text-slate-500">
-                    <Square className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-xs md:text-sm">مخزون جديد</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">
-                        موقوف من الإدارة
-                      </span>
-                    </div>
-                    <div className="text-[11px] opacity-80 mt-0.5">عند إضافة كروت جديدة للشبكة</div>
-                  </div>
-                </div>
               </div>
             </div>
 
-            {/* Notification Channels */}
+            {/* Notification Channels (Hidden for now) */}
+            {false && (
             <div>
               <h3 className="text-xs md:text-sm font-extrabold mb-3 text-slate-300 flex items-center gap-2">
                 <Smartphone className="w-4 h-4 text-emerald-400" />
@@ -417,6 +456,7 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
                 </div>
               </div>
             </div>
+            )}
 
             {/* Save Notifications Button */}
             <div className="pt-2">
@@ -432,7 +472,8 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
           </div>
         </div>
 
-        {/* 3. Auto Withdrawal Settings Section */}
+        {/* 3. Auto Withdrawal Settings Section (Hidden for later: سنقوم باصلاحها وتفعيلها وربطها لاحقا) */}
+        {false && (
         <div
           className={`rounded-2xl p-6 md:p-7 border transition-all shadow-xl space-y-6 ${
             isDarkMode
@@ -508,6 +549,7 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
             </button>
           </div>
         </div>
+        )}
 
         {/* 4. Low Stock Threshold & Category Router Settings Table */}
         <div
@@ -538,8 +580,6 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
                   <th className="py-3 px-3">السعر</th>
                   <th className="py-3 px-3 text-center">الكروت المتاحة</th>
                   <th className="py-3 px-3 text-center">الحد الأدنى للتنبيه</th>
-                  <th className="py-3 px-3">بروفايل MikroTik</th>
-                  <th className="py-3 px-3 text-center">بادئة/لاحقة الاسم</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/40">
@@ -585,61 +625,9 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
                       </div>
                     </td>
 
-                    {/* MikroTik Profile */}
-                    <td className="py-4 px-3">
-                      <div className="flex items-center gap-2">
-                        {item.mikrotikProfile ? (
-                          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono text-[11px] font-bold">
-                            {item.mikrotikProfile}
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" />
-                            <span>لم يتم إعداد...</span>
-                          </span>
-                        )}
+                    {/* Removed MikroTik Profile Column */}
 
-                        <button
-                          onClick={() => handleFetchFromRouter(item.id, item.category)}
-                          disabled={fetchingRouterCategory === item.id}
-                          className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] transition-all cursor-pointer border border-slate-700 flex items-center gap-1 whitespace-nowrap"
-                        >
-                          <RefreshCw className={`w-3 h-3 text-cyan-400 ${fetchingRouterCategory === item.id ? 'animate-spin' : ''}`} />
-                          <span>جلب من الراوتر</span>
-                        </button>
-                      </div>
-                    </td>
 
-                    {/* Prefix/Suffix */}
-                    <td className="py-4 px-3 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <input
-                          type="text"
-                          placeholder="بادئة"
-                          value={item.prefix}
-                          onChange={(e) => handleCategoryInputChange(item.id, 'prefix', e.target.value)}
-                          className={`w-16 rounded-lg py-1.5 px-2 text-center text-xs font-mono focus:outline-none border ${
-                            isDarkMode ? 'bg-[#1a2436] text-white border-slate-700' : 'bg-slate-100 text-slate-900 border-slate-300'
-                          }`}
-                        />
-                        <input
-                          type="text"
-                          placeholder="لاحقة"
-                          value={item.suffix}
-                          onChange={(e) => handleCategoryInputChange(item.id, 'suffix', e.target.value)}
-                          className={`w-16 rounded-lg py-1.5 px-2 text-center text-xs font-mono focus:outline-none border ${
-                            isDarkMode ? 'bg-[#1a2436] text-white border-slate-700' : 'bg-slate-100 text-slate-900 border-slate-300'
-                          }`}
-                        />
-                        <button
-                          onClick={() => handleSaveCategorySettings(item.id, item.category)}
-                          disabled={savingCategory === item.id}
-                          className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] transition-all cursor-pointer"
-                        >
-                          حفظ
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -647,38 +635,7 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
           </div>
         </div>
 
-        {/* 5. MikroTik Setup Warning & Setup Wizard Launcher Banner */}
-        <div
-          className={`rounded-2xl p-6 border transition-all relative overflow-hidden shadow-2xl ${
-            isDarkMode
-              ? 'bg-gradient-to-r from-[#2e1400] to-[#3a1900] border-amber-600/70 text-amber-200'
-              : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-amber-600/20'
-          }`}
-        >
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-start gap-3.5">
-              <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
-                <AlertTriangle className="w-7 h-7 text-amber-400" />
-              </div>
-              <div className="space-y-1 text-right">
-                <h3 className="font-black text-base md:text-lg text-amber-300">
-                  لم يتم إعداد راوتر MikroTik لهذه الشبكة
-                </h3>
-                <p className="text-xs md:text-sm opacity-90 leading-relaxed">
-                  لإعدادات الطباعة التلقائية للكروت ومزامنة الحزم تلقائياً، يجب إعداد راوتر MikroTik أولاً.
-                </p>
-              </div>
-            </div>
 
-            <button
-              onClick={onOpenMikrotikWizard}
-              className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs md:text-sm transition-all shadow-lg shadow-amber-950/40 flex items-center gap-2 cursor-pointer shrink-0"
-            >
-              <Router className="w-4 h-4 text-slate-950" />
-              <span>إعدادات MikroTik</span>
-            </button>
-          </div>
-        </div>
       </main>
     </div>
   );

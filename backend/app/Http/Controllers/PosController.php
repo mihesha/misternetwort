@@ -200,7 +200,7 @@ class PosController extends Controller
                 'network_id' => $network->id,
                 'type' => 'sale',
                 'amount' => $totalPrice,
-                'description' => "مبيعات لنقطة بيع ({$user->name})" . ($amountOnCredit > 0 ? " (آجل: $amountOnCredit)" : "") . " (عمولة: {$commission})",
+                'description' => "فئة {$category->name} - مبيعات لنقطة بيع ({$user->name})" . ($amountOnCredit > 0 ? " (آجل: $amountOnCredit)" : "") . " (عمولة: {$commission})",
                 'reference_number' => 'POS-' . time()
             ]);
 

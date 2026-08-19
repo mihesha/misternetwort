@@ -108,12 +108,9 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
 
   // General Filters (No Date From/To inside filter panel per user request)
   const [txType, setTxType] = useState('all');
-  const [provider, setProvider] = useState('all');
+  const [txStatus, setTxStatus] = useState('all');
   const [category, setCategory] = useState('all');
-  const [saleStatus, setSaleStatus] = useState('all');
-  const [withdrawStatus, setWithdrawStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [groupBy, setGroupBy] = useState('day');
 
   const [transactions, setTransactions] = useState<StatementTransaction[]>([]);
   const [currentBalance, setCurrentBalance] = useState(0);
@@ -178,25 +175,43 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
     }
   };
 
+  // Extract unique categories dynamically from transactions
+  const uniqueCategories = useMemo(() => {
+    const cats = new Set<string>();
+    transactions.forEach((tx) => {
+      if (tx.category && tx.category.trim() !== '') cats.add(tx.category);
+    });
+    return Array.from(cats);
+  }, [transactions]);
+
   // Filtered dataset
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
       // Type filter
       if (txType !== 'all') {
-        if (txType === 'sales' && tx.type !== 'sale') return false;
+        if (txType === 'sales' && tx.type !== 'sale' && tx.type !== 'credit_sale') return false;
+        if (txType === 'sales_pos' && ((tx.type !== 'sale' && tx.type !== 'credit_sale') || tx.provider !== 'POS')) return false;
+        if (txType === 'sales_app' && ((tx.type !== 'sale' && tx.type !== 'credit_sale') || tx.provider === 'POS')) return false;
         if (txType === 'withdrawal' && tx.type !== 'withdrawal') return false;
         if (txType === 'commission' && tx.type !== 'commission') return false;
       }
-      // Provider filter
-      if (provider !== 'all' && tx.provider && !tx.provider.toLowerCase().includes(provider.toLowerCase())) {
+      
+      // Category filter
+      if (category !== 'all' && tx.category !== category) {
         return false;
       }
+
+      // Status filter
+      if (txStatus !== 'all' && tx.status !== txStatus) {
+        return false;
+      }
+
       // Search filter
       if (
         searchQuery &&
         (!tx.reference || !tx.reference.toLowerCase().includes(searchQuery.toLowerCase())) &&
         (!tx.provider || !tx.provider.toLowerCase().includes(searchQuery.toLowerCase())) &&
-        (!tx.id || !tx.id.toLowerCase().includes(searchQuery.toLowerCase()))
+        (!tx.category || !tx.category.toLowerCase().includes(searchQuery.toLowerCase()))
       ) {
         return false;
       }
@@ -209,7 +224,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
       
       return true;
     });
-  }, [transactions, txType, provider, searchQuery, fromDate, toDate]);
+  }, [transactions, txType, category, txStatus, searchQuery, fromDate, toDate]);
 
   // Calculate totals for the filtered view
   const totalSales = filteredTransactions
@@ -239,7 +254,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
     }
 
     const initialNetworkBalance = transactions.length > 0 
-      ? (transactions[transactions.length - 1].balanceAfter || 0) - (transactions[transactions.length - 1].amount || 0)
+      ? (transactions[transactions.length - 1].balanceAfter || 0) - (transactions[transactions.length - 1].balanceDelta || 0)
       : currentBalance;
 
     // 1. Get transactions within or before the date range
@@ -257,7 +272,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
     } else if (txBeforeOrDuring.length > 0) {
       // If no prior transactions, calculate balance before the oldest transaction in this period
       const oldestTx = txBeforeOrDuring[txBeforeOrDuring.length - 1];
-      periodOpening = (oldestTx.balanceAfter || 0) - (oldestTx.amount || 0);
+      periodOpening = (oldestTx.balanceAfter || 0) - (oldestTx.balanceDelta || 0);
     } else {
       periodOpening = initialNetworkBalance;
     }
@@ -292,11 +307,10 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
   }, [filteredTransactions]);
 
   const dynamicSummaryCards = useMemo(() => {
-    const groups: Record<string, { amount: number, count: number }> = {};
+    const groups: Record<string, { salesAmount: number, salesCount: number, deductionsAmount: number, deductionsCount: number, netDelta: number, totalCount: number }> = {};
     
     filteredTransactions.forEach(tx => {
       let key = 'غير محدد';
-      let amount = tx.amount || 0;
       
       if (summarySubTab === 'day') {
         key = tx.date;
@@ -306,19 +320,27 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
         key = tx.provider || 'النظام';
       } else if (summarySubTab === 'type') {
         key = tx.typeLabel || 'معاملة';
-        if (tx.type === 'withdrawal') amount = Math.abs(amount);
       }
       
       if (!groups[key]) {
-        groups[key] = { amount: 0, count: 0 };
+        groups[key] = { salesAmount: 0, salesCount: 0, deductionsAmount: 0, deductionsCount: 0, netDelta: 0, totalCount: 0 };
       }
-      groups[key].amount += amount;
-      groups[key].count += 1;
+
+      groups[key].totalCount += 1;
+      groups[key].netDelta += (tx.balanceDelta || 0);
+
+      if (tx.type === 'sale' || tx.type === 'credit_sale') {
+        groups[key].salesAmount += (tx.amount || 0);
+        groups[key].salesCount += 1;
+      } else if (tx.type === 'withdrawal' || tx.type === 'commission') {
+        groups[key].deductionsAmount += Math.abs(tx.amount || 0);
+        groups[key].deductionsCount += 1;
+      }
     });
 
     return Object.entries(groups)
-      .map(([label, data]) => ({ label, amount: data.amount, count: data.count }))
-      .sort((a, b) => b.amount - a.amount);
+      .map(([label, data]) => ({ label, ...data }))
+      .sort((a, b) => b.netDelta - a.netDelta);
   }, [filteredTransactions, summarySubTab]);
 
   const handleExportPDF = async () => {
@@ -620,19 +642,19 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-blue-500" />
               <span>تصفية الفئات والمعاملات</span>
-              {(txType !== 'all' || provider !== 'all' || searchQuery) && (
+              {(txType !== 'all' || category !== 'all' || txStatus !== 'all' || searchQuery) && (
                 <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
               )}
             </div>
             <div className="flex items-center gap-2 text-slate-400">
-              <span className="text-[11px] font-normal">تصفية حسب المزود، الفئة، أو رقم المرجع</span>
+              <span className="text-[11px] font-normal">تصفية حسب الفئة، الحالة، أو رقم المرجع</span>
               {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </div>
           </button>
 
           {showFilters && (
             <div className={`p-5 border-t space-y-4 ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-bold">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-bold">
                 {/* Transaction Type */}
                 <div>
                   <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -648,30 +670,53 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                     }`}
                   >
                     <option value="all">كل الأنواع</option>
-                    <option value="sales">مبيعات كروت</option>
+                    <option value="sales">مبيعات الكروت (الكل)</option>
+                    <option value="sales_pos">مبيعات (نظام نقاط البيع POS)</option>
+                    <option value="sales_app">مبيعات (تطبيق ومحافظ العملاء)</option>
                     <option value="withdrawal">سحب مالي</option>
-                    <option value="commission">عمولات</option>
+                    <option value="commission">عمولات منصة</option>
                   </select>
                 </div>
 
-                {/* Provider */}
+                {/* Category Filter */}
                 <div>
                   <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                    المزود
+                    الفئة (فئة الكروت)
                   </label>
                   <select
-                    value={provider}
-                    onChange={(e) => setProvider(e.target.value)}
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
                     className={`w-full rounded-xl py-2.5 px-3 text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isDarkMode
                         ? 'bg-[#182232] text-white border border-slate-700'
                         : 'bg-slate-50 text-slate-900 border border-slate-300'
                     }`}
                   >
-                    <option value="all">كل المزودين</option>
-                    <option value="jaib">جيب</option>
-                    <option value="kuraimi">الكريمي</option>
-                    <option value="tadawulat">تداولات</option>
+                    <option value="all">كل الفئات</option>
+                    {uniqueCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Transaction Status Filter */}
+                <div>
+                  <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    حالة المعاملة
+                  </label>
+                  <select
+                    value={txStatus}
+                    onChange={(e) => setTxStatus(e.target.value)}
+                    className={`w-full rounded-xl py-2.5 px-3 text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isDarkMode
+                        ? 'bg-[#182232] text-white border border-slate-700'
+                        : 'bg-slate-50 text-slate-900 border border-slate-300'
+                    }`}
+                  >
+                    <option value="all">الكل</option>
+                    <option value="completed">مكتمل / ناجح</option>
+                    <option value="pending">قيد الانتظار (سحوبات)</option>
+                    <option value="rejected">مرفوض</option>
                   </select>
                 </div>
 
@@ -683,7 +728,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="رقم المرجع، المحفظة..."
+                      placeholder="رقم المرجع، البيان..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className={`w-full rounded-xl py-2.5 px-3 pr-9 text-right focus:outline-none focus:ring-2 focus:ring-blue-500 ${
@@ -695,66 +740,6 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                     <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
-
-                {/* Sale Status */}
-                <div>
-                  <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                    حالة البيع
-                  </label>
-                  <select
-                    value={saleStatus}
-                    onChange={(e) => setSaleStatus(e.target.value)}
-                    className={`w-full rounded-xl py-2.5 px-3 text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      isDarkMode
-                        ? 'bg-[#182232] text-white border border-slate-700'
-                        : 'bg-slate-50 text-slate-900 border border-slate-300'
-                    }`}
-                  >
-                    <option value="all">الكل</option>
-                    <option value="success">ناجح</option>
-                    <option value="pending">قيد الانتظار</option>
-                  </select>
-                </div>
-
-                {/* Withdrawal Status */}
-                <div>
-                  <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                    حالة السحب
-                  </label>
-                  <select
-                    value={withdrawStatus}
-                    onChange={(e) => setWithdrawStatus(e.target.value)}
-                    className={`w-full rounded-xl py-2.5 px-3 text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      isDarkMode
-                        ? 'bg-[#182232] text-white border border-slate-700'
-                        : 'bg-slate-50 text-slate-900 border border-slate-300'
-                    }`}
-                  >
-                    <option value="all">الكل</option>
-                    <option value="completed">مكتمل</option>
-                    <option value="pending">قيد الانتظار</option>
-                  </select>
-                </div>
-
-                {/* Group By */}
-                <div>
-                  <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                    تجميع حسب
-                  </label>
-                  <select
-                    value={groupBy}
-                    onChange={(e) => setGroupBy(e.target.value)}
-                    className={`w-full rounded-xl py-2.5 px-3 text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      isDarkMode
-                        ? 'bg-[#182232] text-white border border-slate-700'
-                        : 'bg-slate-50 text-slate-900 border border-slate-300'
-                    }`}
-                  >
-                    <option value="day">اليوم</option>
-                    <option value="month">الشهر</option>
-                    <option value="category">الفئة</option>
-                  </select>
-                </div>
               </div>
 
               {/* Action Buttons */}
@@ -763,10 +748,8 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                   type="button"
                   onClick={() => {
                     setTxType('all');
-                    setProvider('all');
                     setCategory('all');
-                    setSaleStatus('all');
-                    setWithdrawStatus('all');
+                    setTxStatus('all');
                     setSearchQuery('');
                   }}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -789,97 +772,82 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
           )}
         </div>
 
-        {/* 4 Financial Metrics Cards with Modern Icons */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div
-            className={`p-5 rounded-2xl border transition-all hover:scale-[1.01] ${
-              isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+          {/* Card 1: Opening Balance */}
+          <div className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                الرصيد الافتتاحي
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-                <Building2 className="w-4 h-4" />
+              <span className={`text-[11px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>الرصيد الافتتاحي</span>
+              <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                <Building2 className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className={`text-xl md:text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              {computedOpeningBalance.toLocaleString('en-US')} <span className="text-xs font-normal text-slate-400">ر.ي</span>
+            <div className={`text-lg font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              {computedOpeningBalance.toLocaleString('en-US')} <span className="text-[10px] font-normal text-slate-400">ر.ي</span>
             </div>
           </div>
 
-          <div
-            className={`p-5 rounded-2xl border transition-all hover:scale-[1.01] ${
-              isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
+          {/* Card 2: Cash Sales */}
+          <div className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                صافي المبيعات
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4" />
+              <span className={`text-[11px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>مبيعات نقدية</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                <TrendingUp className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-xl md:text-2xl font-black tracking-tight text-emerald-500">
-              +{totalSales.toLocaleString('en-US')} <span className="text-xs font-normal opacity-70">ر.ي</span>
+            <div className="text-lg font-black tracking-tight text-emerald-500">
+              +{totalCashSales.toLocaleString('en-US')} <span className="text-[10px] font-normal opacity-70">ر.ي</span>
             </div>
-            {(totalCreditSales > 0 || totalCashSales > 0) && (
-              <div className={`flex flex-col gap-1 mt-2 border-t pt-2 ${isDarkMode ? 'border-emerald-500/10' : 'border-emerald-100'}`}>
-                <div className={`flex items-center justify-between text-[11px] font-bold ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>
-                  <span>نقدي / محفظة:</span>
-                  <span>{totalCashSales.toLocaleString('en-US')} ر.ي</span>
-                </div>
-                <div className={`flex items-center justify-between text-[11px] font-bold ${isDarkMode ? 'text-amber-400/80' : 'text-amber-600/80'}`}>
-                  <span>مبيعات آجلة (ذمم):</span>
-                  <span>{totalCreditSales.toLocaleString('en-US')} ر.ي</span>
-                </div>
-              </div>
-            )}
           </div>
 
-          <div
-            className={`p-5 rounded-2xl border transition-all hover:scale-[1.01] ${
-              isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
+          {/* Card 3: Credit Sales */}
+          <div className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                إجمالي السحوبات
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                <ArrowUpRight className="w-4 h-4" />
+              <span className={`text-[11px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>مبيعات آجلة</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-xl md:text-2xl font-black tracking-tight text-amber-500">
-              -{totalWithdrawals.toLocaleString('en-US')} <span className="text-xs font-normal opacity-70">ر.ي</span>
+            <div className="text-lg font-black tracking-tight text-amber-500">
+              +{totalCreditSales.toLocaleString('en-US')} <span className="text-[10px] font-normal opacity-70">ر.ي</span>
             </div>
-            {totalCommissions > 0 && (
-              <div className={`flex flex-col gap-1 mt-2 border-t pt-2 ${isDarkMode ? 'border-amber-500/10' : 'border-amber-100'}`}>
-                <div className={`flex items-center justify-between text-[11px] font-bold ${isDarkMode ? 'text-red-400/80' : 'text-red-600/80'}`}>
-                  <span>عمولات المنصة المخصومة:</span>
-                  <span>-{totalCommissions.toLocaleString('en-US')} ر.ي</span>
-                </div>
-              </div>
-            )}
           </div>
 
-          <div
-            className={`p-5 rounded-2xl border transition-all hover:scale-[1.01] ${
-              isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-            }`}
-          >
+          {/* Card 4: Withdrawals */}
+          <div className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                الرصيد الختامي
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                <Wallet className="w-4 h-4" />
+              <span className={`text-[11px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>المسحوبات</span>
+              <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                <ArrowUpRight className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className={`text-xl md:text-2xl font-black tracking-tight ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-              {computedClosingBalance.toLocaleString('en-US')} <span className="text-xs font-normal text-slate-400">ر.ي</span>
+            <div className="text-lg font-black tracking-tight text-purple-400">
+              -{totalWithdrawals.toLocaleString('en-US')} <span className="text-[10px] font-normal opacity-70">ر.ي</span>
+            </div>
+          </div>
+
+          {/* Card 5: Commissions */}
+          <div className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className={`text-[11px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>عمولات المنصة</span>
+              <div className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
+                <Coins className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div className="text-lg font-black tracking-tight text-rose-400">
+              -{totalCommissions.toLocaleString('en-US')} <span className="text-[10px] font-normal opacity-70">ر.ي</span>
+            </div>
+          </div>
+
+          {/* Card 6: Closing Balance */}
+          <div className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className={`text-[11px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>الرصيد الختامي</span>
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                <Wallet className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div className={`text-lg font-black tracking-tight ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+              {computedClosingBalance.toLocaleString('en-US')} <span className="text-[10px] font-normal text-slate-400">ر.ي</span>
             </div>
           </div>
         </div>
@@ -957,13 +925,14 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                           : 'bg-slate-50 border-slate-200 text-slate-600'
                       }`}
                     >
-                      <th className="py-3 px-4 font-bold">التاريخ والوقت</th>
-                      <th className="py-3 px-4 font-bold">نوع المعاملة</th>
-                      <th className="py-3 px-4 font-bold">المزود / التفاصيل</th>
-                      <th className="py-3 px-4 font-bold">رقم المرجع</th>
-                      <th className="py-3 px-4 font-bold">المبلغ</th>
-                      <th className="py-3 px-4 font-bold">الرصيد بعد</th>
-                      <th className="py-3 px-4 font-bold">الحالة</th>
+                      <th className="py-3 px-3 font-bold">التاريخ والوقت</th>
+                      <th className="py-3 px-3 font-bold">البيان والتفاصيل</th>
+                      <th className="py-3 px-3 font-bold">رقم المرجع</th>
+                      <th className="py-3 px-3 font-bold text-center">المبلغ الإجمالي</th>
+                      <th className="py-3 px-3 font-bold text-center">عمولة منصة</th>
+                      <th className="py-3 px-3 font-bold text-center">طريقة الدفع</th>
+                      <th className="py-3 px-3 font-bold text-center">الرصيد بعد</th>
+                      <th className="py-3 px-3 font-bold">الحالة</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
@@ -974,56 +943,63 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                           isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'
                         }`}
                       >
-                        <td className="py-3.5 px-4 font-mono text-[11px] whitespace-nowrap">
+                        <td className="py-3 px-3 font-mono text-[11px] whitespace-nowrap">
                           <span className="block font-bold">{tx.date}</span>
                           <span className="text-slate-400 text-[10px]">{tx.time}</span>
                         </td>
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold ${
-                              tx.type === 'sale'
-                                ? 'bg-emerald-500/10 text-emerald-400'
-                                : tx.type === 'withdrawal'
-                                ? 'bg-amber-500/10 text-amber-400'
-                                : 'bg-purple-500/10 text-purple-400'
-                            }`}
-                          >
-                            {tx.type === 'sale' && <TrendingUp className="w-3 h-3" />}
-                            {tx.type === 'withdrawal' && <ArrowUpRight className="w-3 h-3" />}
-                            {tx.type === 'commission' && <Coins className="w-3 h-3" />}
-                            {tx.typeLabel}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 font-bold">
-                          <div>{tx.provider}</div>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold ${
+                                tx.type === 'sale'
+                                  ? 'bg-emerald-500/10 text-emerald-400'
+                                  : tx.type === 'withdrawal'
+                                  ? 'bg-amber-500/10 text-amber-400'
+                                  : 'bg-purple-500/10 text-purple-400'
+                              }`}
+                            >
+                              {tx.type === 'sale' && <TrendingUp className="w-2.5 h-2.5" />}
+                              {tx.type === 'withdrawal' && <ArrowUpRight className="w-2.5 h-2.5" />}
+                              {tx.type === 'commission' && <Coins className="w-2.5 h-2.5" />}
+                              {tx.typeLabel}
+                            </span>
+                            <span className="font-bold text-[11px]">{tx.provider}</span>
+                          </div>
                           {tx.category && <div className="text-[10px] text-slate-400 font-normal">{tx.category}</div>}
                         </td>
-                        <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">{tx.reference}</td>
-                        <td className="py-3.5 px-4 font-extrabold font-mono text-xs whitespace-nowrap">
-                          <div className={(tx.amount ?? 0) > 0 ? 'text-emerald-500' : 'text-amber-500'}>
-                            {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString('en-US')}` : (tx.amount ?? 0).toLocaleString('en-US')} ر.ي
-                          </div>
-                          {(tx.creditAmount ?? 0) > 0 && (
-                            <div className="text-[10px] text-amber-500 mt-0.5" title="هذا المبلغ آجل ولم يُضف لرصيدك">
-                              آجل: {(tx.creditAmount ?? 0).toLocaleString('en-US')} ر.ي
-                            </div>
-                          )}
-                          {(tx.cashAmount ?? 0) > 0 && (tx.creditAmount ?? 0) > 0 && (
-                            <div className="text-[10px] text-emerald-500" title="هذا المبلغ مدفوع نقداً/بالمحفظة">
-                              نقدي: {(tx.cashAmount ?? 0).toLocaleString('en-US')} ر.ي
-                            </div>
-                          )}
-                          {(tx.commissionAmount ?? 0) > 0 && (
-                            <div className="text-[10px] text-red-500 mt-0.5" title="العمولة المخصومة من الرصيد">
-                              عمولة مخصومة: -{(tx.commissionAmount ?? 0).toLocaleString('en-US')} ر.ي
-                            </div>
-                          )}
+                        <td className="py-3 px-3 font-mono text-[10px] text-slate-400">{tx.reference}</td>
+                        <td className="py-3 px-3 text-center font-extrabold font-mono text-xs">
+                           {(tx.amount ?? 0) !== 0 ? (
+                             <span className={(tx.amount ?? 0) > 0 ? 'text-slate-300' : 'text-slate-400'}>
+                               {(tx.amount ?? 0) > 0 ? '+' : ''}{(tx.amount ?? 0).toLocaleString('en-US')}
+                             </span>
+                           ) : '-'}
                         </td>
-                        <td className="py-3.5 px-4 font-bold font-mono text-slate-300">
-                          {(tx.balanceAfter ?? 0).toLocaleString('en-US')} ر.ي
+                        <td className="py-3 px-3 text-center font-extrabold font-mono text-xs">
+                           {(tx.commissionAmount ?? 0) > 0 ? (
+                             <span className="text-rose-500">
+                               -{(tx.commissionAmount ?? 0).toLocaleString('en-US')}
+                             </span>
+                           ) : '-'}
                         </td>
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                        <td className="py-3 px-3 text-center font-extrabold font-mono text-xs">
+                           {(tx.type === 'sale' || tx.type === 'credit_sale') ? (
+                             (tx.creditAmount ?? 0) > 0 && (tx.cashAmount ?? 0) > 0 ? (
+                               <span className="text-blue-400 text-[11px]">نقدي + آجل</span>
+                             ) : (tx.creditAmount ?? 0) > 0 ? (
+                               <span className="text-amber-500 text-[11px]">آجل</span>
+                             ) : (
+                               <span className="text-emerald-500 text-[11px]">نقدي / محفظة</span>
+                             )
+                           ) : (
+                             <span className="text-slate-500 text-[11px]">-</span>
+                           )}
+                        </td>
+                        <td className="py-3 px-3 text-center font-bold font-mono text-blue-400 text-xs">
+                          {(tx.balanceAfter ?? 0).toLocaleString('en-US')}
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                             <CheckCircle2 className="w-3 h-3" />
                             {tx.statusLabel}
                           </span>
@@ -1049,7 +1025,8 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
               <button
                 onClick={() => {
                   setTxType('all');
-                  setProvider('all');
+                  setCategory('all');
+                  setTxStatus('all');
                   setSearchQuery('');
                   setQuickPeriod('current_month');
                 }}
@@ -1095,15 +1072,43 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                     isDarkMode ? 'bg-[#121926] border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
                   }`}
                 >
-                  <div className={`flex items-center gap-2 mb-3 text-xs font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                    <BarChart3 className="w-4 h-4" />
-                    <span>{card.label}</span>
+                  <div className={`flex items-center justify-between mb-4 pb-3 border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <div className={`flex items-center gap-2 text-sm font-black ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                      <BarChart3 className="w-4 h-4" />
+                      <span>{card.label}</span>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                      {card.totalCount.toLocaleString('en-US')} عملية
+                    </span>
                   </div>
-                  <div className={`text-xl font-black mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                    {card.amount.toLocaleString('en-US')} ر.ي
-                  </div>
-                  <div className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {card.count.toLocaleString('en-US')} عملية
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[11px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                        مبيعات ({card.salesCount}):
+                      </span>
+                      <span className="text-sm font-black text-emerald-500">
+                        +{card.salesAmount.toLocaleString('en-US')} ر.ي
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[11px] font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                        مسحوبات/عمولات ({card.deductionsCount}):
+                      </span>
+                      <span className="text-sm font-black text-rose-500">
+                        -{card.deductionsAmount.toLocaleString('en-US')} ر.ي
+                      </span>
+                    </div>
+
+                    <div className={`pt-3 mt-1 border-t flex items-center justify-between ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
+                      <span className={`text-xs font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                        صافي التأثير:
+                      </span>
+                      <span className={`text-base font-black ${card.netDelta > 0 ? 'text-emerald-500' : card.netDelta < 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+                        {card.netDelta > 0 ? '+' : ''}{card.netDelta.toLocaleString('en-US')} ر.ي
+                      </span>
+                    </div>
                   </div>
                 </div>
               )) : (
@@ -1199,20 +1204,24 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
           {/* Financial Summary Table */}
           <div style={{ marginBottom: '20px' }}>
             <h3 style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', marginBottom: '8px' }}>ملخص الرصيد المالي للفترة</h3>
-            <table style={{ width: '100%', fontSize: '12px', textAlign: 'right', borderCollapse: 'collapse', border: '1px solid #cbd5e1' }}>
+            <table style={{ width: '100%', fontSize: '11px', textAlign: 'right', borderCollapse: 'collapse', border: '1px solid #cbd5e1' }}>
               <thead>
                 <tr style={{ backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 'bold' }}>
                   <th style={{ padding: '8px', border: '1px solid #334155' }}>الرصيد الافتتاحي</th>
-                  <th style={{ padding: '8px', border: '1px solid #334155' }}>المبيعات والعمولات (+)</th>
-                  <th style={{ padding: '8px', border: '1px solid #334155' }}>إجمالي المسحوبات (-)</th>
-                  <th style={{ padding: '8px', border: '1px solid #334155', backgroundColor: '#1e3a8a' }}>الرصيد الختامي الصافي</th>
+                  <th style={{ padding: '8px', border: '1px solid #334155' }}>مبيعات (نقدي/محفظة) (+)</th>
+                  <th style={{ padding: '8px', border: '1px solid #334155' }}>مبيعات (آجل)</th>
+                  <th style={{ padding: '8px', border: '1px solid #334155' }}>المسحوبات المالية (-)</th>
+                  <th style={{ padding: '8px', border: '1px solid #334155' }}>عمولات المنصة (-)</th>
+                  <th style={{ padding: '8px', border: '1px solid #334155', backgroundColor: '#1e3a8a' }}>الرصيد الختامي</th>
                 </tr>
               </thead>
               <tbody>
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#f8fafc' }}>
                   <td style={{ padding: '10px', border: '1px solid #cbd5e1' }}>{computedOpeningBalance.toLocaleString('en-US')} ر.ي</td>
-                  <td style={{ padding: '10px', border: '1px solid #cbd5e1', color: '#15803d' }}>+{totalSales.toLocaleString('en-US')} ر.ي</td>
+                  <td style={{ padding: '10px', border: '1px solid #cbd5e1', color: '#15803d' }}>+{totalCashSales.toLocaleString('en-US')} ر.ي</td>
+                  <td style={{ padding: '10px', border: '1px solid #cbd5e1', color: '#d97706' }}>{totalCreditSales.toLocaleString('en-US')} ر.ي</td>
                   <td style={{ padding: '10px', border: '1px solid #cbd5e1', color: '#b91c1c' }}>-{totalWithdrawals.toLocaleString('en-US')} ر.ي</td>
+                  <td style={{ padding: '10px', border: '1px solid #cbd5e1', color: '#b91c1c' }}>-{totalCommissions.toLocaleString('en-US')} ر.ي</td>
                   <td style={{ padding: '10px', border: '1px solid #cbd5e1', backgroundColor: '#eff6ff', color: '#1e40af', fontSize: '14px' }}>{computedClosingBalance.toLocaleString('en-US')} ر.ي</td>
                 </tr>
               </tbody>
@@ -1231,6 +1240,8 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                   <th style={{ padding: '8px', border: '1px solid #475569' }}>البيان والمزود</th>
                   <th style={{ padding: '8px', border: '1px solid #475569' }}>الرقم المرجعي</th>
                   <th style={{ padding: '8px', border: '1px solid #475569', textAlign: 'center' }}>المبلغ</th>
+                  <th style={{ padding: '8px', border: '1px solid #475569', textAlign: 'center' }}>عمولة</th>
+                  <th style={{ padding: '8px', border: '1px solid #475569', textAlign: 'center' }}>طريقة الدفع</th>
                   <th style={{ padding: '8px', border: '1px solid #475569', textAlign: 'center' }}>الرصيد المتبقي</th>
                   <th style={{ padding: '8px', border: '1px solid #475569', textAlign: 'center' }}>الحالة</th>
                 </tr>
@@ -1241,18 +1252,24 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{tx.date} - {tx.time}</td>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1', fontWeight: 'bold' }}>
-                      {tx.type === 'sale' ? 'مبيعات كروت' : tx.type === 'withdrawal' ? 'سحب رصيد' : 'عمولة فئة'}
+                      {tx.typeLabel}
                     </td>
-                    <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{tx.provider} ({tx.category})</td>
+                    <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{tx.provider} {tx.category ? `(${tx.category})` : ''}</td>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1', fontFamily: 'monospace' }}>{tx.reference}</td>
-                    <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: (tx.amount ?? 0) > 0 ? '#15803d' : '#b91c1c' }}>
-                      {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString('en-US')}` : (tx.amount ?? 0).toLocaleString('en-US')} ر.ي
+                    <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: (tx.amount ?? 0) > 0 ? '#15803d' : '#475569' }}>
+                      {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString('en-US')}` : '-'} 
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#b91c1c' }}>
+                      {(tx.commissionAmount ?? 0) > 0 ? `-${(tx.commissionAmount ?? 0).toLocaleString('en-US')}` : '-'}
                     </td>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold' }}>
-                      {(tx.balanceAfter ?? 0).toLocaleString('en-US')} ر.ي
+                      {(tx.type === 'sale' || tx.type === 'credit_sale') ? ((tx.creditAmount ?? 0) > 0 && (tx.cashAmount ?? 0) > 0 ? 'نقدي+آجل' : (tx.creditAmount ?? 0) > 0 ? 'آجل' : 'نقدي') : '-'}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold' }}>
+                      {(tx.balanceAfter ?? 0).toLocaleString('en-US')}
                     </td>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#15803d' }}>
-                      مكتمل
+                      {tx.statusLabel}
                     </td>
                   </tr>
                 ))}
@@ -1361,20 +1378,24 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                 {/* Financial Totals */}
                 <div>
                   <h4 className="text-xs font-extrabold text-slate-900 mb-2">الملخص المالي للفترة</h4>
-                  <table className="w-full text-xs text-right border-collapse border border-slate-300">
+                  <table className="w-full text-[10px] sm:text-xs text-right border-collapse border border-slate-300">
                     <thead>
                       <tr className="bg-slate-900 text-white">
                         <th className="p-2 border border-slate-700">الرصيد الافتتاحي</th>
-                        <th className="p-2 border border-slate-700">المبيعات (+)</th>
+                        <th className="p-2 border border-slate-700">مبيعات (نقدي) (+)</th>
+                        <th className="p-2 border border-slate-700">مبيعات (آجل)</th>
                         <th className="p-2 border border-slate-700">المسحوبات (-)</th>
+                        <th className="p-2 border border-slate-700">العمولات (-)</th>
                         <th className="p-2 border border-slate-700 bg-blue-900">الرصيد الختامي</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr className="font-extrabold bg-slate-50">
                         <td className="p-2 border border-slate-300">{computedOpeningBalance.toLocaleString('en-US')} ر.ي</td>
-                        <td className="p-2 border border-slate-300 text-emerald-700">+{totalSales.toLocaleString('en-US')} ر.ي</td>
+                        <td className="p-2 border border-slate-300 text-emerald-700">+{totalCashSales.toLocaleString('en-US')} ر.ي</td>
+                        <td className="p-2 border border-slate-300 text-amber-600">{totalCreditSales.toLocaleString('en-US')} ر.ي</td>
                         <td className="p-2 border border-slate-300 text-red-700">-{totalWithdrawals.toLocaleString('en-US')} ر.ي</td>
+                        <td className="p-2 border border-slate-300 text-red-700">-{totalCommissions.toLocaleString('en-US')} ر.ي</td>
                         <td className="p-2 border border-slate-300 bg-blue-50 text-blue-900">{computedClosingBalance.toLocaleString('en-US')} ر.ي</td>
                       </tr>
                     </tbody>
@@ -1392,6 +1413,8 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                         <th className="p-1.5 border border-slate-700">النوع</th>
                         <th className="p-1.5 border border-slate-700">البيان</th>
                         <th className="p-1.5 border border-slate-700 text-center">المبلغ</th>
+                        <th className="p-1.5 border border-slate-700 text-center">العمولة</th>
+                        <th className="p-1.5 border border-slate-700 text-center">الدفع</th>
                         <th className="p-1.5 border border-slate-700 text-center">الرصيد المتبقي</th>
                       </tr>
                     </thead>
@@ -1399,13 +1422,19 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                       {[...filteredTransactions].reverse().map((tx, idx) => (
                         <tr key={tx.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                           <td className="p-1.5 border border-slate-300 text-center font-bold">{idx + 1}</td>
-                          <td className="p-1.5 border border-slate-300">{tx.date}</td>
-                          <td className="p-1.5 border border-slate-300 font-bold">{tx.type === 'sale' ? 'مبيعات' : tx.type === 'withdrawal' ? 'سحب' : 'عمولة'}</td>
-                          <td className="p-1.5 border border-slate-300">{tx.provider}</td>
-                          <td className={`p-1.5 border border-slate-300 text-center font-bold ${(tx.amount ?? 0) > 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                            {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString('en-US')}` : (tx.amount ?? 0).toLocaleString('en-US')} ر.ي
+                          <td className="p-1.5 border border-slate-300 whitespace-nowrap">{tx.date}</td>
+                          <td className="p-1.5 border border-slate-300 font-bold whitespace-nowrap">{tx.typeLabel}</td>
+                          <td className="p-1.5 border border-slate-300">{tx.provider} {tx.category ? `(${tx.category})` : ''}</td>
+                          <td className={`p-1.5 border border-slate-300 text-center font-bold ${(tx.amount ?? 0) > 0 ? 'text-emerald-700' : 'text-slate-500'}`}>
+                            {(tx.amount ?? 0) > 0 ? `+${(tx.amount ?? 0).toLocaleString('en-US')}` : '-'}
                           </td>
-                          <td className="p-1.5 border border-slate-300 text-center font-bold">{(tx.balanceAfter ?? 0).toLocaleString('en-US')} ر.ي</td>
+                          <td className={`p-1.5 border border-slate-300 text-center font-bold text-red-700`}>
+                            {(tx.commissionAmount ?? 0) > 0 ? `-${(tx.commissionAmount ?? 0).toLocaleString('en-US')}` : '-'}
+                          </td>
+                          <td className="p-1.5 border border-slate-300 text-center font-bold">
+                            {(tx.type === 'sale' || tx.type === 'credit_sale') ? ((tx.creditAmount ?? 0) > 0 && (tx.cashAmount ?? 0) > 0 ? 'نقدي+آجل' : (tx.creditAmount ?? 0) > 0 ? 'آجل' : 'نقدي') : '-'}
+                          </td>
+                          <td className="p-1.5 border border-slate-300 text-center font-bold text-blue-900">{(tx.balanceAfter ?? 0).toLocaleString('en-US')}</td>
                         </tr>
                       ))}
                     </tbody>

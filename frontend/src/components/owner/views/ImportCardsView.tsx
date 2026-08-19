@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState, useRef } from 'react';
 import {
   Upload,
@@ -32,7 +32,9 @@ export const ImportCardsView: React.FC<ImportCardsViewProps> = ({
   globalUpdateTick = 0,
 }) => {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get('category');
+  const [selectedCategory, setSelectedCategory] = useState(categoryParam || '');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isDragging, setIsDragging] = useState(false);

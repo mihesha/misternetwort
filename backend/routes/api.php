@@ -242,9 +242,41 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => 'Password updated successfully']);
     });
     
-    // Networks Management
     Route::get('/networks', [NetworkController::class, 'index']);
     Route::get('/networks/{network}', [NetworkController::class, 'show']);
+
+    Route::patch('/categories/{id}/settings', function ($id, Request $request) {
+        $validated = $request->validate([
+            'min_threshold' => 'nullable|integer',
+            'prefix' => 'nullable|string',
+            'suffix' => 'nullable|string'
+        ]);
+        
+        $cat = \App\Models\CardCategory::findOrFail($id);
+        $network = \App\Models\Network::where('user_id', $request->user()->id)->where('id', $cat->network_id)->firstOrFail();
+        
+        if (isset($validated['min_threshold'])) $cat->min_threshold = $validated['min_threshold'];
+        if (array_key_exists('prefix', $validated)) $cat->prefix = $validated['prefix'];
+        if (array_key_exists('suffix', $validated)) $cat->suffix = $validated['suffix'];
+        
+        $cat->save();
+        return response()->json(['message' => 'Settings updated successfully']);
+    });
+
+    Route::patch('/networks/{network_code}/settings', function ($network_code, Request $request) {
+        $validated = $request->validate([
+            'notif_out_of_stock' => 'nullable|boolean',
+            'notif_low_stock' => 'nullable|boolean'
+        ]);
+        
+        $network = \App\Models\Network::where('user_id', $request->user()->id)->where('network_code', $network_code)->firstOrFail();
+        
+        if (isset($validated['notif_out_of_stock'])) $network->notif_out_of_stock = $validated['notif_out_of_stock'];
+        if (isset($validated['notif_low_stock'])) $network->notif_low_stock = $validated['notif_low_stock'];
+        
+        $network->save();
+        return response()->json(['message' => 'Network settings updated successfully']);
+    });
 
 
 
@@ -367,7 +399,6 @@ Route::patch('/admin/edit-requests/{id}/status', function ($id, Request $request
                             'hours' => (int)($cat['hours'] ?: 0),
                             'validity_days' => (int)($cat['validityDays'] ?: 0),
                             'card_type' => $cat['cardType'] ?? 'مستخدم فقط',
-                            'status' => (isset($cat['enabled']) && $cat['enabled'] === false) ? 'inactive' : 'active',
                         ]);
                         $existingIds[] = $category->id;
                         continue; // Successfully updated, skip to next
@@ -383,7 +414,6 @@ Route::patch('/admin/edit-requests/{id}/status', function ($id, Request $request
                     'hours' => (int)($cat['hours'] ?: 0),
                     'validity_days' => (int)($cat['validityDays'] ?: 0),
                     'card_type' => $cat['cardType'] ?? 'مستخدم فقط',
-                    'status' => (isset($cat['enabled']) && $cat['enabled'] === false) ? 'inactive' : 'active',
                     'stock' => 0,
                 ]);
                 $existingIds[] = $newCat->id;
@@ -796,7 +826,7 @@ Route::get('/withdrawals', function () {
             'status' => $w->status,
             'requestedAt' => $w->created_at->toISOString(),
             'transactionRef' => $w->transaction_ref ?? '',
-            'notes' => ''
+            'notes' => $w->notes ?? ''
         ];
     }));
 });
@@ -834,7 +864,8 @@ Route::post('/withdrawals', function (Request $request) {
         'payout_method' => $validated['provider'],
         'account_number' => $network->jaib_wallet ?? $network->owner_phone, // fallback to phone
         'amount' => $validated['amount'],
-        'status' => 'pending'
+        'status' => 'pending',
+        'notes' => $validated['notes'] ?? null
     ]);
 
     return response()->json($wd);
@@ -942,7 +973,7 @@ Route::patch('/admin/edit-requests/{id}/status', function ($id, Request $request
             }
 
             // Update categories logic
-            $rawCategories = $req->input('categories', []);
+            $rawCategories = $req->categories ?? [];
             $categoriesData = is_string($rawCategories) ? json_decode($rawCategories, true) : $rawCategories;
             
             // Just basic loop for categories
@@ -954,7 +985,6 @@ Route::patch('/admin/edit-requests/{id}/status', function ($id, Request $request
                     $existing->hours = $catData['hours'] ?? 0;
                     $existing->validity_days = $catData['validityDays'] ?? 0;
                     $existing->card_type = $catData['cardType'] ?? 'مستخدم فقط';
-                    $existing->status = ($catData['enabled'] ?? true) ? 'active' : 'inactive';
                     $existing->save();
                 } else {
                     \App\Models\CardCategory::create([
@@ -966,7 +996,6 @@ Route::patch('/admin/edit-requests/{id}/status', function ($id, Request $request
                         'validity_days' => $catData['validityDays'] ?? 0,
                         'card_type' => $catData['cardType'] ?? 'مستخدم فقط',
                         'stock' => 0,
-                        'status' => ($catData['enabled'] ?? true) ? 'active' : 'inactive'
                     ]);
                 }
             }

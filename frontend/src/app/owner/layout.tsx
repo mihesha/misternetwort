@@ -9,21 +9,148 @@ import { useOwnerActions } from '../../hooks/useOwnerActions';
 import { 
   Moon, Sun, Globe, Settings, ChevronDown, Key, Shield, LogOut, 
   Menu, X, LayoutDashboard, Home, Info, Edit, Wifi, CreditCard, 
-  PlusCircle, Receipt, Download, Layers, Wallet
+  PlusCircle, Receipt, Download, Layers, Wallet, Bell, AlertTriangle, CheckCircle
 } from 'lucide-react';
 import { GlobalOwnerModals } from '../../components/owner/GlobalOwnerModals';
 
 const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
   const { isDarkMode, setIsDarkMode } = useAppContext();
-  const { ownerName, networks, setGlobalUpdateTick } = useOwnerContext();
+  const { ownerName, networks, setGlobalUpdateTick, globalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
   const network = networks?.[0];
   const pathname = usePathname() || '';
   const router = useRouter();
   
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [dynamicNotifs, setDynamicNotifs] = useState<{ id: string, title: string, message: string, type: 'error' | 'warning' | 'info' | 'success', date: string }[]>([]);
+
+  useEffect(() => {
+    const fetchDynamicData = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        if (!token) return;
+        
+        const notifs: { id: string, title: string, message: string, type: 'error' | 'warning' | 'info' | 'success', date: string }[] = [];
+
+        // 1. Fetch Withdrawals
+        try {
+          const resW = await fetch('/api/withdrawals', { headers: { 'Authorization': `Bearer ${token}` } });
+          if (resW.ok) {
+            const data = await resW.json();
+            const myWithdrawals = data.filter((w: any) => w.networkName === network?.name);
+            myWithdrawals.forEach((w: any) => {
+               if (w.status === 'pending') {
+                   notifs.push({
+                      id: `wd-${w.id}`,
+                      title: 'طلب سحب قيد الانتظار',
+                      message: `طلب سحب بمبلغ ${w.amount.toLocaleString()} ر.ي إلى ${w.payoutMethod} قيد المراجعة.`,
+                      type: 'info',
+                      date: new Date(w.requestedAt).toLocaleDateString('ar-EG')
+                   });
+               } else if (w.status === 'completed') {
+                   const diffDays = (new Date().getTime() - new Date(w.requestedAt).getTime()) / (1000 * 3600 * 24);
+                   if (diffDays <= 3) {
+                       notifs.push({
+                          id: `wd-${w.id}`,
+                          title: 'تم تحويل مبلغ السحب بنجاح!',
+                          message: `تم الموافقة على طلبك وتحويل مبلغ ${w.amount.toLocaleString()} ر.ي إلى حسابك في ${w.payoutMethod}.`,
+                          type: 'success',
+                          date: new Date(w.requestedAt).toLocaleDateString('ar-EG')
+                       });
+                   }
+               }
+            });
+          }
+        } catch(e) {}
+
+        // 2. Fetch Edit Requests (includes modifying info or adding new categories)
+        try {
+          const resE = await fetch('/api/edit-requests', { headers: { 'Authorization': `Bearer ${token}` } });
+          if (resE.ok) {
+            const data = await resE.json();
+            const myEdits = data.filter((r: any) => r.network_code === network?.code);
+            myEdits.forEach((r: any) => {
+               if (r.status === 'pending') {
+                   notifs.push({
+                      id: `edit-${r.id}`,
+                      title: 'طلب تعديل بيانات قيد الانتظار',
+                      message: `طلب تعديل بيانات الشبكة أو إضافة فئات جديدة قيد المراجعة. مرجع: ${r.reference_number}.`,
+                      type: 'info',
+                      date: new Date(r.created_at).toLocaleDateString('ar-EG')
+                   });
+               } else if (r.status === 'approved') {
+                   const diffDays = (new Date().getTime() - new Date(r.created_at).getTime()) / (1000 * 3600 * 24);
+                   if (diffDays <= 3) {
+                       notifs.push({
+                          id: `edit-${r.id}`,
+                          title: 'تم الموافقة على طلب التعديل!',
+                          message: `تم الموافقة على طلب تعديل بيانات الشبكة وتطبيق التحديثات بنجاح.`,
+                          type: 'success',
+                          date: new Date(r.created_at).toLocaleDateString('ar-EG')
+                       });
+                   }
+               } else if (r.status === 'rejected') {
+                   const diffDays = (new Date().getTime() - new Date(r.created_at).getTime()) / (1000 * 3600 * 24);
+                   if (diffDays <= 3) {
+                       notifs.push({
+                          id: `edit-${r.id}`,
+                          title: 'تم رفض طلب التعديل',
+                          message: `عذراً، تم رفض طلب تعديل بيانات الشبكة. يرجى التواصل مع الإدارة.`,
+                          type: 'error',
+                          date: new Date(r.created_at).toLocaleDateString('ar-EG')
+                       });
+                   }
+               }
+            });
+          }
+        } catch(e) {}
+
+        setDynamicNotifs(notifs);
+      } catch(e) {}
+    };
+    if (network?.name && network?.code) {
+       fetchDynamicData();
+    }
+  }, [network?.name, network?.code, globalUpdateTick]);
+
+  const notifications = React.useMemo(() => {
+    if (!network || !network.categories) return [];
+    const notifs: { id: string, title: string, message: string, type: 'error' | 'warning' | 'info' | 'success', date: string }[] = [];
+    
+    network.categories.forEach((cat: any) => {
+      const stock = cat.remaining !== undefined ? cat.remaining : 0;
+      const minThreshold = cat.min_threshold ?? 10;
+      
+      if (stock === 0 && (network.notif_out_of_stock ?? true)) {
+        notifs.push({
+          id: `out-${cat.value}`,
+          title: 'نفاذ المخزون',
+          message: `نفذ مخزون الكروت فئة ${cat.value} ريال`,
+          type: 'error',
+          date: 'الآن'
+        });
+      } else if (stock > 0 && stock <= minThreshold && (network.notif_low_stock ?? true)) {
+        notifs.push({
+          id: `low-${cat.value}`,
+          title: 'نقص المخزون',
+          message: `مخزون الكروت فئة ${cat.value} ريال وصل للحد الأدنى (${stock} كرت)`,
+          type: 'warning',
+          date: 'الآن'
+        });
+      }
+    });
+
+    return notifs;
+  }, [network]);
+  
+  const combinedNotifications = React.useMemo(() => {
+    return [...notifications, ...dynamicNotifs];
+  }, [notifications, dynamicNotifs]);
+  
+  const unreadCount = combinedNotifications.length;
 
   const isAuthPage = pathname.includes('/login') || pathname.includes('/change-password') || pathname.includes('/privacy-policy');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -172,8 +299,68 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
             </div>
             
             <div className="flex items-center gap-3 md:gap-4">
+              {/* Notifications Dropdown */}
               <div className="relative">
-                <div onClick={() => setShowProfileMenu(!showProfileMenu)} className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer border ${isDarkMode ? 'bg-white/5 hover:bg-white/10 border-white/10 shadow-inner shadow-white/5' : 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm'}`}>
+                <button 
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    if (showProfileMenu) setShowProfileMenu(false);
+                  }} 
+                  className={`relative p-2.5 rounded-xl transition-all border ${isDarkMode ? 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300' : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 shadow-sm'}`}
+                  aria-label="Notifications"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white dark:border-[#0f172a] px-1">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Dropdown Overlay for Mobile */}
+                {showNotifications && (
+                  <div className="fixed inset-0 z-40 sm:hidden" onClick={() => setShowNotifications(false)} />
+                )}
+
+                <div className={`fixed sm:absolute top-[80px] sm:top-full left-4 right-4 sm:left-0 sm:right-auto sm:mt-3 sm:w-80 rounded-2xl p-2 shadow-2xl z-50 border transition-all duration-200 origin-top ${showNotifications ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'} ${isDarkMode ? 'bg-[#141d2b] border-white/10' : 'bg-white border-slate-200'}`}>
+                  <div className={`flex items-center justify-between px-3 py-2 border-b mb-2 ${isDarkMode ? 'border-white/10' : 'border-slate-100'}`}>
+                    <span className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>الإشعارات</span>
+                    {unreadCount > 0 && (
+                      <span className="text-[10px] px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded-full font-bold">{unreadCount} جديد</span>
+                    )}
+                  </div>
+                  
+                  <div className="max-h-64 overflow-y-auto custom-scrollbar flex flex-col gap-1">
+                    {combinedNotifications.length === 0 ? (
+                      <div className={`text-center py-6 text-xs font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                        لا توجد إشعارات جديدة
+                      </div>
+                    ) : (
+                      combinedNotifications.map(notif => (
+                        <div key={notif.id} className={`p-2.5 rounded-xl flex items-start gap-3 transition-colors ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                          <div className={`mt-0.5 p-1.5 rounded-lg shrink-0 ${notif.type === 'error' ? 'bg-red-500/10 text-red-500' : notif.type === 'warning' ? 'bg-amber-500/10 text-amber-500' : notif.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                            {notif.type === 'error' ? <AlertTriangle className="w-4 h-4" /> : notif.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                          </div>
+                          <div>
+                            <div className={`text-xs font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{notif.title}</div>
+                            <div className={`text-[10px] mt-0.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{notif.message}</div>
+                            <div className={`text-[9px] mt-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{notif.date}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <Link href="/owner/settings" onClick={() => setShowNotifications(false)} className={`block text-center mt-2 pt-2 border-t text-[11px] font-bold transition-colors ${isDarkMode ? 'border-white/10 text-blue-400 hover:text-blue-300' : 'border-slate-100 text-blue-600 hover:text-blue-700'}`}>
+                    إعدادات الإشعارات
+                  </Link>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div onClick={() => {
+                  setShowProfileMenu(!showProfileMenu);
+                  if (showNotifications) setShowNotifications(false);
+                }} className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer border ${isDarkMode ? 'bg-white/5 hover:bg-white/10 border-white/10 shadow-inner shadow-white/5' : 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm'}`}>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showProfileMenu ? 'rotate-180' : ''} ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                   <div className="text-right hidden sm:block">
                     <span className={`text-xs font-bold block ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>{ownerName}</span>

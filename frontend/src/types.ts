@@ -81,7 +81,7 @@ export interface WithdrawalRequest {
   networkName: string;
   ownerName: string;
   contactNumber: string;
-  payoutMethod: 'jaib_wallet' | 'kuraimi_bank' | 'tadawulat' | 'cash_exchange';
+  payoutMethod: string;
   accountNumber: string; // رقم الحساب / المحفظة
   recipientName: string;
   amount: number;

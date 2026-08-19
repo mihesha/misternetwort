@@ -244,15 +244,49 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
           </div>
         </div>
 
-        {/* 3. Low Stock Inventory Alert Box */}
+        {/* 3.1 Out of Stock Inventory Alert Box */}
         {(() => {
-          const lowStockCats = categories.filter(c => (c.stock || 0) <= 5 && c.status !== 'inactive');
+          if (networkData?.notif_out_of_stock === false) return null;
+          const outOfStockCats = categories.filter(c => (c.stock === 0 || c.stock === undefined || c.stock === null) && c.status !== 'inactive');
+          
+          if (outOfStockCats.length === 0) return null;
+
+          return (
+            <div
+              className={`rounded-2xl p-5 border transition-colors mb-4 ${
+                isDarkMode
+                  ? 'bg-rose-950/90 border-rose-600/60 text-rose-200'
+                  : 'bg-rose-50 border-rose-300 text-rose-900'
+              }`}
+            >
+              <div className="flex items-start gap-3 text-right">
+                <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                <div className="space-y-2 flex-1">
+                  <h3 className="font-bold text-sm md:text-base text-rose-600 dark:text-rose-400">تنبيه: نفاذ المخزون</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-semibold">
+                    {outOfStockCats.map((cat, idx) => (
+                      <div key={idx} className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-between gap-4">
+                        <span className="truncate">فئة "{cat.name || cat.price}" - نفذت بالكامل!</span>
+                        <Link href={`/owner/import-cards?category=${cat.id}`} className="text-rose-600 dark:text-rose-400 underline font-bold cursor-pointer shrink-0">أضف كروت</Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* 3.2 Low Stock Inventory Alert Box */}
+        {(() => {
+          if (networkData?.notif_low_stock === false) return null;
+          const lowStockCats = categories.filter(c => (c.stock || 0) > 0 && (c.stock || 0) <= (c.min_threshold ?? 10) && c.status !== 'inactive');
           
           if (lowStockCats.length === 0) return null;
 
           return (
             <div
-              className={`rounded-2xl p-5 border transition-colors ${
+              className={`rounded-2xl p-5 border transition-colors mb-4 ${
                 isDarkMode
                   ? 'bg-[#2a1700]/90 border-amber-600/60 text-amber-200'
                   : 'bg-amber-50 border-amber-300 text-amber-900'
@@ -261,12 +295,12 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
               <div className="flex items-start gap-3 text-right">
                 <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <div className="space-y-2 flex-1">
-                  <h3 className="font-bold text-sm md:text-base">تنبيه: مخزون منخفض</h3>
+                  <h3 className="font-bold text-sm md:text-base text-amber-600 dark:text-amber-500">تنبيه: مخزون منخفض</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-semibold">
                     {lowStockCats.map((cat, idx) => (
                       <div key={idx} className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-4">
                         <span className="truncate">فئة "{cat.name || cat.price}" - باقي {cat.stock || 0} كرت فقط</span>
-                        <Link href="/owner/import-cards" className="text-amber-400 underline font-bold cursor-pointer shrink-0">أضف كروت</Link>
+                        <Link href={`/owner/import-cards?category=${cat.id}`} className="text-amber-600 dark:text-amber-500 underline font-bold cursor-pointer shrink-0">أضف كروت</Link>
                       </div>
                     ))}
                   </div>

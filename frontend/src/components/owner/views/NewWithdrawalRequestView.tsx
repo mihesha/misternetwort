@@ -41,7 +41,6 @@ export const NewWithdrawalRequestView: React.FC<NewWithdrawalRequestViewProps> =
   const [provider, setProvider] = useState('');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,7 +80,7 @@ export const NewWithdrawalRequestView: React.FC<NewWithdrawalRequestViewProps> =
         const d = await res.json();
         throw new Error(d.error || 'فشل تقديم طلب السحب');
       }
-      setSubmitted(true);
+      router.push('/owner/withdrawals');
     } catch (err: any) {
       setError(err.message || 'فشل الاتصال بالخادم');
     }
@@ -160,22 +159,6 @@ export const NewWithdrawalRequestView: React.FC<NewWithdrawalRequestViewProps> =
           </p>
         </div>
 
-        {/* Submitted Notification */}
-        {submitted && (
-          <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs md:text-sm font-bold flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              <span>تم تقديم طلب السحب بنجاح! سيتم مراجعته وتنفيذه قريباً.</span>
-            </div>
-            <button
-              onClick={() => router.push('/owner/withdrawals')}
-              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs"
-            >
-              العودة للقائمة
-            </button>
-          </div>
-        )}
-
         {/* Error Alert */}
         {error && (
           <div className="p-3.5 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 text-xs md:text-sm font-bold flex items-center gap-2">
@@ -201,11 +184,14 @@ export const NewWithdrawalRequestView: React.FC<NewWithdrawalRequestViewProps> =
               }`}
             >
               <option value="">-- اختر المزود --</option>
-              <option value="jaib">جيب (Jaib)</option>
-              <option value="tadawulat">تداولات (Tadawulat)</option>
-              <option value="kuraimi">الكريمي (Kuraimi Express)</option>
-              <option value="omqi">العمقي للصرافة</option>
+              <option value="jaib">محفظة جيب</option>
+              <option value="saba_cash">محفظة سبأ كاش</option>
+              <option value="pace">محفظة بيس</option>
+              <option value="one_cash">محفظة ون كاش</option>
+              <option value="floosak">محفظة فلوسك</option>
+              <option value="ezy">محفظة ايزي</option>
               <option value="cash">محفظة كاش</option>
+              <option value="jawali">محفظة جوالي</option>
             </select>
           </div>
 

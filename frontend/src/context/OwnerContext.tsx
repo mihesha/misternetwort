@@ -8,7 +8,9 @@ export interface OwnerNetworkCard {
   balance: number;
   total_sales: number;
   status: 'active' | 'inactive';
-  categories: { value: string; remaining: number }[];
+  notif_out_of_stock?: boolean;
+  notif_low_stock?: boolean;
+  categories: { id: string | number; value: string; remaining: number; min_threshold: number }[];
 }
 
 interface OwnerContextProps {

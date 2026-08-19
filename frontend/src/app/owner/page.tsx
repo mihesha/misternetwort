@@ -188,6 +188,55 @@ export default function OwnerDashboardPage() {
       </div>
 
 
+      {/* Alerts Banners */}
+      {(() => {
+        if (network.notif_out_of_stock === false) return null;
+        const outOfStockCats = network.categories.filter(c => c.remaining === 0 || c.remaining === undefined || c.remaining === null);
+        if (outOfStockCats.length === 0) return null;
+        return (
+          <div className={`rounded-2xl p-5 border transition-colors ${isDarkMode ? 'bg-rose-950/90 border-rose-600/60 text-rose-200' : 'bg-rose-50 border-rose-300 text-rose-900'}`}>
+            <div className="flex items-start gap-3 text-right">
+              <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+              <div className="space-y-2 flex-1">
+                <h3 className="font-bold text-sm md:text-base text-rose-600 dark:text-rose-400">تنبيه: نفاذ المخزون</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-semibold">
+                  {outOfStockCats.map((cat, idx) => (
+                    <div key={idx} className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-between gap-4">
+                      <span className="truncate">فئة "{cat.value} ر.ي" - نفذت بالكامل!</span>
+                      <Link href={`/owner/import-cards?category=${cat.id}`} className="text-rose-600 dark:text-rose-400 underline font-bold cursor-pointer shrink-0">أضف كروت</Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {(() => {
+        if (network.notif_low_stock === false) return null;
+        const lowStockCats = network.categories.filter(c => c.remaining > 0 && c.remaining <= (c.min_threshold ?? 10));
+        if (lowStockCats.length === 0) return null;
+        return (
+          <div className={`rounded-2xl p-5 border transition-colors ${isDarkMode ? 'bg-[#2a1700]/90 border-amber-600/60 text-amber-200' : 'bg-amber-50 border-amber-300 text-amber-900'}`}>
+            <div className="flex items-start gap-3 text-right">
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="space-y-2 flex-1">
+                <h3 className="font-bold text-sm md:text-base text-amber-600 dark:text-amber-500">تنبيه: مخزون منخفض</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-semibold">
+                  {lowStockCats.map((cat, idx) => (
+                    <div key={idx} className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-4">
+                      <span className="truncate">فئة "{cat.value} ر.ي" - باقي {cat.remaining} كرت فقط</span>
+                      <Link href={`/owner/import-cards?category=${cat.id}`} className="text-amber-600 dark:text-amber-500 underline font-bold cursor-pointer shrink-0">أضف كروت</Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 2. KPIs (Real Data) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         

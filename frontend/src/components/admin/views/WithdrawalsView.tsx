@@ -54,11 +54,16 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({
                 <p className="text-xs text-slate-300">
                   وسيلة السحب:{' '}
                   <span className="text-indigo-300 font-bold">
-                    {wd.payoutMethod === 'jaib_wallet'
-                      ? 'محفظة جيب'
-                      : wd.payoutMethod === 'kuraimi_bank'
-                      ? 'حساب بنك الكريمي'
-                      : 'حوالة صرافة'}
+                    {wd.payoutMethod === 'jaib_wallet' ? 'محفظة جيب' :
+                     wd.payoutMethod === 'saba_cash' ? 'محفظة سبأ كاش' :
+                     wd.payoutMethod === 'pace' ? 'محفظة بيس' :
+                     wd.payoutMethod === 'one_cash' ? 'محفظة ون كاش' :
+                     wd.payoutMethod === 'floosak' ? 'محفظة فلوسك' :
+                     wd.payoutMethod === 'ezy' ? 'محفظة ايزي' :
+                     wd.payoutMethod === 'cash' ? 'محفظة كاش' :
+                     wd.payoutMethod === 'jawali' ? 'محفظة جوالي' :
+                     wd.payoutMethod === 'kuraimi_bank' ? 'حساب بنك الكريمي' :
+                     wd.payoutMethod}
                   </span>{' '}
                   - رقم الحساب/المحفظة: <span className="font-mono font-bold text-emerald-400">{wd.accountNumber}</span>
                 </p>
