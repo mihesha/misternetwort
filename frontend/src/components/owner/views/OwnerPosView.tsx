@@ -262,6 +262,17 @@ export const OwnerPosView: React.FC = () => {
                         ) : (
                           <>
                             <button
+                              onClick={() => {
+                                // Navigate to details page
+                                window.location.href = `/owner/pos/${m.user_id}`;
+                              }}
+                              className="px-2 py-1 rounded bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 flex items-center gap-1 transition-colors"
+                              title="عرض التفاصيل والعمليات"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                              التفاصيل
+                            </button>
+                            <button
                               onClick={() => { setSelectedMembership(m); setModalMode('credit'); setNewCreditLimit(m.credit_limit.toString()); setPaymentAmount(''); }}
                               className="px-2 py-1 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/40 flex items-center gap-1 transition-colors"
                             >

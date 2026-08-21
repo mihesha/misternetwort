@@ -83,6 +83,7 @@ export const CustomersView: React.FC = () => {
                   <th className="py-2.5 px-3">تاريخ التسجيل</th>
                   <th className="py-2.5 px-3 text-center">رمز OTP (التحقق/الاستعادة)</th>
                   <th className="py-2.5 px-3">الحالة</th>
+                  <th className="py-2.5 px-3 text-center">الإجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -106,6 +107,14 @@ export const CustomersView: React.FC = () => {
                       ) : (
                         <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 font-bold text-[10px]">غير مفعل</span>
                       )}
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <a 
+                        href={`/admin/customers/${c.id}`} 
+                        className="inline-block px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-bold transition-colors text-[11px]"
+                      >
+                        عرض التفاصيل
+                      </a>
                     </td>
                   </tr>
                 ))}

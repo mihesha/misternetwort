@@ -84,13 +84,18 @@ export default function NetworksPage() {
       window.location.href = `/${networkId}/`;
     } else {
       // Production: cardbox.com -> ahmednet.cardbox.com
-      const hostParts = currentHost.split('.');
-      if (hostParts.length > 2 && !currentHost.includes('localhost')) {
-        // Assume base domain is the last two parts
-        const baseDomain = hostParts.slice(-2).join('.');
-        newHost = `${networkId}.${baseDomain}`;
+      const MAIN_DOMAIN = 'cardbox.basmasoft.com';
+      if (currentHost.includes(MAIN_DOMAIN)) {
+        newHost = `${networkId}.${MAIN_DOMAIN}`;
       } else {
-        newHost = `${networkId}.${currentHost}`;
+        const hostParts = currentHost.split('.');
+        if (hostParts.length > 2 && !currentHost.includes('localhost')) {
+          // Fallback if they use another custom domain
+          const baseDomain = hostParts.slice(-2).join('.');
+          newHost = `${networkId}.${baseDomain}`;
+        } else {
+          newHost = `${networkId}.${currentHost}`;
+        }
       }
       window.location.href = `${protocol}//${newHost}/`;
     }

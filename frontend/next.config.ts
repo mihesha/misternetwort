@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         destination: 'http://localhost:8000/api/:path*', // Proxy to Laravel Backend
       },
+      {
+        source: '/storage/:path*',
+        destination: 'http://localhost:8000/storage/:path*', // Proxy storage files to Laravel
+      },
     ];
   },
 };

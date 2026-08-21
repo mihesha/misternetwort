@@ -29,7 +29,7 @@ conn.on('ready', () => {
     sftp.fastPut('deploy.zip', '/root/deploy.zip', (err) => {
       if (err) throw err;
       console.log('✅ تم الرفع بنجاح! جاري التثبيت والبناء في السيرفر (قد يستغرق بناء الواجهة دقيقة)...');
-      
+
       const commands = [
         'pm2 stop all',
         'rm -rf /var/www/frontend/.next',

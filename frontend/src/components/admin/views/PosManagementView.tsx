@@ -1,6 +1,6 @@
 // PosManagementView Component
 import React, { useEffect, useState } from 'react';
-import { Wallet, Search, Edit3 } from 'lucide-react';
+import { Wallet, Search, Edit3, Eye } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 
 export const PosManagementView: React.FC = () => {
@@ -73,7 +73,7 @@ export const PosManagementView: React.FC = () => {
                   <th className="py-2.5 px-3">الرصيد</th>
                   <th className="py-2.5 px-3">الحالة والـ OTP</th>
                   <th className="py-2.5 px-3">تاريخ الانضمام</th>
-                  <th className="py-2.5 px-3">إجراءات</th>
+                  <th className="py-2.5 px-3 text-center">إجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -96,13 +96,22 @@ export const PosManagementView: React.FC = () => {
                     </td>
                     <td className="py-3 px-3 text-slate-400">{new Date(u.created_at).toLocaleDateString('ar-YE')}</td>
                     <td className="py-3 px-3">
-                      <button
-                        onClick={() => { setSelectedUser(u); setNewBalance(u.wallet_balance.toString()); }}
-                        className="px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 flex items-center gap-1 transition-colors"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                        تعديل الرصيد
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => { setSelectedUser(u); setNewBalance(u.wallet_balance.toString()); }}
+                          className="px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 flex items-center gap-1 transition-colors"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          تعديل
+                        </button>
+                        <a
+                          href={`/admin/pos/${u.id}`}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/40 flex items-center gap-1 transition-colors"
+                        >
+                          <Eye className="w-3 h-3" />
+                          عرض التفاصيل
+                        </a>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -10,54 +10,6 @@ use App\Http\Controllers\PosController;
 // Public Wallet / Purchase Endpoints
 Route::get('/wallet/network/{networkCode}', [NetworkController::class, 'getByCode']);
 
-Route::get('/networks/{network_id}/pos-memberships', function (Request $request, $network_id) {
-    return \App\Models\NetworkPosMembership::where('network_id', $network_id)
-        ->with('user')
-        ->orderBy('created_at', 'desc')
-        ->get();
-});
-
-Route::post('/networks/{network_id}/pos-memberships', function (Request $request, $network_id) {
-    $validated = $request->validate(['phone' => 'required|string']);
-    $user = \App\Models\User::where('phone', $validated['phone'])->where('role', 'pos')->first();
-    if (!$user) return response()->json(['error' => 'لا يوجد نقطة بيع بهذا الرقم'], 404);
-
-    $exists = \App\Models\NetworkPosMembership::where('network_id', $network_id)->where('user_id', $user->id)->first();
-    if ($exists) return response()->json(['error' => 'نقطة البيع منضمة مسبقاً لهذه الشبكة'], 400);
-
-    $membership = \App\Models\NetworkPosMembership::create([
-        'network_id' => $network_id,
-        'user_id' => $user->id,
-        'credit_limit' => 0,
-        'current_debt' => 0,
-        'status' => 'active'
-    ]);
-    return response()->json($membership, 201);
-});
-
-Route::patch('/networks/{network_id}/pos-memberships/{id}', function (Request $request, $network_id, $id) {
-    $membership = \App\Models\NetworkPosMembership::where('network_id', $network_id)->findOrFail($id);
-    if ($request->has('credit_limit')) {
-        $membership->credit_limit = $request->credit_limit;
-    }
-    if ($request->has('status')) {
-        $membership->status = $request->status;
-    }
-    $membership->save();
-    return response()->json($membership);
-});
-
-Route::post('/networks/{network_id}/pos-memberships/{id}/pay-debt', function (Request $request, $network_id, $id) {
-    $validated = $request->validate(['amount' => 'required|numeric|min:1']);
-    $membership = \App\Models\NetworkPosMembership::where('network_id', $network_id)->findOrFail($id);
-    
-    if ($membership->current_debt < $validated['amount']) {
-        return response()->json(['error' => 'المبلغ المدخل أكبر من الدين الحالي'], 400);
-    }
-
-    $membership->decrement('current_debt', $validated['amount']);
-    return response()->json(['message' => 'تم السداد بنجاح', 'current_debt' => $membership->current_debt]);
-});
 
 Route::post('/cards/generate-batch', [CardController::class, 'generateBatch']);
 Route::post('/wallet/purchase-card', [CardController::class, 'purchase']);
@@ -229,6 +181,49 @@ Route::get('/admin/customers', function () {
                 'created_at' => $u->created_at,
             ];
         }));
+});
+
+Route::get('/admin/customers/{id}/details', function ($id) {
+    $customer = \App\Models\User::where('role', 'customer')->findOrFail($id);
+    
+    // Wallet Recharges
+    $recharges = \App\Models\WalletRecharge::where('user_id', $customer->id)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    // Purchases (Cards bought by this phone number)
+    $purchases = \App\Models\Card::where('customer_phone', $customer->phone)
+        ->where('status', 'sold')
+        ->with('cardCategory.network')
+        ->orderBy('purchased_at', 'desc')
+        ->get()
+        ->map(function ($card) {
+            $deposit = \App\Models\AppDeposit::where('used_for_card_id', $card->id)->first();
+            return [
+                'id' => $card->id,
+                'serial_number' => $card->serial_number,
+                'pin_code' => $card->pin_code,
+                'purchased_at' => $card->purchased_at,
+                'package_name' => $card->cardCategory->name ?? 'غير معروف',
+                'network_name' => $card->cardCategory->network->name ?? 'غير معروف',
+                'price' => $card->cardCategory->price ?? 0,
+                'reference_number' => $deposit ? $deposit->reference_number : 'دفع من المحفظة',
+            ];
+        });
+
+    return response()->json([
+        'customer' => [
+            'id' => $customer->id,
+            'name' => $customer->name,
+            'phone' => $customer->phone,
+            'wallet_balance' => $customer->wallet_balance,
+            'otp_code' => $customer->otp_code,
+            'is_active' => $customer->phone_verified_at !== null,
+            'joined_at' => $customer->created_at,
+        ],
+        'recharges' => $recharges,
+        'purchases' => $purchases,
+    ]);
 });
 
 // Public Requests (Joining Form)
@@ -866,8 +861,8 @@ Route::get('/networks/{id}/transactions', function ($id) {
 
         $result[] = [
             'id' => (string) $t->id,
-            'date' => $t->created_at->format('Y-m-d'),
-            'time' => $t->created_at->format('h:i A'),
+            'date' => $t->created_at->setTimezone('Asia/Aden')->format('Y-m-d'),
+            'time' => $t->created_at->setTimezone('Asia/Aden')->format('h:i A'),
             'type' => $t->type,
             'typeLabel' => $typeLabel,
             'provider' => $provider,
@@ -1208,7 +1203,11 @@ Route::patch('/admin/pos-recharges/{id}/status', function ($id, Request $request
     return response()->json(['message' => 'تم تحديث حالة الطلب']);
 });
 
+Route::get('/admin/pos/{id}/details', [\App\Http\Controllers\PosController::class, 'getAdminPosDetails']);
+
 // Network Owner POS Memberships Endpoints
+Route::get('/networks/{id}/pos-memberships/{user_id}/details', [\App\Http\Controllers\PosController::class, 'getOwnerPosDetails']);
+
 Route::get('/networks/{id}/pos-memberships', function ($id) {
     $memberships = \App\Models\NetworkPosMembership::where('network_id', $id)->with('user')->get();
     return response()->json($memberships);

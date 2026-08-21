@@ -83,7 +83,7 @@ export const PosRechargesView: React.FC = () => {
                     <td className="py-3 px-3 text-slate-300">{r.bank_name}</td>
                     <td className="py-3 px-3 text-slate-400">{new Date(r.created_at).toLocaleString('ar-YE')}</td>
                     <td className="py-3 px-3">
-                      <a href={`http://127.0.0.1:8000/storage/${r.receipt_image}`} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">عرض الصورة</a>
+                      <a href={`/storage/${r.receipt_image}`} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">عرض الصورة</a>
                     </td>
                     <td className="py-3 px-3">
                       {r.status === 'pending' ? (
