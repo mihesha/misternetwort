@@ -5,7 +5,6 @@ import Header from '@/components/public/Header';
 import CardBoxLogo from '@/components/common/CardBoxLogo';
 import SupportWidget from '@/components/public/SupportWidget';
 import AuthModal from '@/components/public/AuthModal';
-import PurchasesModal from '@/components/public/PurchasesModal';
 import ProfileModal from '@/components/public/ProfileModal';
 import { UserAccount, OrderDetails, PublicNetworkInfo } from '@/types';
 import { useRouter, usePathname } from 'next/navigation';
@@ -23,7 +22,6 @@ export default function DomainLayout({
   const pathname = usePathname();
 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isPurchasesOpen, setIsPurchasesOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('register');
 
@@ -121,7 +119,7 @@ export default function DomainLayout({
         network={currentNetwork || undefined}
         activeTab={pathname.split('/').pop() || 'home'}
         onNavigate={(path) => router.push(`/${domain}${path === 'home' ? '' : '/' + path}`)}
-        onOpenPurchases={() => setIsPurchasesOpen(true)}
+        onOpenPurchases={() => router.push(`/${domain}/purchases`)}
         onOpenProfile={() => setIsProfileOpen(true)}
         onOpenWallet={() => router.push(`/${domain}/wallet`)}
       />
@@ -138,16 +136,6 @@ export default function DomainLayout({
         onSuccess={(newUser) => handleSetUser(newUser)}
       />
 
-      <PurchasesModal
-        isOpen={isPurchasesOpen}
-        onClose={() => setIsPurchasesOpen(false)}
-        orders={orders}
-        onStartShopping={() => {
-          setIsPurchasesOpen(false);
-          router.push(`/${domain}`);
-        }}
-      />
-
       <ProfileModal
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
@@ -155,22 +143,25 @@ export default function DomainLayout({
         onLogout={handleLogout}
         onOpenPurchases={() => {
           setIsProfileOpen(false);
-          setIsPurchasesOpen(true);
+          router.push(`/${domain}/purchases`);
         }}
       />
 
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 py-8 mt-12 text-center text-xs text-slate-500 dark:text-slate-400 dir-rtl">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col items-center justify-center space-y-3">
-          <CardBoxLogo size="sm" showText={true} />
-          <p>© {new Date().getFullYear()} كارد بوكس (CardBox) - جميع الحقوق محفوظة</p>
-          <div className="flex items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-400">
-            <button onClick={() => router.push(`/${domain}`)} className="hover:text-purple-600">الرئيسية</button>
-            <span>•</span>
-            <button onClick={() => router.push(`/${domain}/networks`)} className="hover:text-purple-600">الشبكات</button>
-            <span>•</span>
-            <button onClick={() => router.push(`/${domain}/guide`)} className="hover:text-purple-600">دليل الشراء</button>
-            <span>•</span>
-            <button onClick={() => router.push(`/${domain}/about`)} className="hover:text-purple-600">عن الخدمة</button>
+      <footer className="relative border-t border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-xl py-12 mt-16 text-center text-xs text-slate-500 dark:text-slate-400 dir-rtl overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent pointer-events-none" />
+        <div className="max-w-6xl mx-auto px-4 flex flex-col items-center justify-center space-y-5 relative z-10">
+          <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 inline-flex">
+            <CardBoxLogo size="sm" showText={true} />
+          </div>
+          <p className="font-bold tracking-wide">© {new Date().getFullYear()} كارد بوكس (CardBox) - جميع الحقوق محفوظة</p>
+          <div className="flex items-center gap-5 text-sm font-black text-slate-600 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-900/50 px-6 py-2.5 rounded-full border border-slate-200/50 dark:border-slate-800/50 backdrop-blur-sm">
+            <button onClick={() => router.push(`/${domain}`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">الرئيسية</button>
+            <span className="text-purple-300 dark:text-purple-700">•</span>
+            <button onClick={() => router.push(`/${domain}/networks`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">الشبكات</button>
+            <span className="text-purple-300 dark:text-purple-700">•</span>
+            <button onClick={() => router.push(`/${domain}/guide`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">دليل الشراء</button>
+            <span className="text-purple-300 dark:text-purple-700">•</span>
+            <button onClick={() => router.push(`/${domain}/about`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">عن الخدمة</button>
           </div>
         </div>
       </footer>

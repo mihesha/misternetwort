@@ -81,6 +81,83 @@ Route::post('/app/deposits', function (Request $request) {
     return response()->json(['message' => 'Deposit received', 'data' => $deposit], 201);
 });
 
+// App OTP Gateway API
+Route::get('/app/otp-tasks', function (Request $request) {
+    if ($request->bearerToken() !== 'mobile-app-secret-123') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $tasks = \App\Models\OtpTask::where('status', 'PENDING')->get()->map(function($task) {
+        return [
+            'id' => $task->id,
+            'phoneNumber' => $task->phone_number,
+            'otpCode' => $task->otp_code,
+            'customMessage' => $task->custom_message
+        ];
+    });
+    
+    return response()->json($tasks);
+});
+
+Route::post('/app/otp-tasks/callback', function (Request $request) {
+    if ($request->bearerToken() !== 'mobile-app-secret-123') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $validated = $request->validate([
+        'taskId' => 'required|exists:otp_tasks,id',
+        'status' => 'required|in:SENT,FAILED',
+        'errorMessage' => 'nullable|string'
+    ]);
+    
+    $task = \App\Models\OtpTask::find($validated['taskId']);
+    $task->status = $validated['status'];
+    $task->error_message = $validated['errorMessage'] ?? null;
+    $task->sent_at = now();
+    $task->save();
+    
+    return response()->json(['message' => 'Task updated successfully']);
+});
+
+// App Card Dispatcher API
+Route::get('/app/card-tasks', function (Request $request) {
+    if ($request->bearerToken() !== 'mobile-app-secret-123') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $tasks = \App\Models\CardSmsTask::where('status', 'PENDING')->get()->map(function($task) {
+        return [
+            'id' => $task->id,
+            'phoneNumber' => $task->phone_number,
+            'cardCategory' => $task->card_category,
+            'cardCode' => $task->card_code,
+            'customMessage' => $task->custom_message
+        ];
+    });
+    
+    return response()->json($tasks);
+});
+
+Route::post('/app/card-tasks/callback', function (Request $request) {
+    if ($request->bearerToken() !== 'mobile-app-secret-123') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    $validated = $request->validate([
+        'taskId' => 'required|exists:card_sms_tasks,id',
+        'status' => 'required|in:SENT,FAILED',
+        'errorMessage' => 'nullable|string'
+    ]);
+    
+    $task = \App\Models\CardSmsTask::find($validated['taskId']);
+    $task->status = $validated['status'];
+    $task->error_message = $validated['errorMessage'] ?? null;
+    $task->sent_at = now();
+    $task->save();
+    
+    return response()->json(['message' => 'Task updated successfully']);
+});
+
 Route::get('/networks/search', function (Request $request) {
     $q = $request->query('q');
     if (!$q) return response()->json([]);
@@ -130,9 +207,28 @@ Route::post('/register', [AuthController::class, 'register']);
 // Customer Auth Endpoints
 Route::post('/customer/register', [AuthController::class, 'customerRegister']);
 Route::post('/customer/login', [AuthController::class, 'customerLogin']);
+Route::post('/customer/auth/verify-otp', [AuthController::class, 'customerVerifyOtp']);
+Route::post('/customer/auth/resend-otp', [AuthController::class, 'customerResendOtp']);
+Route::post('/customer/auth/forgot-password', [AuthController::class, 'customerForgotPassword']);
+Route::post('/customer/auth/check-otp', [AuthController::class, 'customerCheckOtp']);
+Route::post('/customer/auth/reset-password', [AuthController::class, 'customerResetPassword']);
+Route::get('/customer/purchases', [CardController::class, 'myPurchases'])->middleware('auth:sanctum');
 
 Route::get('/admin/customers', function () {
-    return response()->json(\App\Models\User::where('role', 'customer')->get());
+    return response()->json(\App\Models\User::where('role', 'customer')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($u) {
+            return [
+                'id' => $u->id,
+                'name' => $u->name,
+                'phone' => $u->phone,
+                'wallet_balance' => $u->wallet_balance,
+                'otp_code' => $u->otp_code,
+                'phone_verified_at' => $u->phone_verified_at,
+                'created_at' => $u->created_at,
+            ];
+        }));
 });
 
 // Public Requests (Joining Form)
@@ -1205,10 +1301,17 @@ Route::post('/pos/auth/register', function (Request $request) {
         'otp_code' => $otpCode,
     ]);
 
-    // Return OTP in response temporarily to help the mobile dev during testing
+    // Queue OTP for SMS
+    \App\Models\OtpTask::create([
+        'phone_number' => $validated['phone'],
+        'otp_code' => $otpCode,
+        'custom_message' => "رمز التحقق لبرنامج نقاط البيع كارد بوكس هو: {$otpCode}"
+    ]);
+
     return response()->json([
-        'message' => 'تم إنشاء الحساب، يرجى إدخال رمز التحقق OTP.',
-        'test_otp_code' => $otpCode, // Only for testing phase
+        'status' => true,
+        'message' => 'تم إرسال رمز التحقق OTP إلى هاتفك',
+        'test_otp_code' => $otpCode,
         'user' => $user
     ]);
 });
@@ -1232,7 +1335,13 @@ Route::post('/pos/auth/verify-otp', function (Request $request) {
     $profile->save();
 
     $token = $user->createToken('pos-token')->plainTextToken;
-    return response()->json(['message' => 'تم التحقق بنجاح', 'token' => $token, 'user' => $user]);
+    return response()->json([
+        'status' => true,
+        'message' => 'تم التحقق وتفعيل الحساب بنجاح',
+        'token' => $token,
+        'access_token' => $token,
+        'user' => $user
+    ]);
 });
 
 Route::post('/pos/auth/login', function (Request $request) {
@@ -1244,36 +1353,66 @@ Route::post('/pos/auth/login', function (Request $request) {
     $user = \App\Models\User::where('phone', $validated['phone'])->where('role', 'pos')->first();
 
     if (!$user || !\Illuminate\Support\Facades\Hash::check($validated['password'], $user->password)) {
-        return response()->json(['error' => 'رقم الهاتف أو كلمة المرور غير صحيحة'], 401);
+        return response()->json(['status' => false, 'message' => 'بيانات الدخول غير صحيحة'], 401);
     }
 
     $token = $user->createToken('pos-token')->plainTextToken;
-    return response()->json(['token' => $token, 'user' => $user]);
+    return response()->json([
+        'status' => true,
+        'message' => 'تم تسجيل الدخول بنجاح',
+        'token' => $token,
+        'access_token' => $token,
+        'user' => $user
+    ]);
 });
 
 Route::post('/pos/auth/forgot-password', function (Request $request) {
     $request->validate(['phone' => 'required|string']);
     $user = \App\Models\User::where('phone', $request->phone)->where('role', 'pos')->first();
-    if (!$user) return response()->json(['error' => 'الحساب غير موجود'], 404);
+    if (!$user) return response()->json(['status' => false, 'message' => 'الحساب غير موجود'], 404);
     
     // In production, send SMS. For now, generate and return test OTP.
     $otp = (string) rand(100000, 999999);
     $profile = $user->posProfile;
-    if($profile) {
-        $profile->otp_code = $otp;
-        $profile->save();
+    if (!$profile) {
+        $profile = \App\Models\PosProfile::create([
+            'user_id' => $user->id,
+            'shop_name' => 'نقطة بيع',
+            'status' => 'active'
+        ]);
     }
-    return response()->json(['message' => 'تم إرسال كود الاستعادة', 'test_otp_code' => $otp]);
+    
+    $profile->otp_code = $otp;
+    $profile->save();
+    
+    // Also save to user just in case
+    $user->otp_code = $otp;
+    $user->save();
+    
+    \App\Models\OtpTask::create([
+        'phone_number' => $request->phone,
+        'otp_code' => $otp,
+        'custom_message' => "رمز استعادة كلمة المرور لبرنامج نقاط البيع كارد بوكس هو: {$otp}"
+    ]);
+    return response()->json(['status' => true, 'message' => 'تم إرسال رمز استعادة كلمة المرور', 'test_otp_code' => $otp]);
 });
 
 Route::post('/pos/auth/reset-password', function (Request $request) {
     $request->validate(['phone' => 'required|string', 'otp_code' => 'required|string', 'new_password' => 'required|string|min:6']);
     $user = \App\Models\User::where('phone', $request->phone)->where('role', 'pos')->first();
-    if (!$user) return response()->json(['error' => 'الحساب غير موجود'], 404);
+    if (!$user) return response()->json(['status' => false, 'message' => 'الحساب غير موجود'], 404);
     
     $profile = $user->posProfile;
-    if (!$profile || $profile->otp_code !== $request->otp_code) {
-        return response()->json(['error' => 'كود التحقق غير صحيح'], 400);
+    $isValid = false;
+    
+    if ($profile && $profile->otp_code === $request->otp_code) {
+        $isValid = true;
+    } elseif ($user->otp_code === $request->otp_code) {
+        $isValid = true;
+    }
+    
+    if (!$isValid) {
+        return response()->json(['status' => false, 'message' => 'كود التحقق غير صحيح'], 400);
     }
     
     $user->password = \Illuminate\Support\Facades\Hash::make($request->new_password);
@@ -1281,7 +1420,7 @@ Route::post('/pos/auth/reset-password', function (Request $request) {
     $profile->otp_code = null;
     $profile->save();
     
-    return response()->json(['message' => 'تم إعادة تعيين كلمة المرور بنجاح']);
+    return response()->json(['status' => true, 'message' => 'تم إعادة تعيين كلمة المرور بنجاح']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -1289,11 +1428,11 @@ Route::middleware('auth:sanctum')->group(function () {
         $request->validate(['current_password' => 'required', 'new_password' => 'required|min:6']);
         $user = $request->user();
         if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
-            return response()->json(['error' => 'كلمة المرور الحالية غير صحيحة'], 400);
+            return response()->json(['status' => false, 'message' => 'كلمة المرور الحالية غير صحيحة'], 400);
         }
         $user->password = \Illuminate\Support\Facades\Hash::make($request->new_password);
         $user->save();
-        return response()->json(['message' => 'تم تغيير كلمة المرور بنجاح']);
+        return response()->json(['status' => true, 'message' => 'تم تغيير كلمة المرور بنجاح']);
     });
 
     Route::get('/pos/profile', function (Request $request) {

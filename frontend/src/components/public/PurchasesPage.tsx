@@ -22,6 +22,7 @@ import {
 import { UserAccount, OrderDetails, PublicNetworkInfo } from '@/types';
 import CardBoxLogo from '@/components/common/CardBoxLogo';
 import SupportWidget from '@/components/public/SupportWidget';
+import Button from '@/components/common/Button';
 
 
 interface PurchasesPageProps {
@@ -48,21 +49,25 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
   const [copiedPin, setCopiedPin] = useState<string | null>(null);
 
   const [isDark, setIsDark] = useState(() => {
-    if (typeof document !== 'undefined') {
-      return document.documentElement.classList.contains('dark');
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') return true;
+      if (savedTheme === 'light') return false;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
-    return true;
+    return true; // Default server render to true or false
   });
 
   // Toggle Theme
   const toggleTheme = () => {
     const root = document.documentElement;
-    const isCurrentlyDark = root.classList.contains('dark');
-    if (isCurrentlyDark) {
+    if (isDark) {
       root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
       setIsDark(false);
     } else {
       root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
       setIsDark(true);
     }
   };
@@ -279,14 +284,14 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
             )}
           </div>
 
-          {/* Segmented Pill Navigation Bar (Exact order matching user screenshots: قيد الانتظار | الموافق عليها | الملغية) */}
-          <div className="bg-slate-100 dark:bg-slate-950/80 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 grid grid-cols-3 gap-1">
+          {/* Segmented Pill Navigation Bar */}
+          <div className="bg-slate-100/80 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/80 grid grid-cols-3 gap-1 relative z-10 backdrop-blur-md">
             <button
               onClick={() => setActiveTab('pending')}
-              className={`py-2 px-3 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer text-center ${
+              className={`py-2.5 px-3 text-[11px] sm:text-sm font-black rounded-xl transition-all duration-300 cursor-pointer text-center relative ${
                 activeTab === 'pending'
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-md scale-100'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-900/50 scale-95'
               }`}
             >
               قيد الانتظار
@@ -294,10 +299,10 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
 
             <button
               onClick={() => setActiveTab('approved')}
-              className={`py-2 px-3 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer text-center ${
+              className={`py-2.5 px-3 text-[11px] sm:text-sm font-black rounded-xl transition-all duration-300 cursor-pointer text-center relative ${
                 activeTab === 'approved'
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30 scale-100 ring-2 ring-emerald-400/50'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-900/50 scale-95'
               }`}
             >
               الموافق عليها
@@ -305,10 +310,10 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
 
             <button
               onClick={() => setActiveTab('cancelled')}
-              className={`py-2 px-3 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer text-center ${
+              className={`py-2.5 px-3 text-[11px] sm:text-sm font-black rounded-xl transition-all duration-300 cursor-pointer text-center relative ${
                 activeTab === 'cancelled'
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-white dark:bg-slate-800 text-red-500 dark:text-red-400 shadow-md scale-100'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-900/50 scale-95'
               }`}
             >
               الملغية
@@ -317,85 +322,109 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
         </div>
 
         {/* Display Content Box / Empty State Box */}
-        <div className="bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-8 sm:p-12 text-center min-h-[280px] flex flex-col items-center justify-center space-y-4 shadow-inner">
+        <div className="bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-white/40 dark:border-slate-800/50 rounded-3xl p-6 sm:p-10 text-center min-h-[350px] flex flex-col items-center justify-center space-y-4 shadow-xl">
           {currentCards.length > 0 ? (
-            <div className="w-full space-y-4 text-right">
+            <div className="w-full space-y-5 text-right relative z-10">
               {currentCards.map((card, idx) => (
-                <div
-                  key={idx}
-                  className="bg-slate-50 dark:bg-slate-900 p-5 rounded-2xl border border-purple-200 dark:border-purple-500/30 space-y-3"
-                >
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                    <span className="font-extrabold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
-                      <Zap className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                      {card.packageName}
-                    </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                      {card.serialNumber}
-                    </span>
-                  </div>
-
-                  <div className="bg-slate-200/60 dark:bg-black/40 p-3 rounded-xl flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block">كود الكرت:</span>
-                      <span className="text-lg font-mono font-black text-amber-600 dark:text-amber-300">
-                        {card.pinCode.replace(/-/g, '')}
+                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden flex flex-col gap-4 group hover:shadow-xl hover:border-purple-300 dark:hover:border-purple-700 transition-all duration-300">
+                  {/* Decorative background */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 dark:bg-purple-500/5 blur-3xl rounded-full pointer-events-none group-hover:bg-purple-500/10 transition-colors" />
+                  
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center border border-purple-100 dark:border-purple-800/50 shrink-0">
+                        <Wifi className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="text-right">
+                        <h4 className="font-black text-slate-800 dark:text-slate-100 text-base sm:text-lg">
+                          {card.networkName && <span className="text-purple-600 dark:text-purple-400 font-bold ml-1">{card.networkName} -</span>}
+                          {card.packageName}
+                        </h4>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5 text-[11px] sm:text-xs text-slate-500 font-bold">
+                          <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{card.dataSize}</span>
+                          <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{card.duration}</span>
+                          <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{card.expireDate}</span>
+                          {card.date && <span className="text-slate-400 font-mono pr-2 border-r border-slate-200 dark:border-slate-700">{card.date}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-left w-full sm:w-auto pr-14 sm:pr-0 -mt-1 sm:mt-0">
+                      <span className="text-[10px] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded-md text-slate-500 font-mono tracking-wider">
+                        S/N: {card.serialNumber}
                       </span>
                     </div>
-                    <button
-                      onClick={() => handleCopyPin(card.pinCode)}
-                      className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer transition-all"
-                    >
-                      {copiedPin === card.pinCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedPin === card.pinCode ? 'تم النسخ' : 'نسخ'}</span>
-                    </button>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between text-xs text-slate-600 dark:text-slate-300 pt-1 gap-2 border-t border-slate-200 dark:border-slate-800">
-                    <span>الحجم: <strong className="text-slate-900 dark:text-white">{card.dataSize}</strong></span>
-                    <span>المدة: <strong className="text-slate-900 dark:text-white">{card.duration}</strong></span>
-                    <span>الصلاحية: <strong className="text-slate-900 dark:text-white">{card.expireDate}</strong></span>
-                    {card.date && <span className="text-[11px] text-slate-400 font-mono">{card.date}</span>}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
+                    <div className="flex-1 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 flex items-center justify-between">
+                       <span className="text-[10px] text-slate-400 font-bold uppercase hidden sm:block">PIN</span>
+                       <span className="text-xl sm:text-2xl font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 select-all mx-auto sm:mx-0">{card.pinCode.replace(/-/g, '')}</span>
+                    </div>
+                    
+                    <Button
+                      onClick={() => handleCopyPin(card.pinCode)}
+                      variant="primary"
+                      className={`sm:w-auto w-full h-12 px-6 font-bold rounded-xl text-sm transition-all shadow-md shrink-0 flex items-center justify-center gap-2 ${copiedPin === card.pinCode ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20' : 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/20'}`}
+                    >
+                      {copiedPin === card.pinCode ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>تم النسخ</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>نسخ الرمز</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             /* Empty State matching User Screenshots 3, 4, 5 */
-            <div className="space-y-3 flex flex-col items-center">
-              <div className="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 flex items-center justify-center mb-1">
-                <ShoppingCart className="w-8 h-8 stroke-[1.5]" />
+            <div className="space-y-4 flex flex-col items-center max-w-sm mx-auto">
+              <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 text-slate-400 dark:text-slate-500 flex items-center justify-center mb-2 shadow-inner border border-white/50 dark:border-slate-700/50">
+                {activeTab === 'approved' ? (
+                  <History className="w-10 h-10 stroke-[1.5] text-emerald-500/50" />
+                ) : activeTab === 'pending' ? (
+                  <ShoppingCart className="w-10 h-10 stroke-[1.5] text-purple-500/50" />
+                ) : (
+                  <X className="w-10 h-10 stroke-[1.5] text-red-500/50" />
+                )}
               </div>
 
               {activeTab === 'approved' && (
                 <>
-                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
-                    لا توجد مشتريات مكتملة حالياً.
+                  <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">
+                    لا توجد مشتريات مكتملة حالياً
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                    سجل عملياتك فارغ.
+                    يبدو أنك لم تقم بشراء أي كروت إنترنت بعد، ستظهر جميع مشترياتك الناجحة هنا.
                   </p>
                 </>
               )}
 
               {activeTab === 'pending' && (
                 <>
-                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
-                    لا توجد طلبات قيد التحقق حالياً.
+                  <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">
+                    لا توجد طلبات قيد التحقق
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                    سجل عملياتك فارغ.
+                    ليس لديك أي طلبات معلقة بانتظار المراجعة من قبل الإدارة.
                   </p>
                 </>
               )}
 
               {activeTab === 'cancelled' && (
                 <>
-                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
-                    لا توجد طلبات ملغية.
+                  <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">
+                    لا توجد طلبات ملغية
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                    سجل عملياتك فارغ.
+                    سجل العمليات الملغية أو المرفوضة فارغ تماماً.
                   </p>
                 </>
               )}

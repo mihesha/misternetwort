@@ -62,7 +62,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <span>الرصيد المتاح</span>
             </span>
             <p className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400">
-              {user.balance !== undefined ? user.balance.toLocaleString('ar-YE') : '0'} ر.ي
+              {((user.wallet_balance !== undefined ? user.wallet_balance : user.balance) || 0).toLocaleString('ar-YE')} ر.ي
             </p>
           </div>
         </div>

@@ -208,6 +208,7 @@ export type OrderStep = 'select' | 'payment' | 'verification' | 'receipt';
 export interface GeneratedCard {
   packageId: string;
   packageName: string;
+  networkName?: string;
   serialNumber: string;
   pinCode: string;
   dataSize: string;

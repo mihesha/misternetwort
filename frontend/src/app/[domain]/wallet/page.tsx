@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Wallet, 
+import {
+  Wallet,
   ArrowRight,
   CheckCircle2,
   Copy,
@@ -19,16 +19,17 @@ import { useRouter } from 'next/navigation';
 
 export default function WalletPage({ params }: { params: Promise<{ domain: string }> }) {
   const router = useRouter();
-  
+
   const [user, setUser] = useState<UserAccount | null>(null);
   const [selectedWallet, setSelectedWallet] = useState<WalletOption | null>(null);
   const [transactionRef, setTransactionRef] = useState('');
-  
+
   const [copiedPin, setCopiedPin] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
+  const [isRechargeMode, setIsRechargeMode] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
       if (res.ok) {
         const data = await res.json();
         setRecentTransactions(data.recent_transactions || []);
-        
+
         // Update user balance globally
         const savedUser = localStorage.getItem('cardbox_user');
         if (savedUser) {
@@ -107,7 +108,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
       setTransactionRef('');
       setSelectedWallet(null);
       if (user?.token) fetchWalletData(user.token);
-      
+
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -125,7 +126,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
 
   return (
     <div dir="rtl" className="space-y-6 max-w-4xl mx-auto pb-12 animate-fadeIn text-right">
-      
+
       {/* Page Header */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -147,8 +148,8 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
         <div className="bg-gradient-to-br from-purple-900 to-indigo-950 p-6 sm:p-8 rounded-2xl shadow-xl relative overflow-hidden border border-purple-500/30">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl -ml-5 -mb-5 pointer-events-none"></div>
-          
-          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+
+          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
               <p className="text-purple-200 text-sm font-bold mb-1">الرصيد الحالي المتوفر</p>
               <div className="flex items-baseline gap-2">
@@ -158,8 +159,21 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                 <span className="text-purple-300 font-bold">ر.ي</span>
               </div>
             </div>
-            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/10 shadow-inner">
-              <Wallet className="w-8 h-8 text-white/90" />
+
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+              {!isRechargeMode && (
+                <button
+                  type="button"
+                  onClick={() => setIsRechargeMode(true)}
+                  className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-50 text-purple-900 font-black rounded-2xl shadow-lg border-none flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                >
+                  <span className="text-xl leading-none">+</span>
+                  تغذية الرصيد
+                </button>
+              )}
+              <div className="w-14 h-14 bg-white/10 rounded-2xl hidden sm:flex items-center justify-center backdrop-blur-sm border border-white/10 shadow-inner">
+                <Wallet className="w-7 h-7 text-white/90" />
+              </div>
             </div>
           </div>
         </div>
@@ -167,156 +181,174 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Main Recharge Form */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm">
-            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base mb-4 flex items-center gap-2">
-              <span className="w-2 h-6 bg-purple-600 rounded-full"></span>
-              تغذية رصيد المحفظة
-            </h3>
-
-            {!selectedWallet ? (
-              <div className="space-y-4">
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold mb-2">
-                  اختر المحفظة التي قمت بالإيداع إليها:
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {YEMENI_WALLETS.map((wallet) => (
-                    <button
-                      key={wallet.id}
-                      type="button"
-                      onClick={() => setSelectedWallet(wallet)}
-                      className={`w-full p-4 rounded-2xl border text-center transition-all duration-200 flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm border-slate-200 dark:border-slate-800 hover:border-purple-400 dark:hover:border-purple-700 bg-slate-50 dark:bg-slate-900/50`}
-                    >
-                      <span className="block font-bold text-slate-900 dark:text-slate-100 text-sm">
-                        {wallet.nameAr}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+        {isRechargeMode && (
+          <div className="lg:col-span-7 space-y-6 animate-fadeIn">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base flex items-center gap-2">
+                  <span className="w-2 h-6 bg-purple-600 rounded-full"></span>
+                  تغذية رصيد المحفظة
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRechargeMode(false);
+                    setSelectedWallet(null);
+                  }}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors cursor-pointer"
+                >
+                  إلغاء ×
+                </button>
               </div>
-            ) : (
-              <div className="space-y-6 animate-slide-up">
-                
-                {/* Selected Wallet Info */}
-                <div className="p-5 bg-gradient-to-b from-purple-950/40 via-purple-950/30 to-slate-900/90 dark:from-purple-950/60 dark:to-slate-950/90 border-2 border-purple-500/50 dark:border-purple-500/60 rounded-3xl space-y-4 shadow-xl">
-                  <div className="flex items-center justify-between border-b border-purple-500/30 dark:border-purple-800/80 pb-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
-                        ✓
-                      </span>
-                      <div>
-                        <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
-                          {selectedWallet.nameAr}
-                        </h4>
-                        <span className="text-[11px] sm:text-xs text-purple-600 dark:text-purple-400 font-bold">
-                          تم اختيار طريقة الدفع
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedWallet(null)}
-                      className="px-3.5 py-1.5 bg-slate-900/90 dark:bg-slate-900 hover:bg-slate-800 text-purple-400 dark:text-purple-300 border border-purple-500/40 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-2xs active:scale-95"
-                    >
-                      تغيير المحفظة
-                    </button>
-                  </div>
 
-                  <div className="flex items-center justify-between bg-slate-950/80 dark:bg-slate-950 p-3.5 rounded-2xl border border-purple-500/40 dark:border-purple-800/80 shadow-inner">
-                    <span className="font-bold text-slate-200 dark:text-slate-300 text-xs sm:text-sm">
-                      رقم حساب {selectedWallet.nameAr}:
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-black text-purple-300 text-lg sm:text-xl dir-ltr">
-                        {selectedWallet.accountNumber}
-                      </span>
+              {!selectedWallet ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold mb-2">
+                    اختر المحفظة التي تريد الإيداع من خلالها:
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                    {YEMENI_WALLETS.map((wallet) => (
+                      <button
+                        key={wallet.id}
+                        type="button"
+                        onClick={() => setSelectedWallet(wallet)}
+                        className="relative p-3 sm:p-4 rounded-3xl border-2 text-center transition-all duration-300 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer active:scale-[0.98] group border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 hover:border-purple-300 dark:hover:border-purple-700/60 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md"
+                      >
+                        <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-xs sm:text-sm font-bold shadow-inner transition-transform group-hover:-translate-y-1 ${wallet.bgColor} ${wallet.textColor}`}>
+                          <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
+                        </div>
+                        <span className="text-[13px] sm:text-base font-black text-slate-700 dark:text-slate-300">
+                          {wallet.nameAr}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6 animate-slide-up">
+
+                  {/* Selected Wallet Info */}
+                  <div className="p-5 bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-3xl space-y-4 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-purple-200 dark:border-purple-800/80 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+                          ✓
+                        </span>
+                        <div>
+                          <h4 className="font-extrabold text-purple-950 dark:text-slate-100 text-sm sm:text-base">
+                            {selectedWallet.nameAr}
+                          </h4>
+                          <span className="text-[11px] sm:text-xs text-purple-600 dark:text-purple-400 font-bold">
+                            تم اختيار طريقة الدفع
+                          </span>
+                        </div>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => handleCopy(selectedWallet.accountNumber)}
-                        className="p-1.5 text-purple-400 hover:bg-purple-900/50 rounded-lg transition-all cursor-pointer"
-                        title="نسخ رقم الحساب"
+                        onClick={() => setSelectedWallet(null)}
+                        className="px-3.5 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
                       >
-                        {copiedPin === selectedWallet.accountNumber ? (
-                          <Check className="w-4 h-4 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
+                        تغيير المحفظة
                       </button>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-purple-100 dark:border-purple-800/80 shadow-sm">
+                      <span className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
+                        رقم حساب {selectedWallet.nameAr}:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-purple-700 dark:text-purple-300 text-lg sm:text-xl dir-ltr">
+                          {selectedWallet.accountNumber}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(selectedWallet.accountNumber)}
+                          className="p-1.5 text-purple-500 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-lg transition-all cursor-pointer"
+                          title="نسخ رقم الحساب"
+                        >
+                          {copiedPin === selectedWallet.accountNumber ? (
+                            <Check className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 text-xs text-slate-600 dark:text-slate-400 space-y-1">
+                      <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                        <Info className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" /> خطوات الإيداع:
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 pr-2">
+                        {selectedWallet.steps.map((step, idx) => (
+                          <li key={idx}>{step}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
 
-                  <div className="pt-2 text-xs text-slate-400 dark:text-slate-400 space-y-1">
-                    <p className="font-bold text-slate-100 dark:text-slate-200 flex items-center gap-1">
-                      <Info className="w-3.5 h-3.5 text-purple-400" /> خطوات الإيداع:
-                    </p>
-                    <ul className="list-disc list-inside space-y-1 pr-2">
-                      {selectedWallet.steps.map((step, idx) => (
-                        <li key={idx}>{step}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+                  {/* Form Input */}
+                  <div className="p-5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
+                    <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
+                      بيانات عملية التحويل
+                    </h4>
+                    <form onSubmit={handleRecharge} className="space-y-4">
+                      <Input
+                        label="رقم مرجع العملية"
+                        placeholder="أدخل رقم مرجع العملية"
+                        value={transactionRef}
+                        onChange={(e) => setTransactionRef(e.target.value)}
+                        leadingIcon={<Hash className="w-4 h-4" />}
+                        helperText="قم بلصق رقم مرجع العملية الذي نسخته بعد إتمام التحويل هنا"
+                        className="text-sm font-bold placeholder:text-sm placeholder:font-normal"
+                        required
+                      />
 
-                {/* Form Input */}
-                <div className="p-5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
-                  <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
-                    بيانات عملية التحويل
-                  </h4>
-                  <form onSubmit={handleRecharge} className="space-y-4">
-                    <Input
-                      label="رقم مرجع العملية"
-                      placeholder="أدخل رقم العملية المولد من المحفظة (مثال: 9812401)"
-                      value={transactionRef}
-                      onChange={(e) => setTransactionRef(e.target.value)}
-                      leadingIcon={<Hash className="w-4 h-4" />}
-                      helperText="ستجد رقم مرجع العملية في الرسالة النصية أو إشعار التحويل المباشر"
-                      required
-                    />
-
-                    {error && (
-                      <p className="text-xs sm:text-sm font-bold text-red-500 bg-red-50 dark:bg-red-950/50 p-4 rounded-xl border border-red-200 dark:border-red-800">
-                        {error}
-                      </p>
-                    )}
-                    {success && (
-                      <p className="text-xs sm:text-sm font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-center gap-2">
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span>{success}</span>
-                      </p>
-                    )}
-
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      disabled={isLoading}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-purple-600/30 cursor-pointer"
-                    >
-                      {isLoading ? (
-                        <span className="flex items-center gap-2 justify-center">
-                          <RefreshCw className="w-5 h-5 animate-spin" />
-                          جاري المطابقة...
-                        </span>
-                      ) : (
-                        'تأكيد وشحن المحفظة'
+                      {error && (
+                        <p className="text-xs sm:text-sm font-bold text-red-500 bg-red-50 dark:bg-red-950/50 p-4 rounded-xl border border-red-200 dark:border-red-800">
+                          {error}
+                        </p>
                       )}
-                    </Button>
-                  </form>
-                </div>
+                      {success && (
+                        <p className="text-xs sm:text-sm font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5" />
+                          <span>{success}</span>
+                        </p>
+                      )}
 
-              </div>
-            )}
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        disabled={isLoading}
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-purple-600/30 cursor-pointer"
+                      >
+                        {isLoading ? (
+                          <span className="flex items-center gap-2 justify-center">
+                            <RefreshCw className="w-5 h-5 animate-spin" />
+                            جاري المطابقة...
+                          </span>
+                        ) : (
+                          'تأكيد وشحن المحفظة'
+                        )}
+                      </Button>
+                    </form>
+                  </div>
+
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Transaction History Sidebar */}
-        <div className="lg:col-span-5">
+        <div className={isRechargeMode ? "lg:col-span-5" : "lg:col-span-12"}>
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm h-full">
             <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-6 bg-slate-300 dark:bg-slate-700 rounded-full"></span>
                 سجل العمليات الأخير
               </div>
-              <button 
+              <button
                 onClick={() => user?.token && fetchWalletData(user.token)}
                 className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"
               >
@@ -336,10 +368,9 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                 {recentTransactions.map((tx, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm ${
-                        tx.status === 'approved' ? 'bg-emerald-500' : 
-                        tx.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'
-                      }`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm ${tx.status === 'approved' ? 'bg-emerald-500' :
+                          tx.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'
+                        }`}>
                         {tx.status === 'approved' ? '+' : tx.status === 'rejected' ? '×' : '⋯'}
                       </div>
                       <div>
@@ -350,10 +381,9 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                       </div>
                     </div>
                     <div className="text-left">
-                      <span className={`font-black block text-sm sm:text-base ${
-                        tx.status === 'approved' ? 'text-emerald-600 dark:text-emerald-400' : 
-                        tx.status === 'rejected' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
-                      }`}>
+                      <span className={`font-black block text-sm sm:text-base ${tx.status === 'approved' ? 'text-emerald-600 dark:text-emerald-400' :
+                          tx.status === 'rejected' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
+                        }`}>
                         {tx.amount} ر.ي
                       </span>
                       <span className="text-[10px] font-bold text-slate-400">

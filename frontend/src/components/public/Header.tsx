@@ -66,36 +66,36 @@ export const Header: React.FC<HeaderProps> = ({
               {/* 1. Username Pill Button (Right side in RTL) */}
               <button
                 onClick={onOpenProfile}
-                className="flex items-center justify-center gap-1 bg-slate-900 text-slate-100 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-slate-800 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 bg-slate-100 text-slate-800 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm active:scale-95 whitespace-nowrap"
               >
-                <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-400 shrink-0" />
+                <User className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
                 <span className="whitespace-nowrap">{user?.fullName || 'مستخدم'}</span>
               </button>
 
               {/* 2. My Purchases Pill Button (Middle in RTL) */}
               <button
                 onClick={onOpenPurchases}
-                className="flex items-center justify-center gap-1 bg-slate-900 text-slate-100 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-slate-800 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 bg-slate-100 text-slate-800 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm active:scale-95 whitespace-nowrap"
               >
-                <History className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-400 shrink-0" />
+                <History className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
                 <span className="whitespace-nowrap">مشترياتي</span>
               </button>
 
               {/* 3. Wallet Pill Button */}
               <button
                 onClick={onOpenWallet}
-                className="flex items-center justify-center gap-1 bg-slate-900 text-slate-100 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-slate-800 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800/50 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm active:scale-95 whitespace-nowrap"
               >
-                <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" />
+                <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span className="whitespace-nowrap">محفظتي</span>
               </button>
 
-              {/* 3. Logout Pill Button (Left side in RTL) */}
+              {/* 4. Logout Pill Button (Left side in RTL) */}
               <button
                 onClick={onLogout}
-                className="flex items-center justify-center gap-1 bg-slate-900 text-slate-100 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-red-950/40 hover:text-red-400 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-slate-800 hover:border-red-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 px-3 py-1.5 rounded-full border border-red-200 dark:border-red-900/30 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm active:scale-95 whitespace-nowrap"
               >
-                <LogOut className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" />
+                <LogOut className="w-3.5 h-3.5 text-red-500 shrink-0" />
                 <span className="whitespace-nowrap">تسجيل خروج</span>
               </button>
             </div>

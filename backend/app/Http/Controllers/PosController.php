@@ -195,6 +195,24 @@ class PosController extends Controller
                 'sold_by' => $user->id, // track pos user
             ]);
 
+            // Queue SMS if customer_phone is provided
+            if (!empty($validated['customer_phone'])) {
+                foreach ($cards as $c) {
+                    $pinCode = $c->password ?? $c->serial_number ?? 'بدون كود';
+                    $msg = "تم الشراء من كارد بوكس:\n";
+                    $msg .= "الشبكة: {$network->name}\n";
+                    $msg .= "الفئة: {$category->name}\n";
+                    $msg .= "رقم الدخول: {$pinCode}";
+                    
+                    \App\Models\CardSmsTask::create([
+                        'phone_number' => $validated['customer_phone'],
+                        'card_category' => $category->name,
+                        'card_code' => $pinCode,
+                        'custom_message' => $msg
+                    ]);
+                }
+            }
+
             // Add POS Transaction
             Transaction::create([
                 'network_id' => $network->id,
@@ -218,12 +236,15 @@ class PosController extends Controller
                     ];
                 }),
                 'network_name' => $network->name,
-                'total_deducted' => $totalPrice
+                'total_deducted' => $totalPrice,
+                'sms_sent' => !empty($validated['customer_phone']),
+                'sms_message' => !empty($validated['customer_phone']) ? "تم الشراء من كارد بوكس:\nالشبكة: {$network->name}\nالفئة: {$category->name}" : null
             ], 201);
             
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'حدث خطأ داخلي أثناء الشراء'], 500);
+            \Illuminate\Support\Facades\Log::error('Purchase error: ' . $e->getMessage() . ' at line ' . $e->getLine());
+            return response()->json(['message' => 'حدث خطأ داخلي أثناء الشراء: ' . $e->getMessage()], 500);
         }
     }
 
@@ -284,6 +305,11 @@ class PosController extends Controller
                     
                     $query->where('wallet_name', 'LIKE', "%{$walletType}%")
                           ->orWhere('wallet_name', 'LIKE', "%{$walletSearchAr}%");
+                          
+                    if ($walletType === 'jaib' || $walletType === 'jeeb') {
+                        $query->orWhere('wallet_name', 'LIKE', "%jaib%")
+                              ->orWhere('wallet_name', 'LIKE', "%jeeb%");
+                    }
                 })
                 ->first();
 

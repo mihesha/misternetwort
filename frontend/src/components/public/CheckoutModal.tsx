@@ -17,6 +17,7 @@ import {
   Phone,
   Hash,
   Globe,
+  Wifi,
 } from 'lucide-react';
 import Modal from '@/components/common/Modal';
 import Button from '@/components/common/Button';
@@ -65,7 +66,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       try {
         const savedUser = localStorage.getItem('cardbox_user');
         if (savedUser) setUser(JSON.parse(savedUser));
-      } catch {}
+      } catch { }
     }
   }, [isOpen, step, selectedWallet]);
 
@@ -101,16 +102,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       try {
         if (!networkCode) throw new Error('Network code missing');
         if (cartItems.length === 0) throw new Error('Cart is empty');
-        
+
         // We currently support buying 1 type of card per transaction in the backend
-        const item = cartItems[0]; 
+        const item = cartItems[0];
 
         let currentToken = user?.token;
         if (!currentToken) {
           try {
             const savedUser = localStorage.getItem('cardbox_user');
             if (savedUser) currentToken = JSON.parse(savedUser).token;
-          } catch {}
+          } catch { }
         }
 
         const res = await fetch('/api/wallet/purchase-card', {
@@ -130,7 +131,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         });
 
         const data = await res.json();
-        
+
         if (res.status === 400 && data.error === 'overpayment_warning') {
           setOverpaymentData(data);
           setStep('payment');
@@ -143,13 +144,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         }
 
         const generatedCards: GeneratedCard[] = (data.cards || []).map((c: any) => ({
-            packageId: item.wifiPackage.id,
-            packageName: item.wifiPackage.name,
-            serialNumber: c.serial_number,
-            pinCode: c.card_code,
-            dataSize: item.wifiPackage.dataSize,
-            duration: item.wifiPackage.duration,
-            expireDate: item.wifiPackage.validity,
+          packageId: item.wifiPackage.id,
+          packageName: item.wifiPackage.name,
+          networkName: data.network || '',
+          serialNumber: c.serial_number || 'N/A',
+          pinCode: c.card_code,
+          dataSize: item.wifiPackage.dataSize,
+          duration: item.wifiPackage.duration,
+          expireDate: item.wifiPackage.validity,
         }));
 
         const newOrder: OrderDetails = {
@@ -171,6 +173,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           onOrderComplete(newOrder);
         }
 
+        // Update user balance globally if returned
+        if (data.new_wallet_balance !== undefined && data.new_wallet_balance !== null) {
+          const savedUser = localStorage.getItem('cardbox_user');
+          if (savedUser) {
+            const parsed = JSON.parse(savedUser);
+            parsed.wallet_balance = data.new_wallet_balance;
+            localStorage.setItem('cardbox_user', JSON.stringify(parsed));
+            window.dispatchEvent(new CustomEvent('cardbox_user_updated'));
+          }
+        }
+
         setIsLoading(false);
         setStep('receipt');
         onClearCart();
@@ -180,9 +193,28 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         setIsLoading(false);
       }
     };
-    
+
     purchaseCard();
   };
+
+  useEffect(() => {
+    const handleAuthSuccess = () => {
+      // Re-fetch user
+      try {
+        const savedUser = localStorage.getItem('cardbox_user');
+        if (savedUser) setUser(JSON.parse(savedUser));
+      } catch { }
+
+      // If we were waiting for login due to overpayment
+      if (overpaymentData && overpaymentData.is_guest) {
+        // Automatically proceed
+        handleProceedToVerification(undefined, true);
+      }
+    };
+    
+    window.addEventListener('auth_success', handleAuthSuccess as EventListener);
+    return () => window.removeEventListener('auth_success', handleAuthSuccess as EventListener);
+  }, [overpaymentData, transactionRef, selectedWallet]);
 
   const handleCopyPin = (pin: string) => {
     navigator.clipboard.writeText(pin);
@@ -321,42 +353,43 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     : `محفظة ${selectedWallet.nameAr}`;
 
                   return (
-                    <div className="p-5 bg-gradient-to-b from-purple-950/40 via-purple-950/30 to-slate-900/90 dark:from-purple-950/60 dark:to-slate-950/90 border-2 border-purple-500/50 dark:border-purple-500/60 rounded-3xl space-y-4 shadow-xl">
-                      <div className="flex items-center justify-between border-b border-purple-500/30 dark:border-purple-800/80 pb-3">
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+                    <div className="relative p-6 sm:p-8 rounded-[2rem] space-y-5 shadow-sm border-2 border-purple-200 dark:border-purple-500/30 overflow-hidden group bg-purple-50 dark:bg-purple-900/20">
+
+                      <div className="relative z-20 flex items-center justify-between border-b border-purple-200 dark:border-purple-800/80 pb-4">
+                        <div className="flex items-center gap-3">
+                          <span className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-md">
                             ✓
                           </span>
                           <div>
-                            <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
+                            <h4 className="font-extrabold text-purple-950 dark:text-slate-100 text-base sm:text-lg tracking-wide">
                               {walletDisplayName}
                             </h4>
-                            <span className="text-[11px] sm:text-xs text-purple-600 dark:text-purple-400 font-bold">
+                            <span className="text-[11px] sm:text-xs text-purple-600 dark:text-purple-400 font-bold bg-white/50 dark:bg-white/10 px-2 py-0.5 rounded-full mt-1 inline-block border border-purple-100 dark:border-white/10">
                               تم اختيار طريقة الدفع
                             </span>
                           </div>
                         </div>
 
-                        {/* Button to change wallet / show wallet selector again */}
+                        {/* Button to change wallet */}
                         <button
                           type="button"
                           onClick={() => {
                             setSelectedWallet(null);
                             setIsSummaryOpen(true);
                           }}
-                          className="px-3.5 py-1.5 bg-slate-900/90 dark:bg-slate-900 hover:bg-slate-800 text-purple-400 dark:text-purple-300 border border-purple-500/40 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-2xs active:scale-95"
+                          className="px-4 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
                         >
                           تغيير المحفظة
                         </button>
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between bg-slate-950/80 dark:bg-slate-950 p-3.5 rounded-2xl border border-purple-500/40 dark:border-purple-800/80 shadow-inner">
-                          <span className="font-bold text-slate-200 dark:text-slate-300 text-xs sm:text-sm">
+                      <div className="relative z-20 space-y-3.5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white dark:bg-slate-950 p-4 rounded-2xl border border-purple-100 dark:border-purple-800/80 shadow-sm gap-3 sm:gap-0">
+                          <span className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
                             رقم حساب {walletDisplayName}:
                           </span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-black text-purple-300 text-lg sm:text-xl dir-ltr">
+                          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
+                            <span className="font-mono font-black text-purple-700 dark:text-purple-300 text-xl sm:text-2xl dir-ltr tracking-wider">
                               {selectedWallet.accountNumber}
                             </span>
                             <button
@@ -366,30 +399,30 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                                 setCopiedPin(selectedWallet.accountNumber);
                                 setTimeout(() => setCopiedPin(null), 2000);
                               }}
-                              className="p-1.5 text-purple-400 hover:bg-purple-900/50 rounded-lg transition-all cursor-pointer"
+                              className="p-2.5 text-purple-500 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-xl transition-all cursor-pointer border border-transparent"
                               title="نسخ رقم الحساب"
                             >
                               {copiedPin === selectedWallet.accountNumber ? (
-                                <Check className="w-4 h-4 text-emerald-400" />
+                                <Check className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                               ) : (
-                                <Copy className="w-4 h-4" />
+                                <Copy className="w-5 h-5" />
                               )}
                             </button>
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between text-xs sm:text-sm text-slate-400 dark:text-slate-400 px-1 font-medium">
+                        <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 px-2 font-medium">
                           <span>اسم الحساب المستلم:</span>
-                          <span className="font-extrabold text-slate-100 dark:text-slate-200">
+                          <span className="font-extrabold text-slate-800 dark:text-slate-200 text-sm sm:text-base">
                             {selectedWallet.accountName}
                           </span>
                         </div>
 
-                        <div className="flex items-center justify-between text-xs sm:text-sm text-slate-400 dark:text-slate-400 px-1 pt-1 border-t border-purple-500/20 dark:border-purple-800/50 font-medium">
+                        <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 px-2 pt-3 border-t border-purple-200/50 dark:border-purple-800/50 font-medium">
                           <span>المبلغ المطلوب تحويله:</span>
-                          <span className="font-black text-purple-400 text-base sm:text-lg inline-flex items-center gap-1">
+                          <span className="font-black text-purple-700 dark:text-amber-300 text-lg sm:text-xl inline-flex items-center gap-1.5">
                             <span>{totalAmount.toFixed(2)}</span>
-                            <span className="text-xs font-semibold">ريال يمني</span>
+                            <span className="text-xs font-semibold text-purple-600/80 dark:text-amber-300/80">ريال يمني</span>
                           </span>
                         </div>
                       </div>
@@ -399,37 +432,46 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
                 {/* 2. Inputs Container (Phone & Transaction Reference) */}
                 {selectedWallet.id !== 'internal_wallet' && (
-                  <div className="p-5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4 animate-slide-up">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
-                      بيانات عملية التحويل
+                  <div className="p-6 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[2rem] space-y-5 shadow-sm">
+                    <h4 className="font-black text-slate-800 dark:text-slate-200 text-sm sm:text-base flex items-center gap-2">
+                      <Hash className="w-5 h-5 text-purple-500" />
+                      <span>بيانات عملية التحويل</span>
                     </h4>
 
                     <Input
                       label="رقم مرجع العملية"
-                      placeholder="أدخل رقم العملية المولد من المحفظة (مثال: 9812401)"
+                      placeholder="أدخل رقم مرجع العملية"
                       value={transactionRef}
                       onChange={(e) => setTransactionRef(e.target.value)}
-                      leadingIcon={<Hash className="w-4 h-4" />}
-                      helperText="ستجد رقم مرجع العملية في الرسالة النصية أو إشعار التحويل المباشر"
+                      leadingIcon={<Hash className="w-5 h-5 text-slate-400" />}
+                      helperText="قم بلصق رقم مرجع العملية الذي نسخته بعد إتمام التحويل هنا"
+                      className="bg-slate-50 dark:bg-slate-950/50 text-sm font-bold placeholder:text-sm placeholder:font-normal"
                     />
                   </div>
                 )}
 
                 {error && (
-                  <p className="text-xs sm:text-sm font-bold text-red-500 bg-red-50 dark:bg-red-950/50 p-4 rounded-xl border border-red-200 dark:border-red-800">
-                    {error}
+                  <p className="text-sm font-bold text-red-600 bg-red-50 dark:bg-red-950/50 p-4 rounded-2xl border border-red-200 dark:border-red-800/50 flex items-center gap-2">
+                    <Info className="w-5 h-5 shrink-0" />
+                    <span>{error}</span>
                   </p>
                 )}
 
                 {/* Submit CTA */}
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl text-base shadow-lg shadow-purple-600/30 cursor-pointer"
-                >
-                  تأكيد وإرسال طلب الشراء
-                </Button>
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black py-4 sm:py-5 rounded-3xl text-base sm:text-lg shadow-xl shadow-purple-600/20 cursor-pointer active:scale-95 transition-all relative overflow-hidden group"
+                  >
+                    <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      <span>تأكيد وإرسال طلب الشراء</span>
+                      <ArrowLeft className="w-5 h-5" />
+                    </span>
+                  </Button>
+                </div>
               </div>
             )}
           </form>
@@ -445,7 +487,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">
                 تنبيه: إيداع زائد
               </h3>
-              
+
               {overpaymentData.is_guest ? (
                 <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
                   <p>
@@ -472,8 +514,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     variant="primary"
                     className="w-full bg-purple-600 hover:bg-purple-700 font-bold py-3 rounded-xl"
                     onClick={() => {
-                      setOverpaymentData(null);
-                      onClose();
                       if (onOpenAuth) onOpenAuth('login');
                       else window.dispatchEvent(new CustomEvent('open_auth', { detail: 'login' }));
                     }}
@@ -489,7 +529,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     موافق، إتمام الشراء
                   </Button>
                 )}
-                
+
                 <button
                   type="button"
                   onClick={() => setOverpaymentData(null)}
@@ -535,71 +575,63 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
 
             {/* Generated Cards Display Grid */}
-            <div className="space-y-4 max-h-96 overflow-y-auto no-scrollbar pr-1">
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar pb-2">
               {orderDetails.generatedCards.map((card, idx) => (
-                <div
-                  key={idx}
-                  className="bg-gradient-to-br from-purple-900 to-indigo-950 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden border border-purple-500/30"
-                >
-                  <div className="flex items-center justify-between border-b border-purple-700/50 pb-3 mb-3">
-                    <div className="flex items-center gap-2">
-                      <Zap className="w-5 h-5 text-amber-400" />
-                      <span className="font-extrabold text-base">{card.packageName}</span>
+                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden flex flex-col gap-4">
+                  {/* Decorative background */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 dark:bg-purple-500/5 blur-3xl rounded-full pointer-events-none" />
+                  
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center border border-purple-100 dark:border-purple-800/50 shrink-0">
+                        <Wifi className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="text-right">
+                        <h4 className="font-black text-slate-800 dark:text-slate-100 text-base sm:text-lg">
+                          {card.networkName && <span className="text-purple-600 dark:text-purple-400 font-bold ml-1">{card.networkName} -</span>}
+                          {card.packageName}
+                        </h4>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5 text-[11px] sm:text-xs text-slate-500 font-bold">
+                          <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{card.dataSize}</span>
+                          <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{card.duration}</span>
+                          <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{card.expireDate}</span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs bg-purple-800/80 px-3 py-1 rounded-full text-purple-200 font-mono">
-                      {card.serialNumber}
-                    </span>
+                    
+                    <div className="text-left w-full sm:w-auto pr-14 sm:pr-0 -mt-1 sm:mt-0">
+                      <span className="text-[10px] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded-md text-slate-500 font-mono tracking-wider">
+                        S/N: {card.serialNumber}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* PIN Display */}
-                  <div className="bg-black/40 backdrop-blur-md p-5 rounded-2xl text-center my-4 border border-purple-400/20">
-                    <span className="text-xs text-purple-300 block mb-1 font-semibold">رمز الكرت (رمز الدخول):</span>
-                    <span className="text-2xl sm:text-3xl font-mono font-black tracking-wider text-amber-300 select-all">
-                      {card.pinCode.replace(/-/g, '')}
-                    </span>
-                  </div>
-
-                  {/* Card Specs */}
-                  <div className="flex items-center justify-between text-xs sm:text-sm text-purple-200 pt-1">
-                    <span>الحجم: <strong className="text-white inline-flex items-center gap-1"><span>{card.dataSize.split(' ')[1]}</span><span>{card.dataSize.split(' ')[0]}</span></strong></span>
-                    <span>المدة: <strong className="text-white" dir="auto">{card.duration}</strong></span>
-                    <span>الصلاحية: <strong className="text-white" dir="auto">{card.expireDate}</strong></span>
-                  </div>
-
-                  {/* Copy Button */}
-                  <div className="mt-4 pt-3 border-t border-purple-700/50 flex items-center justify-between">
-                    <button
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
+                    <div className="flex-1 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 flex items-center justify-between group">
+                       <span className="text-[10px] text-slate-400 font-bold uppercase hidden sm:block">PIN</span>
+                       <span className="text-xl sm:text-2xl font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 select-all mx-auto sm:mx-0">{card.pinCode.replace(/-/g, '')}</span>
+                    </div>
+                    
+                    <Button
                       onClick={() => handleCopyPin(card.pinCode)}
-                      className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 shadow-md"
+                      variant="primary"
+                      className={`sm:w-auto w-full h-12 px-6 font-bold rounded-xl text-sm transition-all shadow-md shrink-0 flex items-center justify-center gap-2 ${copiedPin === card.pinCode ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20' : 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/20'}`}
                     >
                       {copiedPin === card.pinCode ? (
                         <>
-                          <Check className="w-4 h-4 text-slate-950" />
-                          <span>تم نسخ الرمز بنجاح!</span>
+                          <Check className="w-4 h-4" />
+                          <span>تم النسخ</span>
                         </>
                       ) : (
                         <>
                           <Copy className="w-4 h-4" />
-                          <span>نسخ رمز الكرت</span>
+                          <span>نسخ الرمز</span>
                         </>
                       )}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
-            </div>
-
-            {/* Wi-Fi Instructions */}
-            <div className="p-4 bg-slate-100 dark:bg-slate-900 rounded-2xl text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-2 border border-slate-200 dark:border-slate-800">
-              <p className="font-bold text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
-                <Info className="w-4 h-4 text-purple-600" />
-                <span>كيفية الاستخدام:</span>
-              </p>
-              <ol className="list-decimal list-inside space-y-1 text-slate-600 dark:text-slate-400 pr-2">
-                <li>اتصل بشبكة الواي فاي المحلية الخاصة بك.</li>
-                <li>ستظهر لك صفحة تسجيل الدخول تلقائياً (أو افتح أي موقع في المتصفح).</li>
-                <li>أدخل رمز الكرت المنسوخ أعلاه واضغط على تسجيل الدخول.</li>
-              </ol>
             </div>
 
             {/* Actions */}

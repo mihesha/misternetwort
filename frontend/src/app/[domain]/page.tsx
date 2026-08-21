@@ -75,10 +75,19 @@ export default function HomePage({ params }: { params: Promise<{ domain: string 
 
   const onOrderComplete = (order: OrderDetails) => {
     try {
-      const savedOrders = localStorage.getItem('cardbox_orders');
+      let storageKey = 'cardbox_orders_guest';
+      const savedUser = localStorage.getItem('cardbox_user');
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed.phone) {
+          storageKey = `cardbox_orders_${parsed.phone}`;
+        }
+      }
+
+      const savedOrders = localStorage.getItem(storageKey);
       let currentOrders = savedOrders ? JSON.parse(savedOrders) : [];
       currentOrders = [order, ...currentOrders];
-      localStorage.setItem('cardbox_orders', JSON.stringify(currentOrders));
+      localStorage.setItem(storageKey, JSON.stringify(currentOrders));
       window.dispatchEvent(new Event('cardbox_orders_updated'));
     } catch {}
     handleClearCart();

@@ -69,6 +69,11 @@ class CardController extends Controller
 
                     $query->where('wallet_name', 'LIKE', "%{$walletType}%")
                           ->orWhere('wallet_name', 'LIKE', "%{$walletSearchAr}%");
+                          
+                    if ($walletType === 'jaib' || $walletType === 'jeeb') {
+                        $query->orWhere('wallet_name', 'LIKE', "%jaib%")
+                              ->orWhere('wallet_name', 'LIKE', "%jeeb%");
+                    }
                 })
                 ->first();
 
@@ -134,7 +139,7 @@ class CardController extends Controller
             // Mark cards as sold
             $cardIds = $cards->pluck('id')->toArray();
             Card::whereIn('id', $cardIds)->update([
-                'customer_phone' => $validated['customer_phone'] ?? null,
+                'customer_phone' => $user ? $user->phone : ($validated['customer_phone'] ?? null),
                 'status' => 'sold',
                 'purchased_at' => now(),
             ]);
@@ -173,12 +178,47 @@ class CardController extends Controller
             return response()->json([
                 'message' => 'تمت عملية الشراء بنجاح',
                 'cards' => $cards,
-                'network' => $network->name
+                'network' => $network->name,
+                'new_wallet_balance' => $user ? $user->fresh()->wallet_balance : null
             ], 201);
             
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => 'حدث خطأ أثناء الشراء'], 500);
         }
+    }
+
+    public function myPurchases(Request $request)
+    {
+        $user = $request->user('sanctum');
+        if (!$user) {
+            return response()->json(['error' => 'غير مصرح'], 401);
+        }
+
+        // Fetch cards belonging to this user
+        // The frontend expects the format of "GeneratedCard":
+        // packageId, packageName, serialNumber, pinCode, dataSize, duration, expireDate, date
+        $cards = Card::with(['category', 'category.network'])
+            ->where('customer_phone', $user->phone)
+            ->where('status', 'sold')
+            ->orderBy('purchased_at', 'desc')
+            ->get()
+            ->map(function ($c) {
+                return [
+                    'packageId' => $c->category->id,
+                    'packageName' => $c->category->name,
+                    'networkName' => optional($c->category->network)->name ?? 'غير معروف',
+                    'serialNumber' => $c->serial_number,
+                    'pinCode' => $c->password,
+                    'dataSize' => $c->category->volume ?? '',
+                    'duration' => $c->category->duration ?? '',
+                    'expireDate' => $c->category->validity ?? '',
+                    'date' => $c->purchased_at ? $c->purchased_at->format('Y-m-d H:i') : null,
+                ];
+            });
+
+        return response()->json([
+            'purchases' => $cards
+        ]);
     }
 }
