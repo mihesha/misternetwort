@@ -396,24 +396,17 @@ class PosController extends Controller
         }));
     }
 
-    public function getAdminPosDetails($id, Request $request)
+    /**
+     * @param int|string $id
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getAdminPosDetails($id, Request $request): \Illuminate\Http\JsonResponse
     {
         $user = \App\Models\User::where('role', 'pos')->with('posProfile')->findOrFail($id);
         
         // Networks POS is joined in
-        $networks = NetworkPosMembership::where('user_id', $user->id)
-            ->with('network')
-            ->get()
-            ->map(function ($m) {
-                return [
-                    'id' => $m->network->id,
-                    'name' => $m->network->name,
-                    'credit_limit' => $m->credit_limit,
-                    'current_debt' => $m->current_debt,
-                    'status' => $m->status,
-                    'joined_at' => $m->created_at
-                ];
-            });
+        $networks = $this->getPosNetworksDetails($user->id);
 
         // Date filtering
         $dateFilter = $request->query('filter', 'all');
@@ -432,19 +425,14 @@ class PosController extends Controller
         $totalSales = 0;
         $totalProfit = 0;
 
-        $operations = $cards->map(function ($c) use (&$totalSales, &$totalProfit, $user) {
+        $operations = $cards->map(function (Card $c) use (&$totalSales, &$totalProfit, $user) {
             return $this->mapAdminPosOperation($c, $totalSales, $totalProfit, $user);
         });
 
         $totalDebt = $networks->sum('current_debt');
 
         // Fetch Wallet Recharges / Deposits for this POS
-        $recharges = WalletRecharge::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($r) {
-                return $this->mapAdminPosRecharge($r);
-            });
+        $recharges = $this->getPosRechargesDetails($user->id);
 
         return response()->json([
             'user' => [
@@ -466,6 +454,33 @@ class PosController extends Controller
             'operations' => $operations,
             'recharges' => $recharges
         ]);
+    }
+
+    private function getPosNetworksDetails($userId)
+    {
+        return NetworkPosMembership::where('user_id', $userId)
+            ->with('network')
+            ->get()
+            ->map(function ($m) {
+                return [
+                    'id' => $m->network->id,
+                    'name' => $m->network->name,
+                    'credit_limit' => $m->credit_limit,
+                    'current_debt' => $m->current_debt,
+                    'status' => $m->status,
+                    'joined_at' => $m->created_at
+                ];
+            });
+    }
+
+    private function getPosRechargesDetails($userId)
+    {
+        return WalletRecharge::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($r) {
+                return $this->mapAdminPosRecharge($r);
+            });
     }
 
     private function mapAdminPosOperation($c, &$totalSales, &$totalProfit, $user)
@@ -533,7 +548,13 @@ class PosController extends Controller
         ];
     }
 
-    public function getOwnerPosDetails($networkId, $userId, Request $request)
+    /**
+     * @param int|string $networkId
+     * @param int|string $userId
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getOwnerPosDetails($networkId, $userId, Request $request): \Illuminate\Http\JsonResponse
     {
         $user = \App\Models\User::where('role', 'pos')->with('posProfile')->findOrFail($userId);
         $membership = NetworkPosMembership::where('network_id', $networkId)->where('user_id', $userId)->firstOrFail();
@@ -562,7 +583,7 @@ class PosController extends Controller
         $totalSales = 0;
         $totalProfit = 0;
 
-        $operations = $cards->map(function ($c) use (&$totalSales, &$totalProfit, $user, $networkId) {
+        $operations = $cards->map(function (Card $c) use (&$totalSales, &$totalProfit, $user, $networkId) {
             $price = $c->cardCategory->price ?? 0;
             $posPrice = $c->cardCategory->pos_price ?? $price; // POS buy price
             $profit = max(0, $price - $posPrice);

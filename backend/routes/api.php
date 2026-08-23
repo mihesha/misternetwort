@@ -1203,10 +1203,10 @@ Route::patch('/admin/pos-recharges/{id}/status', function ($id, Request $request
     return response()->json(['message' => 'تم تحديث حالة الطلب']);
 });
 
-Route::get('/admin/pos/{id}/details', [\App\Http\Controllers\PosController::class, 'getAdminPosDetails']);
+Route::get('/admin/pos/{id}/details', [PosController::class, 'getAdminPosDetails']);
 
 // Network Owner POS Memberships Endpoints
-Route::get('/networks/{id}/pos-memberships/{user_id}/details', [\App\Http\Controllers\PosController::class, 'getOwnerPosDetails']);
+Route::get('/networks/{id}/pos-memberships/{user_id}/details', [PosController::class, 'getOwnerPosDetails']);
 
 Route::get('/networks/{id}/pos-memberships', function ($id) {
     $memberships = \App\Models\NetworkPosMembership::where('network_id', $id)->with('user')->get();
