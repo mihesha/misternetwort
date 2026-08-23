@@ -82,4 +82,129 @@ class NetworkController extends Controller
             'packages' => $network->cardCategories->where('status', '!==', 'inactive')->values(),
         ]);
     }
+
+    public function searchNetworks(Request $request)
+    {
+        $q = $request->query('q');
+        if (!$q) return response()->json([]);
+        
+        $networks = Network::where('status', 'active')
+            ->where(function($query) use ($q) {
+                $query->where('name', 'LIKE', "%{$q}%")
+                      ->orWhere('network_code', 'LIKE', "%{$q}%");
+            })
+            ->get();
+            
+        return response()->json($networks);
+    }
+
+    public function getNetworkByCode($code)
+    {
+        $network = Network::where('network_code', $code)->where('status', 'active')->first();
+        if (!$network) return response()->json(['error' => 'Not found'], 404);
+        return response()->json($network);
+    }
+
+    public function getNetworkPackagesByCode($code)
+    {
+        $network = Network::where('network_code', $code)->where('status', 'active')->first();
+        if (!$network) return response()->json(['error' => 'Not found'], 404);
+        
+        $packages = \App\Models\CardCategory::where('network_id', $network->id)
+            ->where('status', '!=', 'inactive')
+            ->where('stock', '>', 0)
+            ->get();
+            
+        return response()->json($packages->map(function($p) {
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'price' => $p->price,
+                'validity' => $p->validity_days,
+                'description' => "سعة: {$p->mega} ميجا، مدة: {$p->hours} ساعة",
+                'stock' => $p->stock,
+            ];
+        }));
+    }
+
+    public function updateCategorySettings($id, Request $request)
+    {
+        $cat = \App\Models\CardCategory::findOrFail($id);
+        
+        $network = \App\Models\Network::findOrFail($cat->network_id);
+        if ($network->user_id !== $request->user()->id && $request->user()->role !== 'admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($request->has('status')) $cat->status = $request->status;
+        $cat->save();
+
+        return response()->json(['message' => 'Category updated successfully']);
+    }
+
+    public function updateNetworkSettings($network_code, Request $request)
+    {
+        $network = \App\Models\Network::where('network_code', $network_code)->firstOrFail();
+        
+        if ($network->user_id !== $request->user()->id && $request->user()->role !== 'admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($request->has('status')) $network->status = $request->status;
+        $network->save();
+
+        return response()->json(['message' => 'Network updated successfully']);
+    }
+
+    public function storeEditRequest(Request $request)
+    {
+        $user = $request->user();
+        $network = \App\Models\Network::where('user_id', $user->id)->first();
+        if (!$network) return response()->json(['error' => 'Network not found'], 404);
+
+        $existing = \App\Models\NetworkDataEditRequest::where('network_code', $network->network_code)
+            ->where('status', 'pending')
+            ->exists();
+            
+        if ($existing) {
+            return response()->json(['error' => 'لديك طلب تعديل قيد المراجعة مسبقاً، يرجى الانتظار حتى يتم البت فيه.'], 400);
+        }
+
+        $req = \App\Models\NetworkDataEditRequest::create([
+            'user_id' => $user->id,
+            'reference_number' => 'MOD-' . time(),
+            'network_code' => $network->network_code,
+            'network_name' => $request->networkName,
+            'owner_name' => $request->ownerName,
+            'contact_phone' => $request->contactPhone,
+            'governorate' => $request->governorate,
+            'city' => $request->city,
+            'district' => $request->district,
+            'jaib_wallet' => $request->jaibWallet,
+            'categories' => json_encode($request->categories ?? []),
+            'previous_data' => json_encode($request->previousData ?? []),
+            'status' => 'pending'
+        ]);
+
+        return response()->json(['message' => 'تم إرسال طلب التعديل بنجاح وسيتم مراجعته من قبل الإدارة', 'request' => $req], 201);
+    }
+
+    public function getEditRequests(Request $request)
+    {
+        $user = $request->user();
+        $requests = \App\Models\NetworkDataEditRequest::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($r) {
+                return [
+                    'id' => (string) $r->id,
+                    'referenceNumber' => $r->reference_number,
+                    'status' => $r->status,
+                    'adminNotes' => $r->admin_notes ?? '',
+                    'createdAt' => $r->created_at->toISOString()
+                ];
+            });
+            
+        return response()->json($requests);
+    }
 }

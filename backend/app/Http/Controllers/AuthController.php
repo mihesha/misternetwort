@@ -251,4 +251,18 @@ class AuthController extends Controller
     {
         return response()->json($request->user()->load('networks'));
     }
+
+    public function changePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'password' => 'required|string|min:6'
+        ]);
+        
+        $user = $request->user();
+        $user->password = \Illuminate\Support\Facades\Hash::make($validated['password']);
+        $user->must_change_password = false;
+        $user->save();
+        
+        return response()->json(['message' => 'Password updated successfully']);
+    }
 }
