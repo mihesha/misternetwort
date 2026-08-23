@@ -58,9 +58,6 @@ export default function ChangePasswordRoute() {
       onToggleTheme={() => setIsDarkMode(!isDarkMode)}
       ownerName={ownerName}
       onPasswordChanged={handlePasswordChanged}
-      onOpenPrivacyPolicy={() => {
-        if (typeof window !== 'undefined') window.location.href = '/owner/privacy-policy';
-      }}
     />
   );
 }
