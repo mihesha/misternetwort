@@ -16,7 +16,7 @@ class NetworkController extends Controller
             'owner.ownerId' => 'required|string',
             'owner.contactNumber' => 'required|string',
             'network.networkName' => 'required|string',
-            'network.networkPhone' => 'required|string',
+            'network.networkPhone' => 'nullable|string',
             'network.governorate' => 'required|string',
             'network.city' => 'required|string',
             'network.neighborhood' => 'nullable|string',
@@ -131,7 +131,7 @@ class NetworkController extends Controller
     {
         $cat = \App\Models\CardCategory::findOrFail($id);
         
-        $network = \App\Models\Network::findOrFail($cat->network_id);
+        $network = Network::findOrFail($cat->network_id);
         if ($network->user_id !== $request->user()->id && $request->user()->role !== 'admin') {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
@@ -144,7 +144,7 @@ class NetworkController extends Controller
 
     public function updateNetworkSettings($network_code, Request $request)
     {
-        $network = \App\Models\Network::where('network_code', $network_code)->firstOrFail();
+        $network = Network::where('network_code', $network_code)->firstOrFail();
         
         if ($network->user_id !== $request->user()->id && $request->user()->role !== 'admin') {
             return response()->json(['error' => 'Unauthorized'], 403);
@@ -159,7 +159,7 @@ class NetworkController extends Controller
     public function storeEditRequest(Request $request)
     {
         $user = $request->user();
-        $network = \App\Models\Network::where('user_id', $user->id)->first();
+        $network = Network::where('user_id', $user->id)->first();
         if (!$network) return response()->json(['error' => 'Network not found'], 404);
 
         $existing = \App\Models\NetworkDataEditRequest::where('network_code', $network->network_code)

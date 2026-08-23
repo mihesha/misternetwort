@@ -14,7 +14,7 @@ class PosPurchaseService
     /**
      * Handle the voucher purchase process for POS
      */
-    public function purchaseVoucher($user, $networkId, $packageId, $quantity = 1, $customerPhone = null)
+    public function purchaseVoucher($user, $networkId, $packageId, $quantity = 1, $customerPhone = null, $requestedPaymentMethod = null)
     {
         $network = Network::find($networkId);
         if (!$network) {
@@ -38,18 +38,40 @@ class PosPurchaseService
 
         $availableCredit = $membership ? ($membership->credit_limit - $membership->current_debt) : 0;
         
-        if ($availableCredit < $totalPrice && $user->wallet_balance < $totalPrice) {
-            throw new \Exception('عذراً، السقف المالي المتبقي ورصيد المحفظة لا يكفيان لإتمام العملية (لا يمكن تجزئة الدفع)');
+        $useWallet = false;
+        $useCredit = false;
+
+        if ($requestedPaymentMethod === 'wallet') {
+            if ((float)$user->wallet_balance < (float)$totalPrice) {
+                throw new \Exception('رصيد المحفظة غير كافٍ لإتمام العملية');
+            }
+            $useWallet = true;
+        } elseif ($requestedPaymentMethod === 'network_credit') {
+            if ((float)$availableCredit < (float)$totalPrice) {
+                throw new \Exception('السقف المالي المتبقي لا يكفي لإتمام العملية');
+            }
+            $useCredit = true;
+        } else {
+            // Auto fallback (old behavior)
+            if ((float)$availableCredit >= (float)$totalPrice) {
+                $useCredit = true;
+            } elseif ((float)$user->wallet_balance >= (float)$totalPrice) {
+                $useWallet = true;
+            } else {
+                throw new \Exception('عذراً، السقف المالي المتبقي ورصيد المحفظة لا يكفيان لإتمام العملية (لا يمكن تجزئة الدفع)');
+            }
         }
 
         DB::beginTransaction();
         try {
-            if ($availableCredit >= $totalPrice) {
+            if ($useCredit) {
                 $amountOnCredit = $totalPrice;
                 $amountFromWallet = 0;
+                $paymentMethodToSave = 'network_credit';
             } else {
                 $amountOnCredit = 0;
                 $amountFromWallet = $totalPrice;
+                $paymentMethodToSave = 'wallet';
             }
 
             if ($amountOnCredit > 0 && $membership) {
@@ -98,6 +120,7 @@ class PosPurchaseService
                 'status' => 'sold',
                 'purchased_at' => now(),
                 'sold_by' => $user->id,
+                'payment_method' => $paymentMethodToSave,
             ]);
 
             // Queue SMS if customer_phone is provided

@@ -60,6 +60,7 @@ export interface ActiveNetwork {
   networkName: string;
   networkCode: string;
   ownerName: string;
+  ownerPhone: string;
   contactNumber: string;
   jaibWalletNumber: string;
   governorate: string;

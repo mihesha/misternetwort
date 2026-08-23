@@ -107,7 +107,8 @@ class PosController extends Controller
             'network_id' => 'required|exists:networks,id',
             'package_id' => 'required|exists:card_categories,id',
             'quantity' => 'nullable|integer|min:1',
-            'customer_phone' => 'nullable|string'
+            'customer_phone' => 'nullable|string',
+            'payment_method' => 'nullable|in:wallet,network_credit'
         ]);
 
         $quantity = $validated['quantity'] ?? 1;
@@ -121,7 +122,8 @@ class PosController extends Controller
                 $validated['network_id'], 
                 $validated['package_id'], 
                 $quantity, 
-                $validated['customer_phone'] ?? null
+                $validated['customer_phone'] ?? null,
+                $validated['payment_method'] ?? null
             );
 
             return response()->json([
@@ -230,7 +232,8 @@ class PosController extends Controller
                 'network_name' => $c->cardCategory->network->name ?? 'غير معروف',
                 'package_name' => $c->cardCategory->name ?? '',
                 'price' => $c->cardCategory->price ?? 0,
-                'purchased_at' => \Carbon\Carbon::parse($c->purchased_at)->format('Y-m-d H:i')
+                'purchased_at' => \Carbon\Carbon::parse($c->purchased_at)->format('Y-m-d H:i'),
+                'payment_method' => $c->payment_method ?? 'unknown'
             ];
         }));
     }

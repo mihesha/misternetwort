@@ -6,7 +6,6 @@ interface ChangePasswordPageProps {
   onToggleTheme: () => void;
   ownerName?: string;
   onPasswordChanged: (newPassword: string) => Promise<void> | void;
-  onOpenPrivacyPolicy?: () => void;
 }
 
 export const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
@@ -14,11 +13,9 @@ export const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
   onToggleTheme,
   ownerName = 'هشام محمد الجايفي',
   onPasswordChanged,
-  onOpenPrivacyPolicy,
 }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -37,10 +34,6 @@ export const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
     }
     if (newPassword !== confirmPassword) {
       setError('كلمات المرور غير متطابقة');
-      return;
-    }
-    if (!agreed) {
-      setError('يرجى الموافقة على شروط الخصوصية والسياسة العامة');
       return;
     }
 
@@ -224,34 +217,6 @@ export const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
                   }`}
                   required
                 />
-              </div>
-
-              {/* Checkbox: Agree Terms */}
-              <div className="flex items-center justify-start gap-2 pt-1 pb-2">
-                <input
-                  type="checkbox"
-                  id="agreeTerms"
-                  checked={agreed}
-                  onChange={(e) => setAgreed(e.target.checked)}
-                  className={`w-4 h-4 rounded text-indigo-600 focus:ring-0 accent-indigo-600 cursor-pointer ${
-                    isDarkMode ? 'bg-[#202b3c] border-slate-600' : 'bg-slate-100 border-slate-300'
-                  }`}
-                />
-                <label htmlFor="agreeTerms" className={`text-xs font-medium select-none ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                  أوافق على{' '}
-                  <span
-                    onClick={(e) => {
-                      if (onOpenPrivacyPolicy) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onOpenPrivacyPolicy();
-                      }
-                    }}
-                    className="text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer font-bold"
-                  >
-                    شروط الخصوصية والسياسة العامة
-                  </span>
-                </label>
               </div>
 
               {/* Submit Button */}

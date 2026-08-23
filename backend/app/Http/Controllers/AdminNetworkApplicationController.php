@@ -47,10 +47,10 @@ class AdminNetworkApplicationController extends Controller
 
         if ($request->status === 'approved') {
             $user = User::firstOrCreate(
-                ['phone' => $app->owner_phone],
+                ['phone' => $app->owner_identity],
                 [
                     'name' => $app->owner_name,
-                    'email' => $app->owner_phone . '@example.com',
+                    'email' => $app->owner_identity . '@example.com',
                     'password' => Hash::make($request->tempPassword ?? '12345678'),
                     'role' => 'network_owner',
                     'must_change_password' => true

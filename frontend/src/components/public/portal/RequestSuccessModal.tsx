@@ -20,7 +20,7 @@ export const RequestSuccessModal: React.FC<RequestSuccessModalProps> = ({
   const whatsappMessage = encodeURIComponent(
     `الرجاء الموافقة على الطلب\n` +
     `اسم الشبكة: ${formData.network.networkName}\n` +
-    `رقم المالك: ${formData.owner.contactNumber || ''}`
+    `رقم المالك: ${formData.owner.ownerId || ''}`
   );
 
   const whatsappUrl = `https://wa.me/967777310606?text=${whatsappMessage}`;
@@ -37,7 +37,11 @@ export const RequestSuccessModal: React.FC<RequestSuccessModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 left-4 p-1.5 rounded-full hover:bg-slate-700/30 text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className={`absolute top-4 left-4 p-1.5 rounded-full transition-colors cursor-pointer ${
+            isDarkMode 
+              ? 'hover:bg-slate-700/30 text-slate-400 hover:text-white' 
+              : 'hover:bg-slate-100 text-slate-500 hover:text-slate-800'
+          }`}
           title="إغلاق"
         >
           <X className="w-4 h-4" />
@@ -54,9 +58,9 @@ export const RequestSuccessModal: React.FC<RequestSuccessModalProps> = ({
         </h3>
 
         {/* Subtitle / Instructions */}
-        <p className="text-xs md:text-sm text-slate-300 leading-relaxed mb-6 font-medium px-2">
+        <p className={`text-xs md:text-sm leading-relaxed mb-6 font-medium px-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
           يرجى تأكيد طلبك بإرسال طلب الموافقة الى الرقم{' '}
-          <span className="font-bold text-white font-mono" dir="ltr">777310606</span>
+          <span className={`font-bold font-mono ${isDarkMode ? 'text-white' : 'text-slate-900'}`} dir="ltr">777310606</span>
         </p>
 
         {/* Confirm and Send WhatsApp Button */}

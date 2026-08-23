@@ -148,7 +148,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const handleApproveWithCredentials = async (app: NetworkApplication, tempPassword: string) => {
     const networkCode = await handleUpdateStatus(app.id, 'approved', tempPassword);
 
-    const ownerPhone = app.formData.owner.contactNumber || app.formData.owner.ownerId;
+    const ownerPhone = app.formData.owner.ownerId;
     const existingIndex = ownerCredentials.findIndex((c) => c.ownerPhone === ownerPhone);
 
     if (existingIndex >= 0) {

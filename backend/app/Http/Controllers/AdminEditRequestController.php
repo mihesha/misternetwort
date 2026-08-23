@@ -82,7 +82,6 @@ class AdminEditRequestController extends Controller
                 
                 if ($network->user) {
                     $network->user->name = $req->owner_name;
-                    $network->user->phone = $req->contact_phone;
                     $network->user->save();
                 }
 

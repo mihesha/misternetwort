@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { PublicHeader } from './components/public/PublicHeader';
 import { JoiningForm } from './components/public/portal/JoiningForm';
 import { RequestSuccessModal } from './components/public/portal/RequestSuccessModal';
-import { RequestTracker } from './components/public/portal/RequestTracker';
 import { ApplicationFormData, NetworkApplication, ApplicationStatus, OwnerCredential } from './types';
 import { useAppContext } from './context/AppContext';
 
@@ -151,7 +150,7 @@ export default function App() {
   const handleApproveWithCredentials = async (app: NetworkApplication, tempPassword: string) => {
     const networkCode = await handleUpdateStatus(app.id, 'approved', tempPassword);
 
-    const ownerPhone = app.formData.owner.contactNumber || app.formData.owner.ownerId;
+    const ownerPhone = app.formData.owner.ownerId;
     const existingIndex = ownerCredentials.findIndex((c) => c.ownerPhone === ownerPhone);
 
     const newCred: OwnerCredential = {
@@ -296,12 +295,7 @@ export default function App() {
 
       {/* Main View Router */}
       <main className="container mx-auto px-4 pt-28 pb-16 space-y-12 relative z-0">
-        {/* Full width Purple Banner: طلب انضمام جديد */}
-        <div className="w-full max-w-2xl mx-auto mb-8 mt-2">
-          <div className="w-full bg-[#5b3bf0] text-white font-extrabold text-lg md:text-xl py-4 px-6 rounded-2xl shadow-lg shadow-purple-900/30 text-center tracking-wide border border-indigo-400/20">
-            طلب انضمام جديد
-          </div>
-        </div>
+
 
         <JoiningForm
           key={formKey}
@@ -310,10 +304,6 @@ export default function App() {
           isSubmitting={isSubmitting}
         />
 
-        <RequestTracker
-          applications={applications}
-          isDarkMode={isDarkMode}
-        />
       </main>
 
       {/* Success Confirmation Modal */}

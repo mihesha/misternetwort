@@ -77,7 +77,7 @@ export const useAdminActions = () => {
   const { handleApproveWithCredentials: onApproveWithCredentials, ownerCredentials } = useAppContext();
 
   const handleApproveAndProvision = async (app: NetworkApplication) => {
-    const ownerPhone = app.formData.owner.contactNumber || app.formData.owner.ownerId;
+    const ownerPhone = app.formData.owner.ownerId;
     
     // Find if we already generated a credential for this owner
     const existingCred = ownerCredentials.find((c) => c.ownerPhone === ownerPhone);
@@ -120,7 +120,7 @@ export const useAdminActions = () => {
     requestModifyApp.notes = notes;
     requestModifyApp.status = 'needs_modification';
 
-    const ownerPhone = requestModifyApp.formData.owner.contactNumber || requestModifyApp.formData.owner.ownerId;
+    const ownerPhone = requestModifyApp.formData.owner.ownerId;
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     const editLink = `${baseUrl}/?view=register&ref=${requestModifyApp.referenceNumber}`;
 
@@ -425,7 +425,7 @@ export const useAdminActions = () => {
         const data = await res.json();
         
         // Update local owner credentials if it exists (for mock UI logic consistency)
-        const existingIndex = ownerCredentials.findIndex((c) => c.ownerPhone === net.contactNumber);
+        const existingIndex = ownerCredentials.findIndex((c) => c.ownerPhone === net.ownerPhone);
         if (existingIndex >= 0) {
           const updatedCreds = [...ownerCredentials];
           updatedCreds[existingIndex].tempPassword = data.tempPassword;
@@ -437,11 +437,11 @@ export const useAdminActions = () => {
         }
         
         const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-        const loginLink = `${baseUrl}/owner/login?phone=${net.contactNumber}`;
+        const loginLink = `${baseUrl}/owner/login?phone=${net.ownerPhone}`;
         
         setWhatsappModalData({
           ownerName: net.ownerName,
-          ownerPhone: net.contactNumber,
+          ownerPhone: net.ownerPhone,
           tempPassword: data.tempPassword,
           networkName: net.networkName,
           loginUrl: loginLink,
