@@ -77,8 +77,8 @@ export default function DomainLayout({
           });
         } else {
           // If network not found, redirect to search page
-          if (pathname !== `/${domain}/networks`) {
-             router.push(`/${domain}/networks`);
+          if (pathname !== `/networks`) {
+             router.push(`/networks`);
           }
         }
       } catch (e) {
@@ -103,7 +103,7 @@ export default function DomainLayout({
 
   const handleLogout = () => {
     handleSetUser(null);
-    router.push(`/${domain}`);
+    router.push(`/n/${domain}`);
   };
 
   if (loading) {
@@ -118,10 +118,10 @@ export default function DomainLayout({
         onLogout={handleLogout}
         network={currentNetwork || undefined}
         activeTab={pathname.split('/').pop() || 'home'}
-        onNavigate={(path) => router.push(`/${domain}${path === 'home' ? '' : '/' + path}`)}
-        onOpenPurchases={() => router.push(`/${domain}/purchases`)}
+        onNavigate={(path) => router.push(path === 'networks' ? '/networks' : `/n/${domain}${path === 'home' ? '' : '/' + path}`)}
+        onOpenPurchases={() => router.push(`/n/${domain}/purchases`)}
         onOpenProfile={() => setIsProfileOpen(true)}
-        onOpenWallet={() => router.push(`/${domain}/wallet`)}
+        onOpenWallet={() => router.push(`/n/${domain}/wallet`)}
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 pt-2 sm:pt-3 pb-6">
@@ -143,7 +143,7 @@ export default function DomainLayout({
         onLogout={handleLogout}
         onOpenPurchases={() => {
           setIsProfileOpen(false);
-          router.push(`/${domain}/purchases`);
+          router.push(`/n/${domain}/purchases`);
         }}
       />
 
@@ -155,13 +155,13 @@ export default function DomainLayout({
           </div>
           <p className="font-bold tracking-wide">© {new Date().getFullYear()} كارد بوكس (CardBox) - جميع الحقوق محفوظة</p>
           <div className="flex items-center gap-5 text-sm font-black text-slate-600 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-900/50 px-6 py-2.5 rounded-full border border-slate-200/50 dark:border-slate-800/50 backdrop-blur-sm">
-            <button onClick={() => router.push(`/${domain}`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">الرئيسية</button>
+            <button onClick={() => router.push(`/n/${domain}`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">الرئيسية</button>
             <span className="text-purple-300 dark:text-purple-700">•</span>
-            <button onClick={() => router.push(`/${domain}/networks`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">الشبكات</button>
+            <button onClick={() => router.push(`/networks`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">الشبكات</button>
             <span className="text-purple-300 dark:text-purple-700">•</span>
-            <button onClick={() => router.push(`/${domain}/guide`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">دليل الشراء</button>
+            <button onClick={() => router.push(`/n/${domain}/guide`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">دليل الشراء</button>
             <span className="text-purple-300 dark:text-purple-700">•</span>
-            <button onClick={() => router.push(`/${domain}/about`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">عن الخدمة</button>
+            <button onClick={() => router.push(`/n/${domain}/about`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">عن الخدمة</button>
           </div>
         </div>
       </footer>

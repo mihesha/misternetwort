@@ -1,14 +1,67 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Wifi, Search, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Wifi, Search, MapPin, Heart, ArrowLeft } from 'lucide-react';
 import Button from '@/components/common/Button';
 import { PublicNetworkInfo } from '@/types';
+import { useRouter } from 'next/navigation';
 
 export default function NetworksPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<PublicNetworkInfo[] | null>(null);
+  const [favoriteNetworks, setFavoriteNetworks] = useState<PublicNetworkInfo[]>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(true);
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const savedUser = localStorage.getItem('cardbox_user');
+        if (!savedUser) {
+          setLoadingFavorites(false);
+          return;
+        }
+        
+        const parsedUser = JSON.parse(savedUser);
+        if (parsedUser && parsedUser.token) {
+          const res = await fetch('/api/customer/purchases', {
+            headers: { 'Authorization': `Bearer ${parsedUser.token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.purchases && data.purchases.length > 0) {
+              const networksMap = new Map<string, PublicNetworkInfo>();
+              
+              data.purchases.forEach((card: any) => {
+                if (card.networkCode && card.networkName && card.networkName !== 'غير معروف') {
+                  if (!networksMap.has(card.networkCode)) {
+                    networksMap.set(card.networkCode, {
+                      id: card.networkCode,
+                      name: card.networkName,
+                      nameAr: card.networkName,
+                      location: 'الشبكة',
+                      coverageArea: '',
+                      activeNodes: 1,
+                      status: 'online'
+                    });
+                  }
+                }
+              });
+              
+              setFavoriteNetworks(Array.from(networksMap.values()));
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load favorites', e);
+      } finally {
+        setLoadingFavorites(false);
+      }
+    };
+    
+    fetchFavorites();
+  }, []);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -70,35 +123,8 @@ export default function NetworksPage() {
   };
 
   const handleNetworkClick = (networkId: string) => {
-    // Redirect to the network's subdomain
-    const currentHost = window.location.host;
-    const protocol = window.location.protocol;
-    
-    let newHost = '';
-    
-    // Check if IP address or localhost
-    const isIpAddress = /^[0-9.]+(:[0-9]+)?$/.test(currentHost);
-    
-    if (isIpAddress || currentHost.includes('localhost')) {
-      // Direct path routing for IP addresses and localhost
-      window.location.href = `/${networkId}/`;
-    } else {
-      // Production: cardbox.com -> ahmednet.cardbox.com
-      const MAIN_DOMAIN = 'cardbox.basmasoft.com';
-      if (currentHost.includes(MAIN_DOMAIN)) {
-        newHost = `${networkId}.${MAIN_DOMAIN}`;
-      } else {
-        const hostParts = currentHost.split('.');
-        if (hostParts.length > 2 && !currentHost.includes('localhost')) {
-          // Fallback if they use another custom domain
-          const baseDomain = hostParts.slice(-2).join('.');
-          newHost = `${networkId}.${baseDomain}`;
-        } else {
-          newHost = `${networkId}.${currentHost}`;
-        }
-      }
-      window.location.href = `${protocol}//${newHost}/`;
-    }
+    // Redirect to the unified network path using Next.js router for a seamless SPA transition
+    router.push(`/n/${networkId}`);
   };
 
   return (
@@ -144,19 +170,59 @@ export default function NetworksPage() {
       {/* Results or Empty State */}
       <div className="flex flex-col items-center justify-center min-h-[300px]">
         {searchResults === null ? (
-          <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="w-24 h-24 mx-auto rounded-[2rem] bg-gradient-to-b from-blue-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-              <Wifi className="w-12 h-12 text-white" />
+          favoriteNetworks.length > 0 ? (
+            <div className="w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center gap-2">
+                <Heart className="w-6 h-6 text-pink-500 fill-pink-500" />
+                <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100">
+                  شبكاتك المفضلة والمشتريات السابقة
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                {favoriteNetworks.map((net) => (
+                  <div
+                    key={net.id}
+                    onClick={() => handleNetworkClick(net.id)}
+                    className="bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800/60 rounded-3xl p-6 space-y-4 shadow-sm hover:border-purple-500 hover:shadow-purple-500/10 dark:hover:border-purple-500 transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-700 text-white rounded-2xl flex items-center justify-center shrink-0 font-bold shadow-md">
+                          <Wifi className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-lg text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                            {net.nameAr}
+                          </h3>
+                          <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-purple-400" />
+                            <span>{net.location || 'الشبكة'}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <button className="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-xl flex items-center gap-1 transition-colors">
+                        دخول <ArrowLeft className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="space-y-3 max-w-md mx-auto">
-              <h2 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-l from-blue-600 to-purple-600 leading-normal">
-                ابحث باسم أو رقم الشبكة لشراء كرتك
-              </h2>
-              <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                أدخل اسم الشبكة أو الرقم الفريد الخاص بها في خانة البحث أعلاه، ثم اضغط "ابحث".
-              </p>
+          ) : (
+            <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="w-24 h-24 mx-auto rounded-[2rem] bg-gradient-to-b from-blue-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <Wifi className="w-12 h-12 text-white" />
+              </div>
+              <div className="space-y-3 max-w-md mx-auto">
+                <h2 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-l from-blue-600 to-purple-600 leading-normal">
+                  ابحث باسم أو رقم الشبكة لشراء كرتك
+                </h2>
+                <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                  أدخل اسم الشبكة أو الرقم الفريد الخاص بها في خانة البحث أعلاه، ثم اضغط "ابحث".
+                </p>
+              </div>
             </div>
-          </div>
+          )
         ) : searchResults.length > 0 ? (
           <div className="w-full space-y-4">
             <h3 className="font-bold text-slate-700 dark:text-slate-300 mb-2">نتائج البحث ({searchResults.length}):</h3>

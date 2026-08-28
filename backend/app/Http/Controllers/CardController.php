@@ -58,21 +58,22 @@ class CardController extends Controller
         // Fetch cards belonging to this user
         // The frontend expects the format of "GeneratedCard":
         // packageId, packageName, serialNumber, pinCode, dataSize, duration, expireDate, date
-        $cards = Card::with(['category', 'category.network'])
+        $cards = Card::with(['cardCategory', 'cardCategory.network'])
             ->where('customer_phone', $user->phone)
             ->where('status', 'sold')
             ->orderBy('purchased_at', 'desc')
             ->get()
             ->map(function ($c) {
                 return [
-                    'packageId' => $c->category->id,
-                    'packageName' => $c->category->name,
-                    'networkName' => optional($c->category->network)->name ?? 'غير معروف',
+                    'packageId' => optional($c->cardCategory)->id ?? '',
+                    'packageName' => optional($c->cardCategory)->name ?? 'باقة محذوفة',
+                    'networkName' => optional(optional($c->cardCategory)->network)->name ?? 'غير معروف',
+                    'networkCode' => optional(optional($c->cardCategory)->network)->network_code ?? '',
                     'serialNumber' => $c->serial_number,
-                    'pinCode' => $c->password,
-                    'dataSize' => $c->category->volume ?? '',
-                    'duration' => $c->category->duration ?? '',
-                    'expireDate' => $c->category->validity ?? '',
+                    'pinCode' => $c->card_code ?? $c->password,
+                    'dataSize' => optional($c->cardCategory)->mega ? optional($c->cardCategory)->mega . ' ميجا' : '',
+                    'duration' => optional($c->cardCategory)->hours ? optional($c->cardCategory)->hours . ' ساعة' : '',
+                    'expireDate' => optional($c->cardCategory)->validity_days ? optional($c->cardCategory)->validity_days . ' أيام' : '',
                     'date' => $c->purchased_at ? $c->purchased_at->format('Y-m-d H:i') : null,
                 ];
             });

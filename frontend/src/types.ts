@@ -210,11 +210,13 @@ export interface GeneratedCard {
   packageId: string;
   packageName: string;
   networkName?: string;
+  networkCode?: string;
   serialNumber: string;
   pinCode: string;
   dataSize: string;
   duration: string;
   expireDate: string;
+  date?: string;
 }
 
 export interface OrderDetails {

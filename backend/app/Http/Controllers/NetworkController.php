@@ -119,10 +119,13 @@ class NetworkController extends Controller
             return [
                 'id' => $p->id,
                 'name' => $p->name,
-                'price' => $p->price,
-                'validity' => $p->validity_days,
-                'description' => "سعة: {$p->mega} ميجا، مدة: {$p->hours} ساعة",
+                'price' => (float) $p->price,
+                'dataSize' => $p->mega ? "{$p->mega} ميجا" : 'مفتوح',
+                'duration' => $p->hours ? "{$p->hours} ساعة" : 'مفتوح',
+                'validity' => $p->validity_days ? "{$p->validity_days} أيام" : 'مفتوح',
+                'available' => $p->stock > 0,
                 'stock' => $p->stock,
+                'badgeText' => $p->stock > 0 ? 'متوفر' : 'غير متوفر',
             ];
         }));
     }

@@ -110,13 +110,13 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
         allCards.push({
           id: c.pinCode,
           packageName: c.packageName,
-          networkName: 'شبكة',
+          networkName: c.networkName || 'شبكة',
           serialNumber: c.serialNumber,
           pinCode: c.pinCode,
           dataSize: c.dataSize,
           duration: c.duration,
           expireDate: c.expireDate,
-          date: ord.date,
+          date: ord.date || c.date || '',
           status: cardTabStatus,
         });
       });
@@ -135,9 +135,27 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
 
   // Derive favorite networks dynamically from orders
   const getFavoriteNetworks = (): PublicNetworkInfo[] => {
-    const list: PublicNetworkInfo[] = [];
-    // Removed mock CURRENT_NETWORK
-    return list;
+    const networksMap = new Map<string, PublicNetworkInfo>();
+    
+    orders.forEach(order => {
+      order.generatedCards.forEach(card => {
+        if (card.networkCode && card.networkName && card.networkName !== 'غير معروف') {
+          if (!networksMap.has(card.networkCode)) {
+            networksMap.set(card.networkCode, {
+              id: card.networkCode,
+              name: card.networkName,
+              nameAr: card.networkName,
+              location: 'الشبكة',
+              coverageArea: '',
+              activeNodes: 1,
+              status: 'online'
+            });
+          }
+        }
+      });
+    });
+    
+    return Array.from(networksMap.values());
   };
 
   const favoriteNetworks = getFavoriteNetworks();
@@ -359,11 +377,11 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
                     <div className="flex-1 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 flex items-center justify-between">
                        <span className="text-[10px] text-slate-400 font-bold uppercase hidden sm:block">PIN</span>
-                       <span className="text-xl sm:text-2xl font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 select-all mx-auto sm:mx-0">{card.pinCode.replace(/-/g, '')}</span>
+                       <span className="text-xl sm:text-2xl font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 select-all mx-auto sm:mx-0">{String(card.pinCode).replace(/-/g, '')}</span>
                     </div>
                     
                     <Button
-                      onClick={() => handleCopyPin(card.pinCode)}
+                      onClick={() => handleCopyPin(String(card.pinCode))}
                       variant="primary"
                       className={`sm:w-auto w-full h-12 px-6 font-bold rounded-xl text-sm transition-all shadow-md shrink-0 flex items-center justify-center gap-2 ${copiedPin === card.pinCode ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20' : 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/20'}`}
                     >
@@ -528,20 +546,23 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                           <MapPin className="w-3.5 h-3.5 text-purple-500 shrink-0" />
                           <span>{net.location}</span>
                         </p>
-                        {totalCardsPurchased > 0 && (
-                          <div className="pt-0.5">
-                            <span className="inline-block text-[11px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-2.5 py-0.5 rounded-md">
-                              تم شراء {totalCardsPurchased} {totalCardsPurchased === 1 ? 'كرت' : 'كروت'}
-                            </span>
-                          </div>
-                        )}
+                        {orders.reduce((sum, ord) => sum + ord.generatedCards.filter(c => c.networkCode === net.id).length, 0) > 0 && (() => {
+                          const netCardsCount = orders.reduce((sum, ord) => sum + ord.generatedCards.filter(c => c.networkCode === net.id).length, 0);
+                          return (
+                            <div className="pt-0.5">
+                              <span className="inline-block text-[11px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-2.5 py-0.5 rounded-md">
+                                تم شراء {netCardsCount} {netCardsCount === 1 ? 'كرت' : 'كروت'}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
                     <button
                       onClick={() => {
                         setIsFavoritesOpen(false);
-                        onNavigate('home');
+                        window.location.href = `/n/${net.id}`;
                       }}
                       className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shrink-0 transition-colors shadow-md cursor-pointer active:scale-95"
                     >

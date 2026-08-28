@@ -1,15 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import PurchasesPage from '@/components/public/PurchasesPage';
 import { UserAccount, OrderDetails } from '@/types';
+import { useRouter } from 'next/navigation';
 
-export default function PurchasesRoute({ params }: { params: Promise<{ domain: string }> }) {
-  const resolvedParams = use(params);
-  const domain = resolvedParams.domain;
+export default function GlobalPurchasesRoute() {
   const router = useRouter();
-
   const [user, setUser] = useState<UserAccount | null>(null);
   const [orders, setOrders] = useState<OrderDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,19 +98,21 @@ export default function PurchasesRoute({ params }: { params: Promise<{ domain: s
   const handleLogout = () => {
     localStorage.removeItem('cardbox_user');
     window.dispatchEvent(new Event('cardbox_user_updated'));
-    router.push(`/${domain}`);
+    router.push(`/networks`);
   };
 
   const handleNavigate = (path: string) => {
-    router.push(`/${domain}${path === 'home' ? '' : '/' + path}`);
+    if (path === 'networks' || path === 'home') {
+      router.push('/networks');
+      return;
+    }
+    router.push(`/networks/${path}`);
   };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">جاري التحميل...</div>;
   }
 
-  // If we want this to take over the whole screen over layout, we might need some CSS tricks,
-  // but let's render PurchasesPage. PurchasesPage already has a header, so it will look like a standalone app.
   return (
     <div className="fixed inset-0 z-[100] bg-slate-50 dark:bg-slate-950 overflow-y-auto">
       <PurchasesPage
