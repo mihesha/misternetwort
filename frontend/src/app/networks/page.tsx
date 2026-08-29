@@ -37,7 +37,7 @@ export default function NetworksPage() {
                 if (card.networkCode && card.networkName && card.networkName !== 'غير معروف') {
                   if (!networksMap.has(card.networkCode)) {
                     networksMap.set(card.networkCode, {
-                      id: card.networkCode,
+                      id: card.englishName || card.networkCode,
                       name: card.networkName,
                       nameAr: card.networkName,
                       location: 'الشبكة',
@@ -74,7 +74,7 @@ export default function NetworksPage() {
         const data = await res.json();
         if (Array.isArray(data)) {
            const mapped: PublicNetworkInfo[] = data.map((d: any) => ({
-             id: d.network_code || d.networkCode || d.id || 'unknown',
+             id: d.english_name || d.network_code || d.networkCode || d.id || 'unknown',
              name: d.networkName || d.name || 'غير معروف',
              nameAr: d.networkName || d.name || 'غير معروف',
              location: (d.governorate || '') + ' - ' + (d.city || ''),
@@ -85,7 +85,7 @@ export default function NetworksPage() {
            setSearchResults(mapped);
         } else if (data.id || data.networkCode) {
            setSearchResults([{
-             id: data.network_code || data.networkCode || data.id,
+             id: data.english_name || data.network_code || data.networkCode || data.id,
              name: data.networkName || data.name,
              nameAr: data.networkName || data.name,
              location: (data.governorate || '') + ' - ' + (data.city || ''),
@@ -102,7 +102,7 @@ export default function NetworksPage() {
         if (codeRes.ok) {
           const data = await codeRes.json();
           setSearchResults([{
-            id: data.network_code || data.networkCode || data.id || searchQuery,
+            id: data.english_name || data.network_code || data.networkCode || data.id || searchQuery,
             name: data.networkName || data.name,
             nameAr: data.networkName || data.name,
             location: (data.governorate || '') + ' - ' + (data.city || ''),

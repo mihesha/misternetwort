@@ -119,6 +119,8 @@ export const InspectApplicationModal = () => {
                 </p>
                 <div className="space-y-1 text-slate-200">
                   <p><span className="text-slate-400">المحافظة / المدينة:</span> <strong className="text-white">{inspectApp.formData.network.governorate} - {inspectApp.formData.network.city}</strong></p>
+                  <p><span className="text-slate-400">اسم الشبكة بالإنجليزي:</span> <strong className="text-white">{inspectApp.formData.network.englishName || 'لا يوجد'}</strong></p>
+                  <p><span className="text-slate-400">رابط الشبكة:</span> <strong className="text-blue-400 font-mono" dir="ltr">{inspectApp.formData.network.externalLink || 'لا يوجد'}</strong></p>
                   <p><span className="text-slate-400">الحي / التغطية:</span> <strong className="text-slate-300">{inspectApp.formData.network.neighborhood || 'المنطقة الرئيسية'}</strong></p>
                   <p><span className="text-slate-400">هاتف الشبكة المعتمد:</span> <strong className="font-mono text-slate-300" dir="ltr">{inspectApp.formData.network.networkPhone || inspectApp.formData.owner.contactNumber}</strong></p>
                   <p><span className="text-slate-400">رقم محفظة جيب المعتمدة:</span> <strong className="text-emerald-400 font-mono font-bold">{inspectApp.formData.jaibWalletNumber}</strong></p>

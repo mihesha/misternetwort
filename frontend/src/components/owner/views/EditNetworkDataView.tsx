@@ -57,6 +57,8 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
 
   // Form State - loaded from API, start empty
   const [netName, setNetName] = useState('');
+  const [englishName, setEnglishName] = useState('');
+  const [externalLink, setExternalLink] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [governorate, setGovernorate] = useState('');
   const [city, setCity] = useState('');
@@ -93,6 +95,8 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
             }));
 
             setNetName(found.name || '');
+            setEnglishName(found.english_name || '');
+            setExternalLink(found.external_link || '');
             setContactPhone(found.owner_phone || '');
             setGovernorate(found.governorate || '');
             setCity(found.city || '');
@@ -103,6 +107,8 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
             // Save a snapshot of original data for comparison in previousData
             setOriginalData({
               networkName: found.name || '',
+              englishName: found.english_name || '',
+              externalLink: found.external_link || '',
               contactPhone: found.owner_phone || '',
               governorate: found.governorate || '',
               city: found.city || '',
@@ -146,7 +152,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
 
   // Store original values from API for previousData comparison
   const [originalData, setOriginalData] = useState<{
-    networkName: string; contactPhone: string; governorate: string;
+    networkName: string; englishName: string; externalLink: string; contactPhone: string; governorate: string;
     city: string; district: string; jaibWallet: string;
     categories: CategoryItem[];
   } | null>(null);
@@ -184,6 +190,8 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
       referenceNumber: `MOD-${Math.floor(1000 + Math.random() * 9000)}`,
       networkCode: networkCode || '',
       networkName: netName,
+      englishName: englishName,
+      externalLink: externalLink,
       ownerName: ownerName || '',
       contactPhone: contactPhone,
       governorate: governorate,
@@ -194,6 +202,8 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
       categories: categories,
       previousData: originalData ? {
         networkName: originalData.networkName,
+        englishName: originalData.englishName,
+        externalLink: originalData.externalLink,
         ownerName: ownerName || '',
         contactPhone: originalData.contactPhone,
         governorate: originalData.governorate,
@@ -286,11 +296,41 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-bold mb-1.5 opacity-80">اسم الشبكة</label>
+                  <label className="block text-xs font-bold mb-1.5 opacity-80">اسم الشبكة بالعربي</label>
                   <input
                     type="text"
                     value={netName}
                     onChange={(e) => setNetName(e.target.value)}
+                    className={`w-full rounded-xl py-2.5 px-3.5 text-xs md:text-sm text-right font-medium focus:outline-none transition-all ${
+                      isDarkMode
+                        ? 'bg-[#1b2536] text-white border border-slate-700 focus:border-blue-500'
+                        : 'bg-slate-50 text-slate-900 border border-slate-300 focus:border-blue-600'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 opacity-80">اسم الشبكة بالإنجليزي</label>
+                  <input
+                    type="text"
+                    value={englishName}
+                    onChange={(e) => setEnglishName(e.target.value)}
+                    dir="ltr"
+                    className={`w-full rounded-xl py-2.5 px-3.5 text-xs md:text-sm text-right font-medium focus:outline-none transition-all ${
+                      isDarkMode
+                        ? 'bg-[#1b2536] text-white border border-slate-700 focus:border-blue-500'
+                        : 'bg-slate-50 text-slate-900 border border-slate-300 focus:border-blue-600'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 opacity-80">رابط الشبكة</label>
+                  <input
+                    type="text"
+                    value={externalLink}
+                    onChange={(e) => setExternalLink(e.target.value)}
+                    dir="ltr"
                     className={`w-full rounded-xl py-2.5 px-3.5 text-xs md:text-sm text-right font-medium focus:outline-none transition-all ${
                       isDarkMode
                         ? 'bg-[#1b2536] text-white border border-slate-700 focus:border-blue-500'

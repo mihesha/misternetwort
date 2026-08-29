@@ -19,6 +19,8 @@ export interface OwnerInfo {
 export interface NetworkInfo {
   networkName: string;  // اسم الشبكة
   networkPhone: string; // رقم هاتف الشبكة
+  englishName?: string;
+  externalLink?: string;
   governorate: string;  // المحافظة
   city: string;         // المدينة
   neighborhood: string; // المنطقة/الحي
@@ -58,6 +60,8 @@ export interface OwnerCredential {
 export interface ActiveNetwork {
   id: string;
   networkName: string;
+  englishName?: string;
+  externalLink?: string;
   networkCode: string;
   ownerName: string;
   ownerPhone: string;
@@ -123,6 +127,8 @@ export interface NetworkDataEditRequest {
   referenceNumber: string;
   networkCode: string;
   networkName: string;
+  englishName?: string;
+  externalLink?: string;
   ownerName: string;
   contactPhone: string;
   governorate: string;
@@ -142,6 +148,8 @@ export interface NetworkDataEditRequest {
   }[];
   previousData?: {
     networkName?: string;
+    englishName?: string;
+    externalLink?: string;
     ownerName?: string;
     contactPhone?: string;
     governorate?: string;
@@ -231,6 +239,7 @@ export interface OrderDetails {
   date: string;
   status: 'pending' | 'completed' | 'failed';
   generatedCards: GeneratedCard[];
+  networkLink?: string;
 }
 
 export interface UserAccount {

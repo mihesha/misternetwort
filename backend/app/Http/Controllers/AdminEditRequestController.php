@@ -24,6 +24,8 @@ class AdminEditRequestController extends Controller
             'reference_number' => $request->referenceNumber ?? 'MOD-' . time(),
             'network_code' => $request->networkCode,
             'network_name' => $request->networkName,
+            'english_name' => $request->englishName,
+            'external_link' => $request->externalLink,
             'owner_name' => $request->ownerName,
             'contact_phone' => $request->contactPhone,
             'governorate' => $request->governorate,
@@ -48,6 +50,8 @@ class AdminEditRequestController extends Controller
                 'referenceNumber' => $r->reference_number,
                 'networkCode' => $r->network_code,
                 'networkName' => $r->network_name,
+                'englishName' => $r->english_name,
+                'externalLink' => $r->external_link,
                 'ownerName' => $r->owner_name,
                 'contactPhone' => $r->contact_phone,
                 'governorate' => $r->governorate,
@@ -73,6 +77,19 @@ class AdminEditRequestController extends Controller
             $network = Network::where('network_code', $req->network_code)->first();
             if ($network) {
                 $network->name = $req->network_name;
+                if (!empty($req->english_name)) {
+                    $baseSlug = \Illuminate\Support\Str::slug($req->english_name);
+                    $slug = $baseSlug;
+                    if ($slug !== $network->english_name) {
+                        $counter = 1;
+                        while (Network::where('english_name', $slug)->exists()) {
+                            $slug = $baseSlug . '-' . $counter;
+                            $counter++;
+                        }
+                        $network->english_name = $slug;
+                    }
+                }
+                if ($req->external_link) $network->external_link = $req->external_link;
                 $network->governorate = $req->governorate;
                 $network->city = $req->city;
                 $network->neighborhood = $req->district;

@@ -95,9 +95,17 @@ export const NetworksView: React.FC<NetworksViewProps> = ({
                   <span className="text-slate-400">محفظة جيب المعتمدة:</span>
                   <span className="font-mono font-bold text-emerald-400" dir="ltr">{net.jaibWalletNumber}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">المنطقة والحي:</span>
-                  <span>{net.city} - {net.neighborhood || 'الشارع الرئيسي'}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 whitespace-nowrap">المنطقة والحي:</span>
+                  <span className="truncate mr-2">{net.city} - {net.neighborhood || 'الشارع الرئيسي'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 whitespace-nowrap">اسم بالانجليزي:</span>
+                  <span className="font-mono text-white truncate mr-2">{net.englishName || '-'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 whitespace-nowrap">رابط الشبكة:</span>
+                  <span className="font-mono text-blue-400 truncate text-left max-w-[150px] mr-2" dir="ltr">{net.externalLink || '-'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">إجمالي المبيعات:</span>

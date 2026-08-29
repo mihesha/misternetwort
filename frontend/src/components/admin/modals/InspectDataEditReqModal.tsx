@@ -143,9 +143,51 @@ export const InspectDataEditReqModal = () => {
                       const isChanged = oldVal !== newVal;
                       return (
                         <tr className={isChanged ? 'bg-amber-500/10 border-r-4 border-r-amber-500' : 'hover:bg-slate-800/30'}>
-                          <td className="p-3 font-bold text-slate-300">اسم الشبكة</td>
+                          <td className="p-3 font-bold text-slate-300">اسم الشبكة بالعربي</td>
                           <td className="p-3 text-slate-400 font-medium">{oldVal}</td>
                           <td className="p-3 font-bold text-white">{newVal}</td>
+                          <td className="p-3 text-center">
+                            {isChanged ? (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">✏️ تم التعديل</span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400">بدون تغيير</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })()}
+
+                    {/* Row 1.1: English Name */}
+                    {(() => {
+                      const oldVal = inspectDataEditReq.previousData?.englishName || 'لا يوجد';
+                      const newVal = inspectDataEditReq.englishName || 'لا يوجد';
+                      const isChanged = oldVal !== newVal;
+                      return (
+                        <tr className={isChanged ? 'bg-amber-500/10 border-r-4 border-r-amber-500' : 'hover:bg-slate-800/30'}>
+                          <td className="p-3 font-bold text-slate-300">اسم الشبكة بالإنجليزي</td>
+                          <td className="p-3 text-slate-400 font-mono" dir="ltr">{oldVal}</td>
+                          <td className="p-3 font-bold font-mono text-emerald-400" dir="ltr">{newVal}</td>
+                          <td className="p-3 text-center">
+                            {isChanged ? (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">✏️ تم التعديل</span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400">بدون تغيير</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })()}
+
+                    {/* Row 1.2: External Link */}
+                    {(() => {
+                      const oldVal = inspectDataEditReq.previousData?.externalLink || 'لا يوجد';
+                      const newVal = inspectDataEditReq.externalLink || 'لا يوجد';
+                      const isChanged = oldVal !== newVal;
+                      return (
+                        <tr className={isChanged ? 'bg-amber-500/10 border-r-4 border-r-amber-500' : 'hover:bg-slate-800/30'}>
+                          <td className="p-3 font-bold text-slate-300">رابط الشبكة</td>
+                          <td className="p-3 text-slate-400 font-mono truncate max-w-[150px]" dir="ltr" title={oldVal}>{oldVal}</td>
+                          <td className="p-3 font-bold font-mono text-emerald-400 truncate max-w-[150px]" dir="ltr" title={newVal}>{newVal}</td>
                           <td className="p-3 text-center">
                             {isChanged ? (
                               <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">✏️ تم التعديل</span>

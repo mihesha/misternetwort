@@ -168,6 +168,7 @@ class CustomerPurchaseService
             return [
                 'cards' => $cards,
                 'network' => $network->name,
+                'network_link' => $network->external_link,
                 'new_wallet_balance' => $user ? $user->fresh()->wallet_balance : null
             ];
             

@@ -93,11 +93,33 @@ export const EditNetworkModal = () => {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-300 mb-1 font-bold">اسم الشبكة:</label>
+                <label className="block text-slate-300 mb-1 font-bold">اسم الشبكة بالعربي:</label>
                 <input
                   type="text"
                   value={editNetworkModal.networkName}
                   onChange={(e) => setEditNetworkModal({ ...editNetworkModal, networkName: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#1d273a] border border-slate-700 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 mb-1 font-bold">اسم الشبكة بالإنجليزي:</label>
+                <input
+                  type="text"
+                  value={editNetworkModal.englishName || ''}
+                  onChange={(e) => setEditNetworkModal({ ...editNetworkModal, englishName: e.target.value })}
+                  dir="ltr"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#1d273a] border border-slate-700 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 mb-1 font-bold">رابط الشبكة:</label>
+                <input
+                  type="text"
+                  value={editNetworkModal.externalLink || ''}
+                  onChange={(e) => setEditNetworkModal({ ...editNetworkModal, externalLink: e.target.value })}
+                  dir="ltr"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#1d273a] border border-slate-700 text-white"
                 />
               </div>

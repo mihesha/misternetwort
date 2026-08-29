@@ -647,6 +647,8 @@ export const InspectNetworkModal = () => {
                       <p><span className="text-slate-400">اسم المالك المسجل:</span> <strong className="text-white">{inspectNetwork.ownerName}</strong></p>
                       <p><span className="text-slate-400">رقم الهاتف:</span> <strong className="font-mono text-emerald-400" dir="ltr">{inspectNetwork.contactNumber}</strong></p>
                       <p><span className="text-slate-400">رقم محفظة جيب المعتمدة:</span> <strong className="font-mono text-emerald-400" dir="ltr">{inspectNetwork.jaibWalletNumber}</strong></p>
+                      <p><span className="text-slate-400">اسم الشبكة بالإنجليزي (الرابط):</span> <strong className="font-mono text-blue-400" dir="ltr">{inspectNetwork.englishName || 'لا يوجد'}</strong></p>
+                      <p><span className="text-slate-400">الرابط الخارجي:</span> <strong className="font-mono text-blue-400 truncate block max-w-full" dir="ltr" title={inspectNetwork.externalLink}>{inspectNetwork.externalLink || 'لا يوجد'}</strong></p>
                       <p><span className="text-slate-400">المحافظة والمدينة:</span> <strong className="text-white">{inspectNetwork.governorate} - {inspectNetwork.city}</strong></p>
                       <p><span className="text-slate-400">الشارع والحي:</span> <strong className="text-white">{inspectNetwork.neighborhood || 'الشارع الرئيسي'}</strong></p>
                     </div>

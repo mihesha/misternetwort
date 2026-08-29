@@ -12,6 +12,15 @@ class CardController extends Controller
 {
     public function purchase(Request $request)
     {
+        // Support using english_name (slug) instead of network_code
+        if ($request->has('network_code')) {
+            $network = Network::where('network_code', $request->network_code)
+                              ->orWhere('english_name', $request->network_code)
+                              ->first();
+            if ($network) {
+                $request->merge(['network_code' => $network->network_code]);
+            }
+        }
         $validated = $request->validate([
             'network_code' => 'required|string|exists:networks,network_code',
             'category_id' => 'required|exists:card_categories,id',
@@ -32,6 +41,7 @@ class CardController extends Controller
                 'message' => 'تمت عملية الشراء بنجاح',
                 'cards' => $result['cards'],
                 'network' => $result['network'],
+                'network_link' => $result['network_link'],
                 'new_wallet_balance' => $result['new_wallet_balance']
             ], 201);
             
@@ -69,6 +79,7 @@ class CardController extends Controller
                     'packageName' => optional($c->cardCategory)->name ?? 'باقة محذوفة',
                     'networkName' => optional(optional($c->cardCategory)->network)->name ?? 'غير معروف',
                     'networkCode' => optional(optional($c->cardCategory)->network)->network_code ?? '',
+                    'englishName' => optional(optional($c->cardCategory)->network)->english_name ?? '',
                     'serialNumber' => $c->serial_number,
                     'pinCode' => $c->card_code ?? $c->password,
                     'dataSize' => optional($c->cardCategory)->mega ? optional($c->cardCategory)->mega . ' ميجا' : '',

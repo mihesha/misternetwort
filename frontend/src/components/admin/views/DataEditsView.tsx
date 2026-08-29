@@ -147,7 +147,7 @@ export const DataEditsView: React.FC<DataEditsViewProps> = ({
               </div>
 
               {/* Detail Preview Summary Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1">
                   <span className="text-slate-400 block font-bold">الموقع المطلوب:</span>
                   <p className="text-slate-200 font-medium">{req.governorate} - {req.city}</p>
@@ -158,6 +158,12 @@ export const DataEditsView: React.FC<DataEditsViewProps> = ({
                   <span className="text-slate-400 block font-bold">محفظة جيب والتواصل:</span>
                   <p className="text-emerald-400 font-mono font-bold" dir="ltr">{req.jaibWallet}</p>
                   <p className="text-slate-300 font-mono" dir="ltr">{req.contactPhone}</p>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1">
+                  <span className="text-slate-400 block font-bold">روابط الشبكة:</span>
+                  <p className="text-blue-400 font-mono font-bold" dir="ltr">{req.englishName || 'لا يوجد'}</p>
+                  <p className="text-slate-400 truncate" dir="ltr" title={req.externalLink}>{req.externalLink || 'بدون رابط'}</p>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1">

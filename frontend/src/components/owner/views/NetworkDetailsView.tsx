@@ -185,9 +185,11 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
                 </span>
                 <h2 className="text-2xl md:text-3xl font-black">{networkName}</h2>
               </div>
-              <div className="flex items-center gap-4 text-xs md:text-sm opacity-90 pt-1 font-mono">
+              <div className="flex items-center gap-4 text-xs md:text-sm opacity-90 pt-1 font-mono flex-wrap">
                 <span>📞 {networkPhone}</span>
                 <span>🏷️ {networkCode}</span>
+                {networkData?.english_name && <span>🌐 {networkData.english_name}</span>}
+                {networkData?.external_link && <a href={networkData.external_link.startsWith('http') ? networkData.external_link : `https://${networkData.external_link}`} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-200" title="الرابط الخارجي للشبكة">🔗 رابط الشبكة</a>}
               </div>
             </div>
           </div>

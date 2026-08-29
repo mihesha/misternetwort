@@ -16,6 +16,8 @@ class NetworkController extends Controller
             'owner.ownerId' => 'required|string',
             'owner.contactNumber' => 'required|string',
             'network.networkName' => 'required|string',
+            'network.englishName' => 'required|string',
+            'network.externalLink' => 'required|string',
             'network.networkPhone' => 'nullable|string',
             'network.governorate' => 'required|string',
             'network.city' => 'required|string',
@@ -24,12 +26,22 @@ class NetworkController extends Controller
             'cardCategories' => 'required|array',
         ]);
 
+        $baseSlug = Str::slug($validated['network']['englishName']);
+        $slug = $baseSlug;
+        $counter = 1;
+        while (Network::where('english_name', $slug)->exists() || NetworkApplication::where('english_name', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+
         $application = NetworkApplication::create([
             'reference_number' => 'REQ-' . date('Y') . '-' . rand(1000, 9999),
             'owner_name' => $validated['owner']['ownerName'],
             'owner_identity' => $validated['owner']['ownerId'],
             'owner_phone' => $validated['owner']['contactNumber'],
             'network_name' => $validated['network']['networkName'],
+            'english_name' => $slug,
+            'external_link' => $validated['network']['externalLink'] ?? null,
             'network_phone' => $validated['network']['networkPhone'],
             'governorate' => $validated['network']['governorate'],
             'city' => $validated['network']['city'],
@@ -91,6 +103,7 @@ class NetworkController extends Controller
         $networks = Network::where('status', 'active')
             ->where(function($query) use ($q) {
                 $query->where('name', 'LIKE', "%{$q}%")
+                      ->orWhere('english_name', 'LIKE', "%{$q}%")
                       ->orWhere('network_code', 'LIKE', "%{$q}%");
             })
             ->get();
@@ -100,14 +113,20 @@ class NetworkController extends Controller
 
     public function getNetworkByCode($code)
     {
-        $network = Network::where('network_code', $code)->where('status', 'active')->first();
+        $network = Network::where(function($query) use ($code) {
+            $query->where('network_code', $code)
+                  ->orWhere('english_name', $code);
+        })->where('status', 'active')->first();
         if (!$network) return response()->json(['error' => 'Not found'], 404);
         return response()->json($network);
     }
 
     public function getNetworkPackagesByCode($code)
     {
-        $network = Network::where('network_code', $code)->where('status', 'active')->first();
+        $network = Network::where(function($query) use ($code) {
+            $query->where('network_code', $code)
+                  ->orWhere('english_name', $code);
+        })->where('status', 'active')->first();
         if (!$network) return response()->json(['error' => 'Not found'], 404);
         
         $packages = \App\Models\CardCategory::where('network_id', $network->id)
@@ -165,6 +184,12 @@ class NetworkController extends Controller
         $network = Network::where('user_id', $user->id)->first();
         if (!$network) return response()->json(['error' => 'Network not found'], 404);
 
+        $request->validate([
+            'networkName' => 'required|string',
+            'englishName' => 'required|string',
+            'externalLink' => 'required|string',
+        ]);
+
         $existing = \App\Models\NetworkDataEditRequest::where('network_code', $network->network_code)
             ->where('status', 'pending')
             ->exists();
@@ -173,11 +198,26 @@ class NetworkController extends Controller
             return response()->json(['error' => 'لديك طلب تعديل قيد المراجعة مسبقاً، يرجى الانتظار حتى يتم البت فيه.'], 400);
         }
 
+        $slug = null;
+        if ($request->englishName) {
+            $baseSlug = Str::slug($request->englishName);
+            $slug = $baseSlug;
+            if ($slug !== $network->english_name) {
+                $counter = 1;
+                while (Network::where('english_name', $slug)->exists() || \App\Models\NetworkDataEditRequest::where('english_name', $slug)->where('status', 'pending')->exists()) {
+                    $slug = $baseSlug . '-' . $counter;
+                    $counter++;
+                }
+            }
+        }
+
         $req = \App\Models\NetworkDataEditRequest::create([
             'user_id' => $user->id,
             'reference_number' => 'MOD-' . time(),
             'network_code' => $network->network_code,
             'network_name' => $request->networkName,
+            'english_name' => $slug,
+            'external_link' => $request->externalLink,
             'owner_name' => $request->ownerName,
             'contact_phone' => $request->contactPhone,
             'governorate' => $request->governorate,

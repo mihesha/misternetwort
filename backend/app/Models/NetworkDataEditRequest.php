@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 #[Fillable([
     'user_id', 'reference_number', 'network_code', 'network_name', 'owner_name',
     'contact_phone', 'governorate', 'city', 'district', 'jaib_wallet',
-    'admin_notes', 'categories', 'previous_data', 'status'
+    'admin_notes', 'categories', 'previous_data', 'status',
+    'english_name', 'external_link'
 ])]
 class NetworkDataEditRequest extends Model
 {

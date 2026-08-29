@@ -26,7 +26,9 @@ class AdminNetworkApplicationController extends Controller
                         'contactNumber' => $app->owner_phone
                     ],
                     'network' => [
-                        'networkName' => $app->network_name, 
+                        'networkName' => $app->network_name,
+                        'englishName' => $app->english_name,
+                        'externalLink' => $app->external_link,
                         'networkPhone' => $app->network_phone,
                         'governorate' => $app->governorate, 
                         'city' => $app->city,
@@ -63,6 +65,8 @@ class AdminNetworkApplicationController extends Controller
                 $network = clone Network::create([
                     'user_id' => $user->id,
                     'name' => $app->network_name,
+                    'english_name' => $app->english_name,
+                    'external_link' => $app->external_link,
                     'network_code' => '8' . rand(1000, 9999), 
                     'governorate' => $app->governorate,
                     'city' => $app->city ?? null,

@@ -78,6 +78,8 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
   const [contactNumber, setContactNumber] = useState(initialData?.owner.contactNumber || '');
 
   const [networkName, setNetworkName] = useState(initialData?.network.networkName || '');
+  const [englishName, setEnglishName] = useState(initialData?.network.englishName || '');
+  const [externalLink, setExternalLink] = useState(initialData?.network.externalLink || '');
   const [networkPhone, setNetworkPhone] = useState(initialData?.network.networkPhone || '');
   const [governorate, setGovernorate] = useState(initialData?.network.governorate || '');
   const [city, setCity] = useState(initialData?.network.city || '');
@@ -164,6 +166,8 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
       if (!contactNumber.trim() || contactNumber.trim().length < 9) newErrors.contactNumber = 'رقم التواصل يجب أن لا يقل عن 9 أرقام';
     } else if (step === 2) {
       if (!networkName.trim()) newErrors.networkName = 'يرجى كتابة اسم الشبكة';
+      if (!englishName.trim()) newErrors.englishName = 'يرجى كتابة اسم الشبكة بالإنجليزي';
+      if (!externalLink.trim()) newErrors.externalLink = 'يرجى كتابة رابط الشبكة';
       if (networkPhone.trim() && networkPhone.trim().length < 9) newErrors.networkPhone = 'رقم الهاتف الإضافي يجب أن لا يقل عن 9 أرقام';
       if (!governorate) newErrors.governorate = 'يرجى اختيار المحافظة';
       if (!city) newErrors.city = 'يرجى اختيار المدينة';
@@ -211,7 +215,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
 
     const formData: ApplicationFormData = {
       owner: { ownerName: ownerName.trim(), ownerId: ownerId.trim(), contactNumber: contactNumber.trim() },
-      network: { networkName: networkName.trim(), networkPhone: networkPhone.trim(), governorate, city, neighborhood: neighborhood.trim() },
+      network: { networkName: networkName.trim(), englishName: englishName.trim(), externalLink: externalLink.trim(), networkPhone: networkPhone.trim(), governorate, city, neighborhood: neighborhood.trim() },
       jaibWalletNumber: jaibWalletNumber.trim(),
       cardCategories,
     };
@@ -350,11 +354,23 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                 <div className="space-y-2">
-                  <label className={`block text-xs font-bold ${errors.networkName ? 'text-rose-500' : 'text-slate-700 dark:text-slate-300'}`}>اسم الشبكة <span className="text-rose-500">*</span></label>
+                  <label className={`block text-xs font-bold ${errors.networkName ? 'text-rose-500' : 'text-slate-700 dark:text-slate-300'}`}>اسم الشبكة بالعربي <span className="text-rose-500">*</span></label>
                   <input type="text" value={networkName} onChange={(e) => { setNetworkName(e.target.value); if(errors.networkName) setErrors({...errors, networkName: ''}) }} placeholder="مثال: يمن نت للإتصالات" className={`w-full px-4 py-3 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 border ${errors.networkName ? 'border-rose-500 focus:ring-rose-500 bg-rose-50 dark:bg-rose-500/10' : isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-indigo-500'}`} />
                   {errors.networkName && <p className="text-xs font-bold text-rose-500 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.networkName}</p>}
                 </div>
                 
+                <div className="space-y-2">
+                  <label className={`block text-xs font-bold ${errors.englishName ? 'text-rose-500' : 'text-slate-700 dark:text-slate-300'}`}>اسم الشبكة بالإنجليزي <span className="text-rose-500">*</span></label>
+                  <input type="text" value={englishName} onChange={(e) => { setEnglishName(e.target.value); if(errors.englishName) setErrors({...errors, englishName: ''}) }} placeholder="مثال: speed-net" className={`w-full px-4 py-3 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 border ${errors.englishName ? 'border-rose-500 focus:ring-rose-500 bg-rose-50 dark:bg-rose-500/10' : isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-indigo-500'}`} dir="ltr" />
+                  {errors.englishName && <p className="text-xs font-bold text-rose-500 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.englishName}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <label className={`block text-xs font-bold ${errors.externalLink ? 'text-rose-500' : 'text-slate-700 dark:text-slate-300'}`}>رابط الشبكة <span className="text-rose-500">*</span></label>
+                  <input type="text" value={externalLink} onChange={(e) => { setExternalLink(e.target.value); if(errors.externalLink) setErrors({...errors, externalLink: ''}) }} placeholder="example.com" className={`w-full px-4 py-3 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 border ${errors.externalLink ? 'border-rose-500 focus:ring-rose-500 bg-rose-50 dark:bg-rose-500/10' : isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-indigo-500'}`} dir="ltr" />
+                  {errors.externalLink && <p className="text-xs font-bold text-rose-500 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.externalLink}</p>}
+                </div>
+
                 <div className="space-y-2">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">هاتف آخر للشبكة <span className="text-slate-400 font-normal">(اختياري)</span></label>
                   <input type="number" value={networkPhone} onChange={(e) => { setNetworkPhone(e.target.value); if(errors.networkPhone) setErrors({...errors, networkPhone: ''}) }} placeholder="رقم هاتف إضافي" className={`w-full px-4 py-3 text-right rounded-xl text-sm transition-all focus:outline-none focus:ring-2 border ${errors.networkPhone ? 'border-rose-500 focus:ring-rose-500 bg-rose-50 dark:bg-rose-500/10' : isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-indigo-500'}`} />
@@ -537,6 +553,14 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
                     <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/50">
                       <span className="text-slate-500 dark:text-slate-400">الشبكة</span>
                       <span className="text-slate-800 dark:text-white font-bold">{networkName}</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/50">
+                      <span className="text-slate-500 dark:text-slate-400">بالإنجليزي</span>
+                      <span className="text-slate-800 dark:text-white font-bold" dir="ltr">{englishName}</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/50">
+                      <span className="text-slate-500 dark:text-slate-400">الرابط الخارجي</span>
+                      <span className="text-slate-800 dark:text-white font-bold" dir="ltr">{externalLink || 'لا يوجد'}</span>
                     </div>
                     <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/50">
                       <span className="text-slate-500 dark:text-slate-400">المكان</span>

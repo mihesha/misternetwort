@@ -142,7 +142,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
         if (card.networkCode && card.networkName && card.networkName !== 'غير معروف') {
           if (!networksMap.has(card.networkCode)) {
             networksMap.set(card.networkCode, {
-              id: card.networkCode,
+              id: (card as any).englishName || card.networkCode,
               name: card.networkName,
               nameAr: card.networkName,
               location: 'الشبكة',

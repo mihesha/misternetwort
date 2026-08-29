@@ -78,6 +78,8 @@ class AdminNetworkController extends Controller
         $network = Network::findOrFail($id);
         $validated = $request->validate([
             'networkName' => 'required|string',
+            'englishName' => 'required|string',
+            'externalLink' => 'required|string',
             'governorate' => 'required|string',
             'city' => 'required|string',
             'ownerName' => 'required|string',
@@ -86,6 +88,21 @@ class AdminNetworkController extends Controller
         ]);
         
         $network->name = $validated['networkName'];
+        if (!empty($validated['englishName'])) {
+            $baseSlug = \Illuminate\Support\Str::slug($validated['englishName']);
+            $slug = $baseSlug;
+            if ($slug !== $network->english_name) {
+                $counter = 1;
+                while (Network::where('english_name', $slug)->exists()) {
+                    $slug = $baseSlug . '-' . $counter;
+                    $counter++;
+                }
+                $network->english_name = $slug;
+            }
+        }
+        if (isset($validated['externalLink'])) {
+            $network->external_link = $validated['externalLink'];
+        }
         $network->governorate = $validated['governorate'];
         $network->city = $validated['city'];
         $network->owner_phone = $validated['contactNumber'];

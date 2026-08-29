@@ -166,6 +166,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           date: new Date().toLocaleString('ar-YE'),
           status: 'completed',
           generatedCards,
+          networkLink: data.network_link,
         };
 
         setOrderDetails(newOrder);
@@ -640,8 +641,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 variant="primary"
                 size="lg"
                 onClick={() => {
-                  // You can redirect to the network's local login page if needed.
-                  onClose();
+                  if (orderDetails?.networkLink) {
+                    let link = orderDetails.networkLink;
+                    if (!link.startsWith('http://') && !link.startsWith('https://')) {
+                      link = 'http://' + link;
+                    }
+                    window.location.href = link;
+                  } else {
+                    onClose();
+                  }
                 }}
                 icon={<Globe className="w-5 h-5" />}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white font-extrabold py-4 rounded-2xl text-base shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all"
