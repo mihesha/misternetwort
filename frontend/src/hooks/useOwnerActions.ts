@@ -1,7 +1,7 @@
 import { useOwnerContext } from '../context/OwnerContext';
 
 export const useOwnerActions = () => {
-  const { setNetworks } = useOwnerContext();
+  const { setNetworks, setIsDataLoaded } = useOwnerContext();
 
   const fetchOwnerNetworks = async () => {
     try {
@@ -35,6 +35,8 @@ export const useOwnerActions = () => {
       }
     } catch (err) {
       console.error("Failed to fetch owner networks", err);
+    } finally {
+      setIsDataLoaded(true);
     }
   };
 

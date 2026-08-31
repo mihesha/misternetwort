@@ -34,10 +34,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                if (localStorage.getItem('karoot_theme') === 'dark') {
                   document.documentElement.classList.add('dark');
                 } else {
                   document.documentElement.classList.remove('dark');
+                  if (!localStorage.getItem('karoot_theme')) {
+                    localStorage.setItem('karoot_theme', 'light');
+                  }
                 }
               } catch (_) {}
             `,

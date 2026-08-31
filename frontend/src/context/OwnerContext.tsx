@@ -40,6 +40,9 @@ interface OwnerContextProps {
   
   globalUpdateTick: number;
   setGlobalUpdateTick: React.Dispatch<React.SetStateAction<number>>;
+  
+  isDataLoaded: boolean;
+  setIsDataLoaded: (val: boolean) => void;
 }
 
 const OwnerContext = createContext<OwnerContextProps | undefined>(undefined);
@@ -47,6 +50,7 @@ const OwnerContext = createContext<OwnerContextProps | undefined>(undefined);
 export const OwnerProvider = ({ children }: { children: ReactNode }) => {
   const [ownerName, setOwnerName] = useState<string>('صاحب شبكة');
   const [networks, setNetworks] = useState<OwnerNetworkCard[]>([]);
+  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
 
   React.useEffect(() => {
     try {
@@ -101,7 +105,8 @@ export const OwnerProvider = ({ children }: { children: ReactNode }) => {
         mikrotikNetwork, setMikrotikNetwork,
         showSearchModal, setShowSearchModal,
         searchQuery, setSearchQuery,
-        globalUpdateTick, setGlobalUpdateTick
+        globalUpdateTick, setGlobalUpdateTick,
+        isDataLoaded, setIsDataLoaded
       }}
     >
       {children}

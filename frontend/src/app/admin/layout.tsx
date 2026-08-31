@@ -96,10 +96,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 }
 
 function AdminShell({ children }: { children: React.ReactNode }) {
-  const { isDarkMode, setIsDarkMode, applications, handleUpdateStatus, handleDeleteApplication, handleApproveWithCredentials } = useAppContext();
+  const { isDarkMode, setIsDarkMode, isThemeLoaded, applications, handleUpdateStatus, handleDeleteApplication, handleApproveWithCredentials } = useAppContext();
   
   const {
-    stats, activeNetworks, withdrawals, auditLogs, dataEditRequests, platformCommissionRate, setPlatformCommissionRate, supportPhone, setSupportPhone, fetchAdminData, setActiveNetworks, setWithdrawals, setDataEditRequests,
+    stats, activeNetworks, withdrawals, auditLogs, dataEditRequests, platformCommissionRate, setPlatformCommissionRate, supportPhone, setSupportPhone, fetchAdminData, setActiveNetworks, setWithdrawals, setDataEditRequests, isAdminDataLoaded,
     inspectApp, setInspectApp, inspectNetwork, setInspectNetwork, inspectNetworkCards, setInspectNetworkCards, inspectNetworkTab, setInspectNetworkTab, inspectCardCatFilter, setInspectCardCatFilter, inspectCardStatusFilter, setInspectCardStatusFilter, inspectCardDateFilter, setInspectCardDateFilter, inspectCardStartDate, setInspectCardStartDate, inspectCardEndDate, setInspectCardEndDate, inspectCardSearchQuery, setInspectCardSearchQuery, editNetworkModal, setEditNetworkModal, balanceAdjustNetwork, setBalanceAdjustNetwork, adjustAmount, setAdjustAmount, adjustNote, setAdjustNote, payoutWdModal, setPayoutWdModal, payoutRef, setPayoutRef, payoutNotes, setPayoutNotes, whatsappModalData, setWhatsappModalData, copiedWpText, setCopiedWpText, requestModifyApp, setRequestModifyApp, modificationReasonText, setModificationReasonText, whatsappModifyData, setWhatsappModifyData, copiedModifyWpText, setCopiedModifyWpText, showNewNetworkModal, setShowNewNetworkModal, newNetName, setNewNetName, newNetOwner, setNewNetOwner, newNetPhone, setNewNetPhone, newNetWallet, setNewNetWallet, newNetGov, setNewNetGov, newNetCity, setNewNetCity, cardBatchNetId, setCardBatchNetId, cardBatchCategory, setCardBatchCategory, cardBatchCount, setCardBatchCount, generatedBatch, setGeneratedBatch, selectedMikrotikNet, setSelectedMikrotikNet, mikrotikIpInput, setMikrotikIpInput, mikrotikUserInput, setMikrotikUserInput, mikrotikPassInput, setMikrotikPassInput, copiedScript, setCopiedScript, showNewUserModal, setShowNewUserModal, newUserName, setNewUserName, newUserEmail, setNewUserEmail, newUserRole, setNewUserRole, newUserPhone, setNewUserPhone
   } = useAdminContext();
   
@@ -156,6 +156,16 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   // Sidebar Collapsed state
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
   
   // States that were not moved to Context
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
@@ -270,11 +280,28 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     },
   ];
 
+  if (!isMounted || !isThemeLoaded) return null;
+
+  const isSystemStable = isAdminDataLoaded || isLoginPage;
+  const isStillLoading = showSplash || !isSystemStable;
+
   if (isAuthenticated === null) {
     return (
-      <div className={`min-h-screen flex flex-col items-center justify-center font-['Cairo',sans-serif] ${isDarkMode ? 'bg-[#0b101d]' : 'bg-slate-100'}`}>
-        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className={`font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>جاري التحقق من الصلاحيات والوصول...</p>
+      <div className={`min-h-screen flex flex-col items-center justify-center font-['Cairo',sans-serif] transition-colors duration-500 ${isDarkMode ? 'bg-[#0b101d]' : 'bg-[#f4f7fb]'}`}>
+        <div className={`relative flex items-center justify-center w-20 h-20 mb-8 rounded-2xl shadow-2xl ${isDarkMode ? 'bg-white/5 shadow-black/50' : 'bg-white shadow-indigo-900/10'}`}>
+          <img 
+            src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} 
+            alt="Card Box Admin" 
+            className="w-12 h-12 object-cover rounded-xl animate-pulse"
+          />
+          <div className={`absolute inset-0 rounded-2xl border-2 border-transparent border-t-indigo-500 animate-spin`} style={{ animationDuration: '1.5s' }}></div>
+        </div>
+        <h2 className={`text-lg font-bold tracking-wide mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Card Box Platform</h2>
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
       </div>
     );
   }
@@ -290,6 +317,24 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         isDarkMode ? 'bg-[#0b101d] text-slate-100' : 'bg-slate-100 text-slate-800'
       }`}
     >
+      {isStillLoading && !isLoginPage && (
+        <div className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center font-['Cairo',sans-serif] transition-opacity duration-500 ${isDarkMode ? 'bg-[#0b101d]' : 'bg-[#f4f7fb]'}`}>
+          <div className={`relative flex items-center justify-center w-24 h-24 mb-8 rounded-2xl shadow-2xl ${isDarkMode ? 'bg-white/5 shadow-black/50' : 'bg-white shadow-indigo-900/10'}`}>
+            <img 
+              src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} 
+              alt="Card Box Logo" 
+              className="w-14 h-14 object-cover rounded-xl animate-pulse"
+            />
+            <div className={`absolute inset-0 rounded-2xl border-2 border-transparent border-t-indigo-500 animate-spin`} style={{ animationDuration: '1.5s' }}></div>
+          </div>
+          <h2 className={`text-xl font-bold tracking-wide mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Card Box Platform</h2>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
+        </div>
+      )}
       {/* MOBILE OVERLAY BACKDROP */}
       {mobileMenuOpen && (
         <div

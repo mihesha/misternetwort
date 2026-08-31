@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { KarootLogo } from '../components/common/Logos';
+import CardBoxLogo from '../components/common/CardBoxLogo';
 import {
   Wifi,
   CreditCard,
@@ -22,6 +23,14 @@ import {
 import { PublicHeader } from '../components/public/PublicHeader';
 
 export default function CustomerLandingPage() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -37,6 +46,23 @@ export default function CustomerLandingPage() {
       }
     }
   };
+
+  if (showSplash) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center font-['Cairo',sans-serif] bg-slate-50 dark:bg-slate-950 transition-colors duration-500">
+        <div className="relative flex items-center justify-center w-24 h-24 mb-8 rounded-2xl shadow-2xl bg-white shadow-purple-900/10 dark:bg-slate-900/50 dark:shadow-black/50">
+          <CardBoxLogo size="md" showText={false} className="animate-pulse" />
+          <div className="absolute inset-0 rounded-2xl border-2 border-transparent border-t-purple-500 animate-spin" style={{ animationDuration: '1.5s' }}></div>
+        </div>
+        <h2 className="text-lg font-bold tracking-wide mb-2 text-slate-800 dark:text-slate-100">Card Box Platform</h2>
+        <div className="flex items-center gap-2 mt-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0a0f1c] text-slate-900 dark:text-white selection:bg-indigo-500/30 font-sans overflow-x-hidden transition-colors duration-300" dir="rtl">

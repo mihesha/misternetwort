@@ -3,6 +3,7 @@ import { Wallet, Plus, CreditCard, DollarSign, Tag, Save, Store, TrendingUp, Ale
 import { useAppContext } from '@/context/AppContext';
 import { useOwnerContext } from '@/context/OwnerContext';
 import { useOwnerActions } from '@/hooks/useOwnerActions';
+import { useRouter } from 'next/navigation';
 
 // Helper to convert Arabic/Indic numerals to English
 const toEnglishDigits = (str: string) => {
@@ -11,6 +12,7 @@ const toEnglishDigits = (str: string) => {
 };
 
 export const OwnerPosView: React.FC = () => {
+  const router = useRouter();
   const { isDarkMode } = useAppContext();
   const { networks, setGlobalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
@@ -452,7 +454,7 @@ export const OwnerPosView: React.FC = () => {
                             </button>
                             <button
                               onClick={() => {
-                                window.location.href = `/owner/pos/${m.user_id}`;
+                                router.push(`/owner/pos/${m.user_id}`);
                               }}
                               className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${isDarkMode ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white shadow-sm'}`}
                             >

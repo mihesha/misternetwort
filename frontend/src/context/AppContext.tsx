@@ -17,20 +17,25 @@ interface AppContextType {
   handleUpdateStatus: (id: string, status: ApplicationStatus, tempPassword?: string) => Promise<string | null>;
   handleApproveWithCredentials: (app: NetworkApplication, tempPassword: string) => Promise<string | null>;
   handleDeleteApplication: (id: string) => Promise<void>;
+  isThemeLoaded: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [isDarkMode, setIsDarkModeState] = useState<boolean>(true);
+  const [isDarkMode, setIsDarkModeState] = useState<boolean>(false);
+  const [isThemeLoaded, setIsThemeLoaded] = useState<boolean>(false);
 
   // Initialize theme from local storage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('karoot_theme');
-      if (savedTheme) {
-        setIsDarkModeState(savedTheme === 'dark');
+      if (savedTheme === 'dark') {
+        setIsDarkModeState(true);
+      } else {
+        setIsDarkModeState(false);
       }
+      setIsThemeLoaded(true);
     }
   }, []);
 
@@ -201,6 +206,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         handleUpdateStatus,
         handleApproveWithCredentials,
         handleDeleteApplication,
+        isThemeLoaded,
       }}
     >
       {children}

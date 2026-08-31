@@ -15,13 +15,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Dark Mode: Deep rich slate background, soft off-white text (no pure black/white) */
-    --background: #020617;
-    --foreground: #f8fafc;
-  }
-}
+
 
 .dark {
   --background: #020617;

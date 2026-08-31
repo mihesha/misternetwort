@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronLeft,
+  ChevronRight,
   FileText,
   Key,
   Shield,
@@ -54,6 +55,158 @@ interface NetworkAccountStatementViewProps {
   onNavigateView?: (view: string) => void;
   globalUpdateTick?: number;
 }
+
+const CustomDropdown = ({ options, value, onChange, isDarkMode }: { options: {value: string, label: string}[], value: string, onChange: (val: string) => void, isDarkMode: boolean }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full rounded-xl py-2.5 px-4 pl-10 text-sm font-bold cursor-pointer flex items-center justify-between transition-all border ${isDarkMode ? 'bg-[#182232] text-white border-slate-700 hover:border-blue-500' : 'bg-slate-50 text-slate-900 border-slate-300 hover:border-blue-500 shadow-sm'}`}
+      >
+        <span className="truncate">{selectedOption ? selectedOption.label : 'اختر'}</span>
+        <ChevronDown className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-500' : (isDarkMode ? 'text-slate-400' : 'text-slate-500')}`} />
+      </div>
+      
+      {isOpen && (
+        <div className={`absolute z-50 w-full mt-2 rounded-xl border shadow-xl max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-200 ${isDarkMode ? 'bg-[#1e293b] border-slate-700 shadow-black/50' : 'bg-white border-slate-200 shadow-slate-200/50'}`}>
+          <div className="p-1.5 flex flex-col gap-1">
+            {options.map((opt) => (
+              <div
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                className={`px-3 py-2.5 rounded-lg text-sm font-bold cursor-pointer transition-colors flex items-center gap-2 ${value === opt.value ? (isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600') : (isDarkMode ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100')}`}
+              >
+                {value === opt.value ? <CheckCircle2 className="w-4 h-4 text-current shrink-0" /> : <div className="w-4 h-4 shrink-0" />}
+                <span className="truncate">{opt.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ModernDatePicker = ({ value, onChange, isDarkMode, placeholder }: { value: string, onChange: (val: string) => void, isDarkMode: boolean, placeholder: string }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const [currentMonth, setCurrentMonth] = React.useState(new Date());
+  
+  React.useEffect(() => {
+    if (value) {
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) setCurrentMonth(d);
+    }
+  }, [value]);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+  
+  const handlePrevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  const handleNextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+
+  const handleDateClick = (day: number) => {
+    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const offset = newDate.getTimezoneOffset();
+    newDate.setMinutes(newDate.getMinutes() - offset);
+    const dateStr = newDate.toISOString().split('T')[0];
+    onChange(dateStr);
+    setIsOpen(false);
+  };
+
+  const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full rounded-xl py-2.5 px-4 text-sm font-bold cursor-pointer flex items-center justify-between transition-all border ${isDarkMode ? 'bg-[#182232] text-white border-slate-700 hover:border-blue-500' : 'bg-slate-50 text-slate-900 border-slate-300 hover:border-blue-500 shadow-sm'}`}
+      >
+        <div className="flex items-center gap-2">
+          <Calendar className={`w-4 h-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+          <span className={value ? 'font-mono' : 'text-slate-500'} dir="ltr">{value ? value.replace(/-/g, '/') : placeholder}</span>
+        </div>
+      </div>
+      
+      {isOpen && (
+        <div className={`absolute z-50 w-[280px] mt-2 rounded-2xl border shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-200 ${isDarkMode ? 'bg-[#1e293b] border-slate-700 shadow-black/50' : 'bg-white border-slate-200 shadow-slate-200/50'}`} style={{ right: 0 }}>
+          <div className="flex items-center justify-between mb-4">
+            <button type="button" onClick={handleNextMonth} className={`p-1.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-700'}`}>
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <div className="font-bold text-sm">
+              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            </div>
+            <button type="button" onClick={handlePrevMonth} className={`p-1.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-700'}`}>
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1 mb-2 text-center" dir="rtl">
+            {['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'].map(d => (
+              <div key={d} className={`text-[10px] font-black ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{d}</div>
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1" dir="rtl">
+            {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+              <div key={`empty-${i}`} />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const isSelected = value === dateStr;
+              const isToday = new Date().toISOString().split('T')[0] === dateStr;
+              
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => handleDateClick(day)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all
+                    ${isSelected 
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                      : isToday
+                        ? (isDarkMode ? 'bg-slate-700 text-blue-400' : 'bg-blue-50 text-blue-600')
+                        : (isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-700')
+                    }
+                  `}
+                >
+                  <span className="font-mono">{day}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface StatementTransaction {
   id: string;
@@ -114,6 +267,12 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
 
   const [transactions, setTransactions] = useState<StatementTransaction[]>([]);
   const [currentBalance, setCurrentBalance] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [txType, category, txStatus, searchQuery, fromDate, toDate]);
 
   React.useEffect(() => {
     const fetchNetworkAndTransactions = async () => {
@@ -225,6 +384,11 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
       return true;
     });
   }, [transactions, txType, category, txStatus, searchQuery, fromDate, toDate]);
+
+  // Pagination calculations
+  const itemsPerPage = 20;
+  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / itemsPerPage));
+  const paginatedTransactions = filteredTransactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Calculate totals for the filtered view
   const totalSales = filteredTransactions
@@ -578,36 +742,24 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                   <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                     من تاريخ (بداية الفترة)
                   </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
-                      className={`w-full rounded-xl py-2.5 px-3 text-right focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        isDarkMode
-                          ? 'bg-[#1c283a] text-white border border-slate-700'
-                          : 'bg-white text-slate-900 border border-slate-300 shadow-xs'
-                      }`}
-                    />
-                  </div>
+                  <ModernDatePicker 
+                    value={fromDate}
+                    onChange={(val) => setFromDate(val)}
+                    isDarkMode={isDarkMode}
+                    placeholder="اختر تاريخ البداية"
+                  />
                 </div>
 
                 <div>
                   <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                     إلى تاريخ (نهاية الفترة)
                   </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
-                      className={`w-full rounded-xl py-2.5 px-3 text-right focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        isDarkMode
-                          ? 'bg-[#1c283a] text-white border border-slate-700'
-                          : 'bg-white text-slate-900 border border-slate-300 shadow-xs'
-                      }`}
-                    />
-                  </div>
+                  <ModernDatePicker 
+                    value={toDate}
+                    onChange={(val) => setToDate(val)}
+                    isDarkMode={isDarkMode}
+                    placeholder="اختر تاريخ النهاية"
+                  />
                 </div>
 
                 <div className="flex items-end gap-2">
@@ -629,13 +781,13 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
 
         {/* Collapsible Filter Panel (Note: From/To Date removed per user request) */}
         <div
-          className={`rounded-2xl border transition-all overflow-hidden ${
+          className={`rounded-2xl border transition-all ${
             isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
           }`}
         >
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`w-full px-5 py-3.5 flex items-center justify-between text-xs font-black transition-colors cursor-pointer ${
+            className={`w-full px-5 py-3.5 flex items-center justify-between text-xs font-black transition-colors cursor-pointer ${showFilters ? 'rounded-t-2xl' : 'rounded-2xl'} ${
               isDarkMode ? 'hover:bg-slate-800/40 text-slate-200' : 'hover:bg-slate-50 text-slate-800'
             }`}
           >
@@ -660,22 +812,19 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                   <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                     نوع المعاملة
                   </label>
-                  <select
+                  <CustomDropdown
+                    isDarkMode={isDarkMode}
                     value={txType}
-                    onChange={(e) => setTxType(e.target.value)}
-                    className={`w-full rounded-xl py-2.5 px-3 text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      isDarkMode
-                        ? 'bg-[#182232] text-white border border-slate-700'
-                        : 'bg-slate-50 text-slate-900 border border-slate-300'
-                    }`}
-                  >
-                    <option value="all">كل الأنواع</option>
-                    <option value="sales">مبيعات الكروت (الكل)</option>
-                    <option value="sales_pos">مبيعات (نظام نقاط البيع POS)</option>
-                    <option value="sales_app">مبيعات (تطبيق ومحافظ العملاء)</option>
-                    <option value="withdrawal">سحب مالي</option>
-                    <option value="commission">عمولات منصة</option>
-                  </select>
+                    onChange={(val) => setTxType(val)}
+                    options={[
+                      { value: 'all', label: 'كل الأنواع' },
+                      { value: 'sales', label: 'مبيعات الكروت (الكل)' },
+                      { value: 'sales_pos', label: 'مبيعات (نظام نقاط البيع POS)' },
+                      { value: 'sales_app', label: 'مبيعات (تطبيق ومحافظ العملاء)' },
+                      { value: 'withdrawal', label: 'سحب مالي' },
+                      { value: 'commission', label: 'عمولات منصة' }
+                    ]}
+                  />
                 </div>
 
                 {/* Category Filter */}
@@ -683,20 +832,15 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                   <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                     الفئة (فئة الكروت)
                   </label>
-                  <select
+                  <CustomDropdown
+                    isDarkMode={isDarkMode}
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className={`w-full rounded-xl py-2.5 px-3 text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      isDarkMode
-                        ? 'bg-[#182232] text-white border border-slate-700'
-                        : 'bg-slate-50 text-slate-900 border border-slate-300'
-                    }`}
-                  >
-                    <option value="all">كل الفئات</option>
-                    {uniqueCategories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
+                    onChange={(val) => setCategory(val)}
+                    options={[
+                      { value: 'all', label: 'كل الفئات' },
+                      ...uniqueCategories.map(cat => ({ value: cat, label: cat }))
+                    ]}
+                  />
                 </div>
 
                 {/* Transaction Status Filter */}
@@ -704,20 +848,17 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                   <label className={`block mb-1.5 text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                     حالة المعاملة
                   </label>
-                  <select
+                  <CustomDropdown
+                    isDarkMode={isDarkMode}
                     value={txStatus}
-                    onChange={(e) => setTxStatus(e.target.value)}
-                    className={`w-full rounded-xl py-2.5 px-3 text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      isDarkMode
-                        ? 'bg-[#182232] text-white border border-slate-700'
-                        : 'bg-slate-50 text-slate-900 border border-slate-300'
-                    }`}
-                  >
-                    <option value="all">الكل</option>
-                    <option value="completed">مكتمل / ناجح</option>
-                    <option value="pending">قيد الانتظار (سحوبات)</option>
-                    <option value="rejected">مرفوض</option>
-                  </select>
+                    onChange={(val) => setTxStatus(val)}
+                    options={[
+                      { value: 'all', label: 'الكل' },
+                      { value: 'completed', label: 'مكتمل / ناجح' },
+                      { value: 'pending', label: 'قيد الانتظار (سحوبات)' },
+                      { value: 'rejected', label: 'مرفوض' }
+                    ]}
+                  />
                 </div>
 
                 {/* Search input */}
@@ -936,7 +1077,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                    {filteredTransactions.map((tx) => (
+                    {paginatedTransactions.map((tx) => (
                       <tr
                         key={tx.id}
                         className={`transition-colors ${
@@ -1009,6 +1150,42 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className={`flex items-center justify-between p-4 border-t ${isDarkMode ? 'border-slate-800 bg-[#1b2536]/30 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
+                  <div className="text-xs font-bold">
+                    إجمالي المعاملات: {filteredTransactions.length}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        currentPage === 1 
+                        ? 'opacity-50 cursor-not-allowed border ' + (isDarkMode ? 'border-slate-700 text-slate-500' : 'border-slate-300 text-slate-400')
+                        : 'cursor-pointer hover:bg-blue-600 hover:text-white border border-blue-500 text-blue-500'
+                      }`}
+                    >
+                      السابق
+                    </button>
+                    <span className="text-xs font-bold px-2">
+                      صفحة {currentPage} من {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        currentPage === totalPages 
+                        ? 'opacity-50 cursor-not-allowed border ' + (isDarkMode ? 'border-slate-700 text-slate-500' : 'border-slate-300 text-slate-400')
+                        : 'cursor-pointer hover:bg-blue-600 hover:text-white border border-blue-500 text-blue-500'
+                      }`}
+                    >
+                      التالي
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div

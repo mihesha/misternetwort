@@ -21,6 +21,8 @@ interface AdminContextType {
   setPlatformCommissionRate: (rate: number) => void;
   supportPhone: string;
   setSupportPhone: (phone: string) => void;
+  isAdminDataLoaded: boolean;
+  setIsAdminDataLoaded: (loaded: boolean) => void;
   fetchAdminData: () => Promise<void>;
   setActiveNetworks: React.Dispatch<React.SetStateAction<ActiveNetwork[]>>;
   setWithdrawals: React.Dispatch<React.SetStateAction<WithdrawalRequest[]>>;
@@ -158,6 +160,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [platformCommissionType, setPlatformCommissionType] = useState<'fixed' | 'percentage'>('fixed');
   const [platformCommissionRate, setPlatformCommissionRate] = useState<number>(5);
   const [supportPhone, setSupportPhone] = useState<string>('784999804');
+  const [isAdminDataLoaded, setIsAdminDataLoaded] = useState<boolean>(false);
 
   // Modal States
 
@@ -341,6 +344,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           categories: []
         },
       ]);
+    } finally {
+      setIsAdminDataLoaded(true);
     }
   };
 
@@ -369,7 +374,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AdminContext.Provider
       value={{
-        stats, activeNetworks, withdrawals, auditLogs, dataEditRequests, platformCommissionType, setPlatformCommissionType, platformCommissionRate, setPlatformCommissionRate, supportPhone, setSupportPhone, fetchAdminData, setActiveNetworks, setWithdrawals, setDataEditRequests,
+        stats, activeNetworks, withdrawals, auditLogs, dataEditRequests, platformCommissionType, setPlatformCommissionType, platformCommissionRate, setPlatformCommissionRate, supportPhone, setSupportPhone, isAdminDataLoaded, setIsAdminDataLoaded, fetchAdminData, setActiveNetworks, setWithdrawals, setDataEditRequests,
     
         inspectDataEditReq, setInspectDataEditReq,
     adminUsers, setAdminUsers,

@@ -18,7 +18,13 @@ import {
   Activity,
   Layers,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ChevronUp,
+  History,
+  CalendarDays,
+  CalendarRange,
+  Clock,
+  SlidersHorizontal
 } from 'lucide-react';
 
 interface CardsManagementViewProps {
@@ -28,6 +34,158 @@ interface CardsManagementViewProps {
   networkCode?: string;
   networkId?: string | number;
   globalUpdateTick?: number;
+}
+
+const CustomDropdown = ({ options, value, onChange, isDarkMode }: { options: {value: string, label: string}[], value: string, onChange: (val: string) => void, isDarkMode: boolean }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full rounded-xl py-2.5 px-4 pl-10 text-sm font-bold cursor-pointer flex items-center justify-between transition-all border ${isDarkMode ? 'bg-[#182232] text-white border-slate-700 hover:border-blue-500' : 'bg-slate-50 text-slate-900 border-slate-300 hover:border-blue-500 shadow-sm'}`}
+      >
+        <span className="truncate">{selectedOption ? selectedOption.label : 'اختر'}</span>
+        <ChevronDown className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-500' : (isDarkMode ? 'text-slate-400' : 'text-slate-500')}`} />
+      </div>
+      
+      {isOpen && (
+        <div className={`absolute z-50 w-full mt-2 rounded-xl border shadow-xl max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-200 ${isDarkMode ? 'bg-[#1e293b] border-slate-700 shadow-black/50' : 'bg-white border-slate-200 shadow-slate-200/50'}`}>
+          <div className="p-1.5 flex flex-col gap-1">
+            {options.map((opt) => (
+              <div
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                className={`px-3 py-2.5 rounded-lg text-sm font-bold cursor-pointer transition-colors flex items-center gap-2 ${value === opt.value ? (isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600') : (isDarkMode ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100')}`}
+              >
+                {value === opt.value ? <CheckCircle2 className="w-4 h-4 text-current shrink-0" /> : <div className="w-4 h-4 shrink-0" />}
+                <span className="truncate">{opt.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ModernDatePicker = ({ value, onChange, isDarkMode, placeholder }: { value: string, onChange: (val: string) => void, isDarkMode: boolean, placeholder: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  useEffect(() => {
+    if (value) {
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) setCurrentMonth(d);
+    }
+  }, [value]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+  
+  const handlePrevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  const handleNextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+
+  const handleDateClick = (day: number) => {
+    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const offset = newDate.getTimezoneOffset();
+    newDate.setMinutes(newDate.getMinutes() - offset);
+    const dateStr = newDate.toISOString().split('T')[0];
+    onChange(dateStr);
+    setIsOpen(false);
+  };
+
+  const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full rounded-xl py-2.5 px-4 text-sm font-bold cursor-pointer flex items-center justify-between transition-all border ${isDarkMode ? 'bg-[#182232] text-white border-slate-700 hover:border-blue-500' : 'bg-slate-50 text-slate-900 border-slate-300 hover:border-blue-500 shadow-sm'}`}
+      >
+        <div className="flex items-center gap-2">
+          <Calendar className={`w-4 h-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+          <span className={value ? 'font-mono' : 'text-slate-500'} dir="ltr">{value ? value.replace(/-/g, '/') : placeholder}</span>
+        </div>
+      </div>
+      
+      {isOpen && (
+        <div className={`absolute z-50 w-[280px] mt-2 rounded-2xl border shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-200 ${isDarkMode ? 'bg-[#1e293b] border-slate-700 shadow-black/50' : 'bg-white border-slate-200 shadow-slate-200/50'}`} style={{ right: 0 }}>
+          <div className="flex items-center justify-between mb-4">
+            <button type="button" onClick={handleNextMonth} className={`p-1.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-700'}`}>
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <div className="font-bold text-sm">
+              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            </div>
+            <button type="button" onClick={handlePrevMonth} className={`p-1.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-700'}`}>
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1 mb-2 text-center" dir="rtl">
+            {['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'].map(d => (
+              <div key={d} className={`text-[10px] font-black ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{d}</div>
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1" dir="rtl">
+            {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+              <div key={`empty-${i}`} />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const isSelected = value === dateStr;
+              const isToday = new Date().toISOString().split('T')[0] === dateStr;
+              
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => handleDateClick(day)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all
+                    ${isSelected 
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                      : isToday
+                        ? (isDarkMode ? 'bg-slate-700 text-blue-400' : 'bg-blue-50 text-blue-600')
+                        : (isDarkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-700')
+                    }
+                  `}
+                >
+                  <span className="font-mono">{day}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
@@ -49,6 +207,7 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
   
   // Date Filtering State
   const [dateRangeType, setDateRangeType] = useState('all');
@@ -325,106 +484,147 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
         })()}
 
         {/* Filters Section */}
-        <div className={`p-6 rounded-2xl border transition-colors space-y-5 shadow-xl ${isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200'}`}>
-          <div className="flex items-center gap-2 mb-2 text-slate-400 border-b pb-3 border-slate-700/30">
-            <Filter className="w-5 h-5 text-blue-500" />
-            <h3 className="text-sm md:text-base font-extrabold text-blue-400">الفلترة والبحث المتقدم</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Search */}
-            <div className="relative">
-              <label className="block text-[11px] md:text-xs font-bold mb-2 text-slate-400">البحث الشامل</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="رقم الكرت، كلمة المرور..."
-                  className={`w-full rounded-xl py-2.5 pr-10 pl-4 text-xs md:text-sm font-bold focus:outline-none transition-all border ${
-                    isDarkMode ? 'bg-[#1b2536] text-white border-slate-700 focus:border-blue-500' : 'bg-slate-50 text-slate-900 border-slate-300 focus:border-blue-500'
-                  }`}
-                />
-                <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
+        <div className={`rounded-2xl border transition-all ${isDarkMode ? 'bg-[#121926] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`w-full px-5 py-3.5 flex items-center justify-between text-xs font-black transition-colors cursor-pointer ${showFilters ? 'rounded-t-2xl' : 'rounded-2xl'} ${
+              isDarkMode ? 'hover:bg-slate-800/40 text-slate-200' : 'hover:bg-slate-50 text-slate-800'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
+                <Filter className="w-4 h-4" />
               </div>
+              <span>تصفية وفلترة الكروت</span>
+              {(categoryFilter !== 'all' || statusFilter !== 'all' || searchQuery || dateRangeType !== 'all') && (
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+              )}
             </div>
-
-            {/* Status */}
-            <div>
-              <label className="block text-[11px] md:text-xs font-bold mb-2 text-slate-400">حالة الكرت</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className={`w-full rounded-xl py-2.5 px-3 text-xs md:text-sm font-bold focus:outline-none border ${
-                  isDarkMode ? 'bg-[#1b2536] text-white border-slate-700' : 'bg-slate-50 text-slate-900 border-slate-300'
-                }`}
-              >
-                <option value="all">جميع الحالات</option>
-                <option value="available">متاح</option>
-                <option value="sold">مباع</option>
-              </select>
+            <div className="flex items-center gap-2 text-slate-400">
+              <span className="text-xs font-bold hidden sm:inline">خيارات التصفية والتاريخ</span>
+              {showFilters ? <ChevronUp className="w-5 h-5 text-blue-500" /> : <ChevronDown className="w-5 h-5" />}
             </div>
+          </button>
 
-            {/* Category */}
-            <div>
-              <label className="block text-[11px] md:text-xs font-bold mb-2 text-slate-400">فئة الكرت</label>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className={`w-full rounded-xl py-2.5 px-3 text-xs md:text-sm font-bold focus:outline-none border ${
-                  isDarkMode ? 'bg-[#1b2536] text-white border-slate-700' : 'bg-slate-50 text-slate-900 border-slate-300'
-                }`}
-              >
-                <option value="all">جميع الفئات</option>
-                {categories.map((c: any) => (
-                  <option key={c.id} value={c.id.toString()}>{c.name || c.price} - {c.price} ريال</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Date Range Pre-sets */}
-            <div>
-              <label className="block text-[11px] md:text-xs font-bold mb-2 text-slate-400">تاريخ الإضافة</label>
-              <select
-                value={dateRangeType}
-                onChange={(e) => setDateRangeType(e.target.value)}
-                className={`w-full rounded-xl py-2.5 px-3 text-xs md:text-sm font-bold focus:outline-none border ${
-                  isDarkMode ? 'bg-[#1b2536] text-white border-slate-700' : 'bg-slate-50 text-slate-900 border-slate-300'
-                }`}
-              >
-                <option value="all">جميع الأوقات</option>
-                <option value="today">اليوم</option>
-                <option value="week">آخر 7 أيام</option>
-                <option value="month">هذا الشهر</option>
-                <option value="custom">تاريخ مخصص...</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Custom Date Inputs */}
-          {dateRangeType === 'custom' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3 border-t border-slate-700/30 animate-in fade-in slide-in-from-top-2">
-              <div>
-                <label className="block text-[11px] md:text-xs font-bold mb-2 text-amber-500">من تاريخ (بداية الفترة)</label>
-                <input
-                  type="date"
-                  value={customDateFrom}
-                  onChange={(e) => setCustomDateFrom(e.target.value)}
-                  className={`w-full rounded-xl py-2.5 px-4 text-xs md:text-sm font-mono font-bold focus:outline-none border ${
-                    isDarkMode ? 'bg-[#1b2536] text-white border-slate-700' : 'bg-slate-50 text-slate-900 border-slate-300'
-                  }`}
-                />
+          {showFilters && (
+            <div className={`p-6 border-t space-y-6 ${isDarkMode ? 'border-slate-800 bg-slate-900/20' : 'border-slate-100 bg-slate-50/50'}`}>
+              
+              {/* Quick Periods */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`text-xs font-bold ml-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>الفترة:</span>
+                {[
+                  { id: 'all', label: 'كل الأوقات', icon: History },
+                  { id: 'today', label: 'اليوم', icon: Calendar },
+                  { id: 'week', label: 'آخر 7 أيام', icon: CalendarRange },
+                  { id: 'month', label: 'هذا الشهر', icon: CalendarDays },
+                  { id: 'custom', label: 'تخصيص', icon: SlidersHorizontal },
+                ].map((period) => {
+                  const IconComp = period.icon;
+                  return (
+                    <button
+                      key={period.id}
+                      onClick={() => setDateRangeType(period.id)}
+                      className={`px-4 py-2 rounded-xl transition-all font-bold text-xs flex items-center gap-1.5 ${
+                        dateRangeType === period.id
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-500/50 ring-offset-1 ' + (isDarkMode ? 'ring-offset-slate-900' : 'ring-offset-white')
+                          : isDarkMode
+                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                          : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      <IconComp className={`w-3.5 h-3.5 ${dateRangeType === period.id ? 'text-white' : 'text-blue-500'}`} />
+                      <span>{period.label}</span>
+                    </button>
+                  );
+                })}
               </div>
-              <div>
-                <label className="block text-[11px] md:text-xs font-bold mb-2 text-amber-500">إلى تاريخ (نهاية الفترة)</label>
-                <input
-                  type="date"
-                  value={customDateTo}
-                  onChange={(e) => setCustomDateTo(e.target.value)}
-                  className={`w-full rounded-xl py-2.5 px-4 text-xs md:text-sm font-mono font-bold focus:outline-none border ${
-                    isDarkMode ? 'bg-[#1b2536] text-white border-slate-700' : 'bg-slate-50 text-slate-900 border-slate-300'
-                  }`}
-                />
+
+              {dateRangeType === 'custom' && (
+                <div className={`p-5 rounded-2xl border animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm ${isDarkMode ? 'bg-slate-800/50 border-blue-500/30' : 'bg-blue-50/50 border-blue-200'}`}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+                    <div>
+                      <label className={`block mb-1.5 text-xs font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>من تاريخ</label>
+                      <ModernDatePicker 
+                        value={customDateFrom}
+                        onChange={(val) => setCustomDateFrom(val)}
+                        isDarkMode={isDarkMode}
+                        placeholder="اختر تاريخ البداية"
+                      />
+                    </div>
+                    <div>
+                      <label className={`block mb-1.5 text-xs font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>إلى تاريخ</label>
+                      <ModernDatePicker 
+                        value={customDateTo}
+                        onChange={(val) => setCustomDateTo(val)}
+                        isDarkMode={isDarkMode}
+                        placeholder="اختر تاريخ النهاية"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div>
+                  <label className={`block mb-1.5 text-xs font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>فئة الكرت</label>
+                  <CustomDropdown
+                    isDarkMode={isDarkMode}
+                    value={categoryFilter}
+                    onChange={(val) => setCategoryFilter(val)}
+                    options={[
+                      { value: 'all', label: 'جميع الفئات' },
+                      ...categories.map((c: any) => ({ value: c.id.toString(), label: `${c.name || c.price} - ${c.price} ريال` }))
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block mb-1.5 text-xs font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>حالة الكرت</label>
+                  <CustomDropdown
+                    isDarkMode={isDarkMode}
+                    value={statusFilter}
+                    onChange={(val) => setStatusFilter(val)}
+                    options={[
+                      { value: 'all', label: 'جميع الحالات' },
+                      { value: 'available', label: 'متاح' },
+                      { value: 'sold', label: 'مباع' }
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block mb-1.5 text-xs font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>البحث الشامل</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="رقم الكرت، كلمة المرور..."
+                      className={`w-full rounded-xl py-2.5 pr-10 pl-4 text-xs font-bold focus:outline-none transition-all border ${
+                        isDarkMode ? 'bg-[#1b2536] text-white border-slate-700 focus:border-blue-500' : 'bg-slate-50 text-slate-900 border-slate-300 focus:border-blue-500'
+                      }`}
+                    />
+                    <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDateRangeType('all');
+                    setCustomDateFrom('');
+                    setCustomDateTo('');
+                    setCategoryFilter('all');
+                    setStatusFilter('all');
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                >
+                  إعادة ضبط
+                </button>
               </div>
             </div>
           )}
