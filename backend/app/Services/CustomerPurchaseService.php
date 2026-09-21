@@ -18,31 +18,67 @@ class CustomerPurchaseService
      */
     public function purchaseCard($user, array $data)
     {
-        $quantity = $data['quantity'] ?? 1;
-
         $network = Network::where('network_code', $data['network_code'])->first();
         if (!$network) {
             throw new \Exception('الشبكة غير موجودة.');
         }
 
-        /** @var \App\Models\CardCategory $category */
-        $category = $network->cardCategories()->where('id', $data['category_id'])->first();
-
-        if (!$category || $category->stock < $quantity) {
-            throw new \Exception('عذراً، الكروت المطلوبة لهذه الفئة غير متوفرة بالكمية الكافية');
+        // Normalize data to support both single purchase and cart items array
+        $items = [];
+        if (!empty($data['items']) && is_array($data['items'])) {
+            $items = $data['items'];
+        } else {
+            $items[] = [
+                'category_id' => $data['category_id'],
+                'quantity' => $data['quantity'] ?? 1
+            ];
         }
 
-        $totalPrice = $category->price * $quantity;
+        if (empty($items)) {
+            throw new \Exception('السلة فارغة.');
+        }
+
+        $overallTotalPrice = 0;
+        $processedCategories = [];
+
+        // 1. Validate Stock & Calculate Totals for All Items
+        foreach ($items as $item) {
+            $quantity = (int)($item['quantity'] ?? 1);
+            if ($quantity <= 0) continue;
+
+            $category = $network->cardCategories()->where('id', $item['category_id'])->first();
+            
+            if (!$category) {
+                throw new \Exception('إحدى الفئات المطلوبة غير موجودة في هذه الشبكة.');
+            }
+            if ($category->stock < $quantity) {
+                throw new \Exception("عذراً، الكروت المطلوبة لفئة ({$category->name}) غير متوفرة بالكمية الكافية");
+            }
+            
+            $itemTotalPrice = $category->price * $quantity;
+            $overallTotalPrice += $itemTotalPrice;
+            
+            $processedCategories[] = [
+                'category' => $category,
+                'quantity' => $quantity,
+                'item_total_price' => $itemTotalPrice
+            ];
+        }
+
+        if ($overallTotalPrice <= 0 || empty($processedCategories)) {
+            throw new \Exception('لم يتم تحديد أي كروت صالحة للشراء.');
+        }
+
         $isInternalWallet = strtolower($data['wallet_type']) === 'internal_wallet';
-        
         $deposit = null;
         $overpayment = 0;
 
+        // 2. Validate Payment
         if ($isInternalWallet) {
             if (!$user) {
                 throw new \Exception('يجب تسجيل الدخول لاستخدام رصيد المحفظة.', 401);
             }
-            if ($user->wallet_balance < $totalPrice) {
+            if ($user->wallet_balance < $overallTotalPrice) {
                 throw new \Exception('رصيد محفظتك غير كافٍ لإتمام العملية.');
             }
         } else {
@@ -51,15 +87,9 @@ class CustomerPurchaseService
                     $walletType = strtolower($data['wallet_type']);
                     
                     $walletMapAr = [
-                        'jaib' => 'جيب',
-                        'jeeb' => 'جيب',
-                        'jawali' => 'جوالي',
-                        'saba_cash' => 'سبأ',
-                        'one_cash' => 'ون كاش',
-                        'pyes' => 'بيس',
-                        'floosak' => 'فلوسك',
-                        'easy' => 'ايزي',
-                        'cash_wallet' => 'كاش',
+                        'jaib' => 'جيب', 'jeeb' => 'جيب', 'jawali' => 'جوالي',
+                        'saba_cash' => 'سبأ', 'one_cash' => 'ون كاش', 'pyes' => 'بيس',
+                        'floosak' => 'فلوسك', 'easy' => 'ايزي', 'cash_wallet' => 'كاش',
                         'jawwal' => 'جوال'
                     ];
                     
@@ -68,7 +98,7 @@ class CustomerPurchaseService
                     $query->where('wallet_name', 'LIKE', "%{$walletType}%")
                           ->orWhere('wallet_name', 'LIKE', "%{$walletSearchAr}%");
                           
-                    if ($walletType === 'jaib' || $walletType === 'jeeb') {
+                    if (in_array($walletType, ['jaib', 'jeeb'])) {
                         $query->orWhere('wallet_name', 'LIKE', "%jaib%")
                               ->orWhere('wallet_name', 'LIKE', "%jeeb%");
                     }
@@ -80,67 +110,95 @@ class CustomerPurchaseService
             }
 
             if ($deposit->status === 'used') {
-                throw new \Exception('عذراً، رقم المرجع هذا تم استخدامه مسبقاً لشراء كرت آخر.');
+                throw new \Exception('عذراً، رقم المرجع هذا تم استخدامه مسبقاً لشراء كروت أخرى.');
             }
 
-            if ($deposit->amount < $totalPrice) {
+            if ($deposit->amount < $overallTotalPrice) {
                 throw new \Exception('عذراً، مبلغ الإيداع أقل من إجمالي سعر الكروت المطلوبة.');
             }
 
-            $overpayment = $deposit->amount - $totalPrice;
+            $overpayment = $deposit->amount - $overallTotalPrice;
 
             if ($overpayment > 0 && empty($data['confirm_overpayment'])) {
                 $errorInfo = json_encode([
                     'error' => 'overpayment_warning',
                     'deposited_amount' => $deposit->amount,
-                    'card_price' => $totalPrice,
+                    'card_price' => $overallTotalPrice,
                     'remaining_amount' => $overpayment,
                     'is_guest' => !$user
                 ]);
-                throw new \Exception($errorInfo, 400); // 400 will be caught by controller to send structured response
+                throw new \Exception($errorInfo, 400);
             }
         }
 
+        // 3. Process Transaction Core
         DB::beginTransaction();
         try {
-            $category->decrement('stock', $quantity);
-
+            $allPurchasedCards = collect();
+            $totalCommission = 0;
+            
             $commissionType = SystemSetting::where('key', 'platformCommissionType')->value('value') ?? 'fixed';
             $commissionValue = (float) (SystemSetting::where('key', 'platformCommissionRate')->value('value') ?? 5);
 
-            if ($commissionType === 'fixed') {
-                $commission = $commissionValue * $quantity; 
-            } else {
-                $commission = $totalPrice * ($commissionValue / 100); 
+            foreach ($processedCategories as $proc) {
+                /** @var \App\Models\CardCategory $cat */
+                $cat = $proc['category'];
+                $qty = $proc['quantity'];
+                $itemTotal = $proc['item_total_price'];
+
+                // Deduct Category Stock
+                $cat->decrement('stock', $qty);
+
+                // Calculate Commission for this item
+                if ($commissionType === 'fixed') {
+                    $itemCommission = $commissionValue * $qty; 
+                } else {
+                    $itemCommission = $itemTotal * ($commissionValue / 100); 
+                }
+                $totalCommission += $itemCommission;
+
+                // Extract Cards Locking for Update
+                $cards = Card::where('card_category_id', $cat->id)
+                    ->where('status', 'available')
+                    ->lockForUpdate()
+                    ->limit($qty)
+                    ->get();
+
+                if ($cards->count() < $qty) {
+                    throw new \Exception("نعتذر، لقد نفدت كروت الفئة {$cat->name} بشكل فعلي أثناء المعالجة.");
+                }
+
+                $cardIds = $cards->pluck('id')->toArray();
+                Card::whereIn('id', $cardIds)->update([
+                    'customer_phone' => $user ? $user->phone : ($data['customer_phone'] ?? null),
+                    'status' => 'sold',
+                    'purchased_at' => now(),
+                ]);
+
+                // Track all extracted cards
+                $allPurchasedCards = $allPurchasedCards->merge($cards);
+
+                // Create Individual Transaction Record for Clear Accounting
+                Transaction::create([
+                    'network_id' => $network->id,
+                    'type' => 'sale',
+                    'amount' => $itemTotal,
+                    'description' => "فئة {$cat->name} - شراء عدد {$qty} كرت عبر محفظة {$data['wallet_type']} (عمولة: {$itemCommission})",
+                    'reference_number' => $data['transaction_ref'] ?? 'WALLET-' . time()
+                ]);
             }
-            $netEarnings = $totalPrice - $commission;
-            
-            $network->increment('balance', (float)$netEarnings);
-            $network->increment('total_sales', (float)$totalPrice);
 
-            $cards = Card::where('card_category_id', $category->id)
-                ->where('status', 'available')
-                ->lockForUpdate()
-                ->limit($quantity)
-                ->get();
+            // Update Network Balance & Sales once with totals
+            $totalNetEarnings = $overallTotalPrice - $totalCommission;
+            $network->increment('balance', (float)$totalNetEarnings);
+            $network->increment('total_sales', (float)$overallTotalPrice);
 
-            if ($cards->count() < $quantity) {
-                DB::rollBack();
-                throw new \Exception('نعتذر، لقد نفدت كروت هذه الفئة بشكل فعلي.');
-            }
-
-            $cardIds = $cards->pluck('id')->toArray();
-            Card::whereIn('id', $cardIds)->update([
-                'customer_phone' => $user ? $user->phone : ($data['customer_phone'] ?? null),
-                'status' => 'sold',
-                'purchased_at' => now(),
-            ]);
-
+            // Handle Payment Deduction / Overpayment processing
             if ($isInternalWallet) {
-                $user->decrement('wallet_balance', $totalPrice);
+                $user->decrement('wallet_balance', $overallTotalPrice);
             } else {
                 $deposit->status = 'used';
-                $deposit->used_for_card_id = $cards->first()->id; 
+                $deposit->used_for_card_id = $allPurchasedCards->first()->id; 
                 $deposit->save();
 
                 if ($overpayment > 0 && $user) {
@@ -155,18 +213,10 @@ class CustomerPurchaseService
                 }
             }
 
-            Transaction::create([
-                'network_id' => $network->id,
-                'type' => 'sale',
-                'amount' => $totalPrice,
-                'description' => "فئة {$category->name} - شراء عدد $quantity كرت عبر محفظة {$data['wallet_type']} (عمولة: {$commission})",
-                'reference_number' => $data['transaction_ref'] ?? 'WALLET-' . time()
-            ]);
-
             DB::commit();
 
             return [
-                'cards' => $cards,
+                'cards' => $allPurchasedCards,
                 'network' => $network->name,
                 'network_link' => $network->external_link,
                 'new_wallet_balance' => $user ? $user->fresh()->wallet_balance : null

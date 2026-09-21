@@ -15,19 +15,22 @@ class CardController extends Controller
         // Support using english_name (slug) instead of network_code
         if ($request->has('network_code')) {
             $network = Network::where('network_code', $request->network_code)
-                              ->orWhere('english_name', $request->network_code)
-                              ->first();
+                ->orWhere('english_name', $request->network_code)
+                ->first();
             if ($network) {
                 $request->merge(['network_code' => $network->network_code]);
             }
         }
         $validated = $request->validate([
             'network_code' => 'required|string|exists:networks,network_code',
-            'category_id' => 'required|exists:card_categories,id',
+            'category_id' => 'nullable|exists:card_categories,id', // Make nullable if using items
+            'quantity' => 'nullable|integer|min:1',
+            'items' => 'nullable|array',
+            'items.*.category_id' => 'required_with:items|exists:card_categories,id',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
             'customer_phone' => 'nullable|string',
             'wallet_type' => 'required|string',
             'transaction_ref' => 'nullable|string',
-            'quantity' => 'nullable|integer|min:1',
             'confirm_overpayment' => 'nullable|boolean'
         ]);
 
@@ -44,16 +47,16 @@ class CardController extends Controller
                 'network_link' => $result['network_link'],
                 'new_wallet_balance' => $result['new_wallet_balance']
             ], 201);
-            
+
         } catch (\Exception $e) {
             $code = $e->getCode() > 0 ? $e->getCode() : 400;
-            
+
             // Check if error is JSON (for overpayment warning)
             $decoded = json_decode($e->getMessage(), true);
             if (is_array($decoded) && isset($decoded['error'])) {
                 return response()->json($decoded, $code);
             }
-            
+
             return response()->json(['error' => $e->getMessage()], $code);
         }
     }

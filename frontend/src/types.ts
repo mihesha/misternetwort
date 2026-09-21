@@ -271,6 +271,7 @@ export interface PublicNetworkInfo {
   id: string;
   name: string;
   nameAr: string;
+  networkCode?: string;
   location: string;
   coverageArea: string;
   activeNodes: number;

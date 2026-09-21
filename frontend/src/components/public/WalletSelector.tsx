@@ -37,8 +37,8 @@ export const WalletSelector: React.FC<WalletSelectorProps> = ({
               type="button"
               onClick={() => onSelectWallet({
                 id: 'internal_wallet',
-                name: 'محفظتي',
-                nameAr: 'محفظتي',
+                name: 'رصيدي',
+                nameAr: 'رصيدي',
                 category: 'wallet',
                 icon: 'Wallet',
                 bgColor: 'bg-emerald-100 dark:bg-emerald-900',
@@ -48,11 +48,10 @@ export const WalletSelector: React.FC<WalletSelectorProps> = ({
                 accountName: user.fullName,
                 steps: []
               })}
-              className={`w-full relative p-4 sm:p-5 rounded-3xl border-2 text-center transition-all duration-300 flex items-center justify-between cursor-pointer active:scale-[0.98] shadow-lg ${
-                isInternalSelected
+              className={`w-full relative p-4 sm:p-5 rounded-3xl border-2 text-center transition-all duration-300 flex items-center justify-between cursor-pointer active:scale-[0.98] shadow-lg ${isInternalSelected
                   ? 'border-emerald-400 bg-emerald-50/90 dark:bg-emerald-950/90 shadow-emerald-500/20'
                   : 'border-white/50 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:border-emerald-400/60 dark:hover:border-emerald-600/60'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shadow-inner transition-colors ${isInternalSelected ? 'bg-gradient-to-br from-emerald-400 to-teal-500 text-white' : 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800'}`}>
@@ -60,7 +59,7 @@ export const WalletSelector: React.FC<WalletSelectorProps> = ({
                 </div>
                 <div className="text-right">
                   <span className="block font-black text-slate-900 dark:text-slate-100 text-base sm:text-lg">
-                    الدفع عبر محفظتي
+                    الدفع من رصيدي
                   </span>
                   <span className="block font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm mt-0.5">
                     الرصيد المتاح: {(user.wallet_balance || 0).toFixed(2)} ر.ي
@@ -85,11 +84,10 @@ export const WalletSelector: React.FC<WalletSelectorProps> = ({
                 key={wallet.id}
                 type="button"
                 onClick={() => onSelectWallet(wallet)}
-                className={`relative p-3 sm:p-4 rounded-3xl border-2 text-center transition-all duration-300 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer active:scale-[0.98] group ${
-                  isSelected
+                className={`relative p-3 sm:p-4 rounded-3xl border-2 text-center transition-all duration-300 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer active:scale-[0.98] group ${isSelected
                     ? 'border-purple-500 bg-purple-50/90 dark:bg-purple-900/40 shadow-lg shadow-purple-500/20'
                     : 'border-white/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md hover:border-purple-300 dark:hover:border-purple-700/60 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md'
-                }`}
+                  }`}
               >
                 {/* Selected Checkmark */}
                 {isSelected && (
@@ -100,9 +98,8 @@ export const WalletSelector: React.FC<WalletSelectorProps> = ({
 
                 {/* Wallet Icon Badge */}
                 <div
-                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-xs sm:text-sm font-bold shadow-inner transition-transform group-hover:-translate-y-1 ${
-                    isSelected ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-purple-500/30' : `${wallet.bgColor} ${wallet.textColor}`
-                  }`}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-xs sm:text-sm font-bold shadow-inner transition-transform group-hover:-translate-y-1 ${isSelected ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-purple-500/30' : `${wallet.bgColor} ${wallet.textColor}`
+                    }`}
                 >
                   <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>

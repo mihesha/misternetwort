@@ -103,8 +103,8 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
         ord.status === 'completed'
           ? 'approved'
           : ord.status === 'pending'
-          ? 'pending'
-          : 'cancelled';
+            ? 'pending'
+            : 'cancelled';
 
       ord.generatedCards.forEach((c) => {
         allCards.push({
@@ -136,13 +136,15 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
   // Derive favorite networks dynamically from orders
   const getFavoriteNetworks = (): PublicNetworkInfo[] => {
     const networksMap = new Map<string, PublicNetworkInfo>();
-    
+
     orders.forEach(order => {
       order.generatedCards.forEach(card => {
-        if (card.networkCode && card.networkName && card.networkName !== 'غير معروف') {
-          if (!networksMap.has(card.networkCode)) {
-            networksMap.set(card.networkCode, {
-              id: (card as any).englishName || card.networkCode,
+        if (card.networkName && card.networkName !== 'غير معروف') {
+          // Use englishName or networkCode if available, otherwise just use networkName as ID
+          const netId = (card as any).englishName || card.networkCode || card.networkName;
+          if (!networksMap.has(card.networkName)) {
+            networksMap.set(card.networkName, {
+              id: netId,
               name: card.networkName,
               nameAr: card.networkName,
               location: 'الشبكة',
@@ -154,7 +156,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
         }
       });
     });
-    
+
     return Array.from(networksMap.values());
   };
 
@@ -266,78 +268,6 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
 
       {/* ================= MAIN CONTENT AREA ================= */}
       <main className="max-w-4xl w-full mx-auto px-4 py-2 sm:py-3 space-y-3.5 flex-1">
-        {/* Header Card (Title, Description & Segmented Tabs) */}
-        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/90 rounded-3xl p-5 sm:p-6 space-y-5 shadow-xl relative overflow-hidden">
-          {/* Header Title & Subtitle */}
-          <div className="space-y-1.5 text-right">
-            {activeTab === 'approved' && (
-              <>
-                <h2 className="text-xl sm:text-2xl font-black text-purple-700 dark:text-purple-300">
-                  كروت مشترياتي
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                  استعرض كروت الإنترنت التي قمت بشرائها مع بيانات استخدامها وتفاصيل العمليات.
-                </p>
-              </>
-            )}
-            {activeTab === 'pending' && (
-              <>
-                <h2 className="text-xl sm:text-2xl font-black text-purple-700 dark:text-purple-300">
-                  طلبات قيد المراجعة
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                  تابع الطلبات التي ما زالت بانتظار مراجعة وتأكيد عملية الدفع من قبل إدارة الشبكة.
-                </p>
-              </>
-            )}
-            {activeTab === 'cancelled' && (
-              <>
-                <h2 className="text-xl sm:text-2xl font-black text-purple-700 dark:text-purple-300">
-                  الطلبات الملغية
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                  استعرض الطلبات التي تم رفضها من الإدارة أو انتهت مهلة سدادها وتم إلغاؤها.
-                </p>
-              </>
-            )}
-          </div>
-
-          {/* Segmented Pill Navigation Bar */}
-          <div className="bg-slate-100/80 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/80 grid grid-cols-3 gap-1 relative z-10 backdrop-blur-md">
-            <button
-              onClick={() => setActiveTab('pending')}
-              className={`py-2.5 px-3 text-[11px] sm:text-sm font-black rounded-xl transition-all duration-300 cursor-pointer text-center relative ${
-                activeTab === 'pending'
-                  ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-md scale-100'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-900/50 scale-95'
-              }`}
-            >
-              قيد الانتظار
-            </button>
-
-            <button
-              onClick={() => setActiveTab('approved')}
-              className={`py-2.5 px-3 text-[11px] sm:text-sm font-black rounded-xl transition-all duration-300 cursor-pointer text-center relative ${
-                activeTab === 'approved'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30 scale-100 ring-2 ring-emerald-400/50'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-900/50 scale-95'
-              }`}
-            >
-              الموافق عليها
-            </button>
-
-            <button
-              onClick={() => setActiveTab('cancelled')}
-              className={`py-2.5 px-3 text-[11px] sm:text-sm font-black rounded-xl transition-all duration-300 cursor-pointer text-center relative ${
-                activeTab === 'cancelled'
-                  ? 'bg-white dark:bg-slate-800 text-red-500 dark:text-red-400 shadow-md scale-100'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-900/50 scale-95'
-              }`}
-            >
-              الملغية
-            </button>
-          </div>
-        </div>
 
         {/* Display Content Box / Empty State Box */}
         <div className="bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-white/40 dark:border-slate-800/50 rounded-3xl p-6 sm:p-10 text-center min-h-[350px] flex flex-col items-center justify-center space-y-4 shadow-xl">
@@ -347,7 +277,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                 <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden flex flex-col gap-4 group hover:shadow-xl hover:border-purple-300 dark:hover:border-purple-700 transition-all duration-300">
                   {/* Decorative background */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 dark:bg-purple-500/5 blur-3xl rounded-full pointer-events-none group-hover:bg-purple-500/10 transition-colors" />
-                  
+
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
                     <div className="flex items-center gap-3 w-full sm:w-auto">
                       <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center border border-purple-100 dark:border-purple-800/50 shrink-0">
@@ -366,7 +296,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="text-left w-full sm:w-auto pr-14 sm:pr-0 -mt-1 sm:mt-0">
                       <span className="text-[10px] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded-md text-slate-500 font-mono tracking-wider">
                         S/N: {card.serialNumber}
@@ -376,10 +306,10 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
 
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
                     <div className="flex-1 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 flex items-center justify-between">
-                       <span className="text-[10px] text-slate-400 font-bold uppercase hidden sm:block">PIN</span>
-                       <span className="text-xl sm:text-2xl font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 select-all mx-auto sm:mx-0">{String(card.pinCode).replace(/-/g, '')}</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase hidden sm:block">PIN</span>
+                      <span className="text-xl sm:text-2xl font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 select-all mx-auto sm:mx-0">{String(card.pinCode).replace(/-/g, '')}</span>
                     </div>
-                    
+
                     <Button
                       onClick={() => handleCopyPin(String(card.pinCode))}
                       variant="primary"
@@ -539,15 +469,15 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                           </h4>
                           <span className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>متصلة</span>
+                            <span>نشطة</span>
                           </span>
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5 text-purple-500 shrink-0" />
                           <span>{net.location}</span>
                         </p>
-                        {orders.reduce((sum, ord) => sum + ord.generatedCards.filter(c => c.networkCode === net.id).length, 0) > 0 && (() => {
-                          const netCardsCount = orders.reduce((sum, ord) => sum + ord.generatedCards.filter(c => c.networkCode === net.id).length, 0);
+                        {orders.reduce((sum, ord) => sum + ord.generatedCards.filter(c => c.networkName === net.name).length, 0) > 0 && (() => {
+                          const netCardsCount = orders.reduce((sum, ord) => sum + ord.generatedCards.filter(c => c.networkName === net.name).length, 0);
                           return (
                             <div className="pt-0.5">
                               <span className="inline-block text-[11px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-2.5 py-0.5 rounded-md">

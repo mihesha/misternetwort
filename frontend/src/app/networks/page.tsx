@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Wifi, Search, MapPin, Heart, ArrowLeft } from 'lucide-react';
+import { Wifi, Search, MapPin, Heart, ArrowLeft, Hash } from 'lucide-react';
 import Button from '@/components/common/Button';
 import { PublicNetworkInfo } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -22,7 +22,7 @@ export default function NetworksPage() {
           setLoadingFavorites(false);
           return;
         }
-        
+
         const parsedUser = JSON.parse(savedUser);
         if (parsedUser && parsedUser.token) {
           const res = await fetch('/api/customer/purchases', {
@@ -32,12 +32,13 @@ export default function NetworksPage() {
             const data = await res.json();
             if (data.purchases && data.purchases.length > 0) {
               const networksMap = new Map<string, PublicNetworkInfo>();
-              
+
               data.purchases.forEach((card: any) => {
                 if (card.networkCode && card.networkName && card.networkName !== 'غير معروف') {
                   if (!networksMap.has(card.networkCode)) {
                     networksMap.set(card.networkCode, {
                       id: card.englishName || card.networkCode,
+                      networkCode: card.networkCode,
                       name: card.networkName,
                       nameAr: card.networkName,
                       location: 'الشبكة',
@@ -48,7 +49,7 @@ export default function NetworksPage() {
                   }
                 }
               });
-              
+
               setFavoriteNetworks(Array.from(networksMap.values()));
             }
           }
@@ -59,13 +60,13 @@ export default function NetworksPage() {
         setLoadingFavorites(false);
       }
     };
-    
+
     fetchFavorites();
   }, []);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
+
     setIsSearching(true);
     try {
       // Call search endpoint
@@ -73,28 +74,30 @@ export default function NetworksPage() {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
-           const mapped: PublicNetworkInfo[] = data.map((d: any) => ({
-             id: d.english_name || d.network_code || d.networkCode || d.id || 'unknown',
-             name: d.networkName || d.name || 'غير معروف',
-             nameAr: d.networkName || d.name || 'غير معروف',
-             location: (d.governorate || '') + ' - ' + (d.city || ''),
-             coverageArea: d.neighborhood || '',
-             activeNodes: d.activeNodes || 10,
-             status: (d.status === 'active' ? 'online' : 'maintenance') as 'online' | 'maintenance',
-           }));
-           setSearchResults(mapped);
+          const mapped: PublicNetworkInfo[] = data.map((d: any) => ({
+            id: d.english_name || d.network_code || d.networkCode || d.id || 'unknown',
+            networkCode: d.network_code || d.networkCode || String(d.id || ''),
+            name: d.networkName || d.name || 'غير معروف',
+            nameAr: d.networkName || d.name || 'غير معروف',
+            location: [d.governorate, d.city, d.neighborhood].filter(Boolean).join(' - '),
+            coverageArea: d.neighborhood || '',
+            activeNodes: d.activeNodes || 10,
+            status: (d.status === 'active' ? 'online' : 'maintenance') as 'online' | 'maintenance',
+          }));
+          setSearchResults(mapped);
         } else if (data.id || data.networkCode) {
-           setSearchResults([{
-             id: data.english_name || data.network_code || data.networkCode || data.id,
-             name: data.networkName || data.name,
-             nameAr: data.networkName || data.name,
-             location: (data.governorate || '') + ' - ' + (data.city || ''),
-             coverageArea: data.neighborhood || '',
-             activeNodes: data.activeNodes || 10,
-             status: (data.status === 'active' ? 'online' : 'maintenance') as 'online' | 'maintenance',
-           }]);
+          setSearchResults([{
+            id: data.english_name || data.network_code || data.networkCode || data.id,
+            networkCode: data.network_code || data.networkCode || String(data.id || ''),
+            name: data.networkName || data.name,
+            nameAr: data.networkName || data.name,
+            location: [data.governorate, data.city, data.neighborhood].filter(Boolean).join(' - '),
+            coverageArea: data.neighborhood || '',
+            activeNodes: data.activeNodes || 10,
+            status: (data.status === 'active' ? 'online' : 'maintenance') as 'online' | 'maintenance',
+          }]);
         } else {
-           setSearchResults([]);
+          setSearchResults([]);
         }
       } else {
         // Fallback: try fetching by exact domain/code if search endpoint is not available
@@ -103,9 +106,10 @@ export default function NetworksPage() {
           const data = await codeRes.json();
           setSearchResults([{
             id: data.english_name || data.network_code || data.networkCode || data.id || searchQuery,
+            networkCode: data.network_code || data.networkCode || String(data.id || ''),
             name: data.networkName || data.name,
             nameAr: data.networkName || data.name,
-            location: (data.governorate || '') + ' - ' + (data.city || ''),
+            location: [data.governorate, data.city, data.neighborhood].filter(Boolean).join(' - '),
             coverageArea: data.neighborhood || '',
             activeNodes: data.activeNodes || 10,
             status: (data.status === 'active' ? 'online' : 'maintenance') as 'online' | 'maintenance',
@@ -129,11 +133,11 @@ export default function NetworksPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-12 py-8 text-right dir-rtl px-4">
-      
+
       {/* Search Container */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100 dark:border-slate-800">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          
+
           {/* Right Side - Title */}
           <div className="text-center md:text-right w-full md:w-auto space-y-1">
             <span className="text-purple-600 dark:text-purple-400 font-bold text-sm">البحث السريع</span>
@@ -147,7 +151,7 @@ export default function NetworksPage() {
             <div className="relative flex-1">
               <input
                 type="text"
-                placeholder="ابحث باسم الشبكة أو رقمها الفريد..."
+                placeholder="البحث باسم الشبكة او بكود الشبكة..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -191,12 +195,20 @@ export default function NetworksPage() {
                           <Wifi className="w-6 h-6" />
                         </div>
                         <div>
-                          <h3 className="font-black text-lg text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                            {net.nameAr}
-                          </h3>
-                          <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-purple-400" />
-                            <span>{net.location || 'الشبكة'}</span>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-black text-lg text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors leading-tight">
+                              {net.nameAr}
+                            </h3>
+                            {net.networkCode && (
+                              <span className="text-[10px] sm:text-xs font-mono tracking-wider font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800/60 shadow-sm flex items-center gap-0.5">
+                                <Hash className="w-3 h-3 text-purple-500" />
+                                {net.networkCode}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 flex items-start gap-1.5 mt-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                            <span className="break-words leading-relaxed">{net.location || 'الشبكة'}</span>
                           </p>
                         </div>
                       </div>
@@ -239,18 +251,26 @@ export default function NetworksPage() {
                         <Wifi className="w-7 h-7" />
                       </div>
                       <div>
-                        <h3 className="font-black text-lg text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                          {net.nameAr}
-                        </h3>
-                        <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-purple-400" />
-                          <span>{net.location || 'موقع غير محدد'}</span>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-black text-lg text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors leading-tight">
+                            {net.nameAr}
+                          </h3>
+                          {net.networkCode && (
+                            <span className="text-[10px] sm:text-xs font-mono tracking-wider font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800/60 shadow-sm flex items-center gap-0.5">
+                              <Hash className="w-3 h-3 text-purple-500" />
+                              {net.networkCode}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 flex items-start gap-1.5 mt-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                          <span className="break-words leading-relaxed">{net.location || 'موقع غير محدد'}</span>
                         </p>
                       </div>
                     </div>
                     <span className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-full text-xs font-bold border border-emerald-100 dark:border-emerald-800/30">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                      متصلة
+                      نشطة
                     </span>
                   </div>
                 </div>

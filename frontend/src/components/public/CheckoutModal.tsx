@@ -103,8 +103,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         if (!networkCode) throw new Error('Network code missing');
         if (cartItems.length === 0) throw new Error('Cart is empty');
 
-        // We currently support buying 1 type of card per transaction in the backend
-        const item = cartItems[0];
+        const itemsPayload = cartItems.map(item => ({
+          category_id: item.wifiPackage.id,
+          quantity: item.quantity
+        }));
 
         let currentToken = user?.token;
         if (!currentToken) {
@@ -122,8 +124,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           },
           body: JSON.stringify({
             network_code: networkCode,
-            category_id: item.wifiPackage.id,
-            quantity: item.quantity,
+            items: itemsPayload,
             wallet_type: selectedWallet?.id || 'jaib',
             transaction_ref: transactionRef,
             confirm_overpayment: confirmOverpayment
@@ -143,16 +144,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           throw new Error(data.error || 'فشلت عملية الشراء');
         }
 
-        const generatedCards: GeneratedCard[] = (data.cards || []).map((c: any) => ({
-          packageId: item.wifiPackage.id,
-          packageName: item.wifiPackage.name,
-          networkName: data.network || '',
-          serialNumber: c.serial_number || 'N/A',
-          pinCode: c.card_code,
-          dataSize: item.wifiPackage.dataSize,
-          duration: item.wifiPackage.duration,
-          expireDate: item.wifiPackage.validity,
-        }));
+        const generatedCards: GeneratedCard[] = (data.cards || []).map((c: any) => {
+          const matchedItem = cartItems.find(i => Number(i.wifiPackage.id) === Number(c.card_category_id)) || cartItems[0];
+          return {
+            packageId: matchedItem.wifiPackage.id,
+            packageName: matchedItem.wifiPackage.name,
+            networkName: data.network || '',
+            serialNumber: c.serial_number || 'N/A',
+            pinCode: c.card_code || c.password || 'N/A',
+            dataSize: matchedItem.wifiPackage.dataSize,
+            duration: matchedItem.wifiPackage.duration,
+            expireDate: matchedItem.wifiPackage.validity,
+          };
+        });
 
         const newOrder: OrderDetails = {
           orderId: `ORD-${Date.now().toString().slice(-6)}`,
@@ -212,7 +216,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         handleProceedToVerification(undefined, true);
       }
     };
-    
+
     window.addEventListener('auth_success', handleAuthSuccess as EventListener);
     return () => window.removeEventListener('auth_success', handleAuthSuccess as EventListener);
   }, [overpaymentData, transactionRef, selectedWallet]);
@@ -349,9 +353,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div className="space-y-5 animate-slide-up">
                 {/* 1. Account Details Container */}
                 {(() => {
-                  const walletDisplayName = selectedWallet.nameAr.startsWith('محفظة')
+                  const walletDisplayName = selectedWallet.id === 'internal_wallet'
                     ? selectedWallet.nameAr
-                    : `محفظة ${selectedWallet.nameAr}`;
+                    : (selectedWallet.nameAr.startsWith('محفظة')
+                      ? selectedWallet.nameAr
+                      : `محفظة ${selectedWallet.nameAr}`);
 
                   return (
                     <div className="relative p-6 sm:p-8 rounded-[2rem] space-y-5 shadow-sm border-2 border-purple-200 dark:border-purple-500/30 overflow-hidden group bg-purple-50 dark:bg-purple-900/20">
@@ -385,42 +391,55 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       </div>
 
                       <div className="relative z-20 space-y-3.5">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white dark:bg-slate-950 p-4 rounded-2xl border border-purple-100 dark:border-purple-800/80 shadow-sm gap-3 sm:gap-0">
-                          <span className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
-                            رقم حساب {walletDisplayName}:
-                          </span>
-                          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
-                            <span className="font-mono font-black text-purple-700 dark:text-purple-300 text-xl sm:text-2xl dir-ltr tracking-wider">
-                              {selectedWallet.accountNumber}
+                        {selectedWallet.id === 'internal_wallet' ? (
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white dark:bg-slate-950 p-4 rounded-2xl border border-purple-100 dark:border-purple-800/80 shadow-sm gap-3 sm:gap-0">
+                            <span className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
+                              الرصيد المتاح:
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(selectedWallet.accountNumber);
-                                setCopiedPin(selectedWallet.accountNumber);
-                                setTimeout(() => setCopiedPin(null), 2000);
-                              }}
-                              className="p-2.5 text-purple-500 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-xl transition-all cursor-pointer border border-transparent"
-                              title="نسخ رقم الحساب"
-                            >
-                              {copiedPin === selectedWallet.accountNumber ? (
-                                <Check className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-                              ) : (
-                                <Copy className="w-5 h-5" />
-                              )}
-                            </button>
+                            <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-xl sm:text-2xl dir-ltr tracking-wider">
+                              {user?.wallet_balance?.toFixed(2) || '0.00'} <span className="text-sm">ر.ي</span>
+                            </span>
                           </div>
-                        </div>
+                        ) : (
+                          <>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white dark:bg-slate-950 p-4 rounded-2xl border border-purple-100 dark:border-purple-800/80 shadow-sm gap-3 sm:gap-0">
+                              <span className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
+                                رقم حساب {walletDisplayName}:
+                              </span>
+                              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
+                                <span className="font-mono font-black text-purple-700 dark:text-purple-300 text-xl sm:text-2xl dir-ltr tracking-wider">
+                                  {selectedWallet.accountNumber}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(selectedWallet.accountNumber);
+                                    setCopiedPin(selectedWallet.accountNumber);
+                                    setTimeout(() => setCopiedPin(null), 2000);
+                                  }}
+                                  className="p-2.5 text-purple-500 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-xl transition-all cursor-pointer border border-transparent"
+                                  title="نسخ رقم الحساب"
+                                >
+                                  {copiedPin === selectedWallet.accountNumber ? (
+                                    <Check className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                                  ) : (
+                                    <Copy className="w-5 h-5" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
 
-                        <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 px-2 font-medium">
-                          <span>اسم الحساب المستلم:</span>
-                          <span className="font-extrabold text-slate-800 dark:text-slate-200 text-sm sm:text-base">
-                            {selectedWallet.accountName}
-                          </span>
-                        </div>
+                            <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 px-2 font-medium">
+                              <span>اسم الحساب المستلم:</span>
+                              <span className="font-extrabold text-slate-800 dark:text-slate-200 text-sm sm:text-base">
+                                {selectedWallet.accountName}
+                              </span>
+                            </div>
+                          </>
+                        )}
 
                         <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 px-2 pt-3 border-t border-purple-200/50 dark:border-purple-800/50 font-medium">
-                          <span>المبلغ المطلوب تحويله:</span>
+                          <span>المبلغ المطلوب {selectedWallet.id === 'internal_wallet' ? 'خصمه' : 'تحويله'}:</span>
                           <span className="font-black text-purple-700 dark:text-amber-300 text-lg sm:text-xl inline-flex items-center gap-1.5">
                             <span>{totalAmount.toFixed(2)}</span>
                             <span className="text-xs font-semibold text-purple-600/80 dark:text-amber-300/80">ريال يمني</span>
@@ -581,7 +600,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden flex flex-col gap-4">
                   {/* Decorative background */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 dark:bg-purple-500/5 blur-3xl rounded-full pointer-events-none" />
-                  
+
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
                     <div className="flex items-center gap-3 w-full sm:w-auto">
                       <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center border border-purple-100 dark:border-purple-800/50 shrink-0">
@@ -599,7 +618,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="text-left w-full sm:w-auto pr-14 sm:pr-0 -mt-1 sm:mt-0">
                       <span className="text-[10px] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded-md text-slate-500 font-mono tracking-wider">
                         S/N: {card.serialNumber}
@@ -609,10 +628,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
                     <div className="flex-1 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 flex items-center justify-between group">
-                       <span className="text-[10px] text-slate-400 font-bold uppercase hidden sm:block">PIN</span>
-                       <span className="text-xl sm:text-2xl font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 select-all mx-auto sm:mx-0">{card.pinCode.replace(/-/g, '')}</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase hidden sm:block">PIN</span>
+                      <span className="text-xl sm:text-2xl font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 select-all mx-auto sm:mx-0">{card.pinCode.replace(/-/g, '')}</span>
                     </div>
-                    
+
                     <Button
                       onClick={() => handleCopyPin(card.pinCode)}
                       variant="primary"
