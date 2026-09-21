@@ -6,9 +6,9 @@ import { OwnerProvider, useOwnerContext } from '../../context/OwnerContext';
 import { useAppContext } from '../../context/AppContext';
 import { useIdleTimeout } from '../../hooks/useIdleTimeout';
 import { useOwnerActions } from '../../hooks/useOwnerActions';
-import { 
-  Moon, Sun, Globe, Settings, ChevronDown, Key, Shield, LogOut, 
-  Menu, X, LayoutDashboard, Home, Info, Edit, Wifi, CreditCard, 
+import {
+  Moon, Sun, Globe, Settings, ChevronDown, Key, Shield, LogOut,
+  Menu, X, LayoutDashboard, Home, Info, Edit, Wifi, CreditCard,
   PlusCircle, Receipt, Download, Layers, Wallet, Bell, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { GlobalOwnerModals } from '../../components/owner/GlobalOwnerModals';
@@ -20,7 +20,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
   const network = networks?.[0];
   const pathname = usePathname() || '';
   const router = useRouter();
-  
+
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -50,7 +50,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
         if (!token) return;
-        
+
         const notifs: { id: string, title: string, message: string, type: 'error' | 'warning' | 'info' | 'success', date: string }[] = [];
 
         // 1. Fetch Withdrawals
@@ -60,29 +60,29 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
             const data = await resW.json();
             const myWithdrawals = data.filter((w: any) => w.networkName === network?.name);
             myWithdrawals.forEach((w: any) => {
-               if (w.status === 'pending') {
-                   notifs.push({
-                      id: `wd-${w.id}`,
-                      title: 'طلب سحب قيد الانتظار',
-                      message: `طلب سحب بمبلغ ${w.amount.toLocaleString()} ر.ي إلى ${w.payoutMethod} قيد المراجعة.`,
-                      type: 'info',
-                      date: new Date(w.requestedAt).toLocaleDateString('ar-EG')
-                   });
-               } else if (w.status === 'completed') {
-                   const diffDays = (new Date().getTime() - new Date(w.requestedAt).getTime()) / (1000 * 3600 * 24);
-                   if (diffDays <= 3) {
-                       notifs.push({
-                          id: `wd-${w.id}`,
-                          title: 'تم تحويل مبلغ السحب بنجاح!',
-                          message: `تم الموافقة على طلبك وتحويل مبلغ ${w.amount.toLocaleString()} ر.ي إلى حسابك في ${w.payoutMethod}.`,
-                          type: 'success',
-                          date: new Date(w.requestedAt).toLocaleDateString('ar-EG')
-                       });
-                   }
-               }
+              if (w.status === 'pending') {
+                notifs.push({
+                  id: `wd-${w.id}`,
+                  title: 'طلب سحب قيد الانتظار',
+                  message: `طلب سحب بمبلغ ${w.amount.toLocaleString()} ر.ي إلى ${w.payoutMethod} قيد المراجعة.`,
+                  type: 'info',
+                  date: new Date(w.requestedAt).toLocaleDateString('ar-EG')
+                });
+              } else if (w.status === 'completed') {
+                const diffDays = (new Date().getTime() - new Date(w.requestedAt).getTime()) / (1000 * 3600 * 24);
+                if (diffDays <= 3) {
+                  notifs.push({
+                    id: `wd-${w.id}`,
+                    title: 'تم تحويل مبلغ السحب بنجاح!',
+                    message: `تم الموافقة على طلبك وتحويل مبلغ ${w.amount.toLocaleString()} ر.ي إلى حسابك في ${w.payoutMethod}.`,
+                    type: 'success',
+                    date: new Date(w.requestedAt).toLocaleDateString('ar-EG')
+                  });
+                }
+              }
             });
           }
-        } catch(e) {}
+        } catch (e) { }
 
         // 2. Fetch Edit Requests (includes modifying info or adding new categories)
         try {
@@ -91,57 +91,57 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
             const data = await resE.json();
             const myEdits = data.filter((r: any) => r.network_code === network?.code);
             myEdits.forEach((r: any) => {
-               if (r.status === 'pending') {
-                   notifs.push({
-                      id: `edit-${r.id}`,
-                      title: 'طلب تعديل بيانات قيد الانتظار',
-                      message: `طلب تعديل بيانات الشبكة أو إضافة فئات جديدة قيد المراجعة. مرجع: ${r.reference_number}.`,
-                      type: 'info',
-                      date: new Date(r.created_at).toLocaleDateString('ar-EG')
-                   });
-               } else if (r.status === 'approved') {
-                   const diffDays = (new Date().getTime() - new Date(r.created_at).getTime()) / (1000 * 3600 * 24);
-                   if (diffDays <= 3) {
-                       notifs.push({
-                          id: `edit-${r.id}`,
-                          title: 'تم الموافقة على طلب التعديل!',
-                          message: `تم الموافقة على طلب تعديل بيانات الشبكة وتطبيق التحديثات بنجاح.`,
-                          type: 'success',
-                          date: new Date(r.created_at).toLocaleDateString('ar-EG')
-                       });
-                   }
-               } else if (r.status === 'rejected') {
-                   const diffDays = (new Date().getTime() - new Date(r.created_at).getTime()) / (1000 * 3600 * 24);
-                   if (diffDays <= 3) {
-                       notifs.push({
-                          id: `edit-${r.id}`,
-                          title: 'تم رفض طلب التعديل',
-                          message: `عذراً، تم رفض طلب تعديل بيانات الشبكة. يرجى التواصل مع الإدارة.`,
-                          type: 'error',
-                          date: new Date(r.created_at).toLocaleDateString('ar-EG')
-                       });
-                   }
-               }
+              if (r.status === 'pending') {
+                notifs.push({
+                  id: `edit-${r.id}`,
+                  title: 'طلب تعديل بيانات قيد الانتظار',
+                  message: `طلب تعديل بيانات الشبكة أو إضافة فئات جديدة قيد المراجعة. مرجع: ${r.reference_number}.`,
+                  type: 'info',
+                  date: new Date(r.created_at).toLocaleDateString('ar-EG')
+                });
+              } else if (r.status === 'approved') {
+                const diffDays = (new Date().getTime() - new Date(r.created_at).getTime()) / (1000 * 3600 * 24);
+                if (diffDays <= 3) {
+                  notifs.push({
+                    id: `edit-${r.id}`,
+                    title: 'تم الموافقة على طلب التعديل!',
+                    message: `تم الموافقة على طلب تعديل بيانات الشبكة وتطبيق التحديثات بنجاح.`,
+                    type: 'success',
+                    date: new Date(r.created_at).toLocaleDateString('ar-EG')
+                  });
+                }
+              } else if (r.status === 'rejected') {
+                const diffDays = (new Date().getTime() - new Date(r.created_at).getTime()) / (1000 * 3600 * 24);
+                if (diffDays <= 3) {
+                  notifs.push({
+                    id: `edit-${r.id}`,
+                    title: 'تم رفض طلب التعديل',
+                    message: `عذراً، تم رفض طلب تعديل بيانات الشبكة. يرجى التواصل مع الإدارة.`,
+                    type: 'error',
+                    date: new Date(r.created_at).toLocaleDateString('ar-EG')
+                  });
+                }
+              }
             });
           }
-        } catch(e) {}
+        } catch (e) { }
 
         setDynamicNotifs(notifs);
-      } catch(e) {}
+      } catch (e) { }
     };
     if (network?.name && network?.code) {
-       fetchDynamicData();
+      fetchDynamicData();
     }
   }, [network?.name, network?.code, globalUpdateTick]);
 
   const notifications = React.useMemo(() => {
     if (!network || !network.categories) return [];
     const notifs: { id: string, title: string, message: string, type: 'error' | 'warning' | 'info' | 'success', date: string }[] = [];
-    
+
     network.categories.forEach((cat: any) => {
       const stock = cat.remaining !== undefined ? cat.remaining : 0;
       const minThreshold = cat.min_threshold ?? 10;
-      
+
       if (stock === 0 && (network.notif_out_of_stock ?? true)) {
         notifs.push({
           id: `out-${cat.value}`,
@@ -163,11 +163,11 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
 
     return notifs;
   }, [network]);
-  
+
   const combinedNotifications = React.useMemo(() => {
     return [...notifications, ...dynamicNotifs];
   }, [notifications, dynamicNotifs]);
-  
+
   const unreadCount = combinedNotifications.length;
 
   const isAuthPage = pathname.includes('/login') || pathname.includes('/change-password') || pathname.includes('/privacy-policy');
@@ -176,12 +176,12 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
   // Handle sidebar initial state and resize
   useEffect(() => {
     setIsMounted(true);
-    
+
     // Artificial delay for premium splash screen effect
     const timer = setTimeout(() => {
       setShowSplash(false);
     }, 800);
-    
+
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         setIsSidebarOpen(false);
@@ -194,7 +194,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
         }
       }
     };
-    
+
     // Set initial state
     handleResize();
 
@@ -225,7 +225,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
     if (!isAuthPage && isAuthenticated) {
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
       if (token) {
-        fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }).catch(() => {});
+        fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }).catch(() => { });
       }
       localStorage.removeItem('auth_token');
       localStorage.removeItem('owner_user');
@@ -295,9 +295,9 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
     return (
       <div className={`min-h-screen flex flex-col items-center justify-center font-['Cairo',sans-serif] transition-colors duration-500 ${isDarkMode ? 'bg-[#0a0f18]' : 'bg-[#f4f7fb]'}`}>
         <div className={`relative flex items-center justify-center w-20 h-20 mb-8 rounded-2xl shadow-2xl ${isDarkMode ? 'bg-white/5 shadow-black/50' : 'bg-white shadow-blue-900/10'}`}>
-          <img 
-            src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} 
-            alt="Card Box Logo" 
+          <img
+            src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'}
+            alt="Card Box Logo"
             className="w-12 h-12 object-cover rounded-xl animate-pulse"
           />
           {/* Outer rotating ring */}
@@ -332,9 +332,9 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
       {isStillLoading && (
         <div className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center font-['Cairo',sans-serif] transition-opacity duration-500 ${isDarkMode ? 'bg-[#0a0f18]' : 'bg-[#f4f7fb]'}`}>
           <div className={`relative flex items-center justify-center w-24 h-24 mb-8 rounded-2xl shadow-2xl ${isDarkMode ? 'bg-white/5 shadow-black/50' : 'bg-white shadow-blue-900/10'}`}>
-            <img 
-              src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} 
-              alt="Card Box Logo" 
+            <img
+              src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'}
+              alt="Card Box Logo"
               className="w-14 h-14 object-cover rounded-xl animate-pulse"
             />
             <div className={`absolute inset-0 rounded-2xl border-2 border-transparent border-t-purple-500 animate-spin`} style={{ animationDuration: '1.5s' }}></div>
@@ -352,7 +352,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
           {/* Header */}
           <header className={`fixed top-0 right-0 left-0 z-50 h-[72px] flex items-center justify-between px-4 md:px-8 transition-all duration-300 ${isDarkMode ? 'bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/20' : 'bg-white/80 backdrop-blur-xl border-b border-slate-200/80 shadow-sm'}`}>
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={toggleSidebar}
                 onMouseEnter={(e) => {
                   if (window.innerWidth >= 1024) {
@@ -366,13 +366,13 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
               >
                 <Menu className="w-5 h-5" />
               </button>
-              
+
               <Link href="/owner" className="flex items-center gap-2.5 ml-2 cursor-pointer transition-opacity hover:opacity-80">
-                <div className={`shrink-0 flex items-center justify-center p-1 rounded-xl ${isDarkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
-                  <img 
-                    src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} 
-                    alt="Card Box Logo" 
-                    className="w-9 h-9 object-cover rounded-lg"
+                <div className="shrink-0 flex items-center justify-center">
+                  <img
+                    src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'}
+                    alt="Card Box Logo"
+                    className="w-9 h-9 object-contain"
                   />
                 </div>
                 <span className={`text-base md:text-lg font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
@@ -380,15 +380,15 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
                 </span>
               </Link>
             </div>
-            
+
             <div className="flex items-center gap-3 md:gap-4">
               {/* Notifications Dropdown */}
               <div className="relative" ref={notifRef}>
-                <button 
+                <button
                   onClick={() => {
                     setShowNotifications(!showNotifications);
                     if (showProfileMenu) setShowProfileMenu(false);
-                  }} 
+                  }}
                   onMouseEnter={(e) => {
                     if (window.innerWidth >= 1024) {
                       const rect = e.currentTarget.getBoundingClientRect();
@@ -416,7 +416,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
                       <span className="text-[10px] px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded-full font-bold">{unreadCount} جديد</span>
                     )}
                   </div>
-                  
+
                   <div className="max-h-64 overflow-y-auto custom-scrollbar flex flex-col gap-1">
                     {combinedNotifications.length === 0 ? (
                       <div className={`text-center py-6 text-xs font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -461,7 +461,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-[#0f172a] animate-pulse" title="متصل"></div>
                   </div>
                 </div>
-                
+
 
 
                 {/* Profile Menu Dropdown */}
@@ -473,7 +473,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
                     <Shield className="w-4 h-4 text-indigo-400 shrink-0" /> <span>شروط الخصوصية والسياسة</span>
                   </Link>
                   <hr className={`my-2 ${isDarkMode ? 'border-white/10' : 'border-slate-100'}`} />
-                  <button 
+                  <button
                     onClick={async () => {
                       setShowProfileMenu(false);
                       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
@@ -483,7 +483,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` }
                           });
-                        } catch (e) {}
+                        } catch (e) { }
                       }
                       localStorage.removeItem('auth_token');
                       localStorage.removeItem('owner_user');
@@ -498,9 +498,9 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
               </div>
               {/* Vertical Divider */}
               <div className={`hidden lg:block w-px h-6 ${isDarkMode ? 'bg-white/10' : 'bg-slate-200'}`} />
-              
-              <button 
-                onClick={() => setIsDarkMode(!isDarkMode)} 
+
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
                 onMouseEnter={(e) => {
                   if (window.innerWidth >= 1024) {
                     const rect = e.currentTarget.getBoundingClientRect();
@@ -517,13 +517,13 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
           </header>
 
           {/* Sidebar Overlay */}
-          <div 
+          <div
             className={`fixed inset-0 bg-black/60 z-40 backdrop-blur-sm lg:hidden transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             onClick={() => setIsSidebarOpen(false)}
           />
 
           {/* Sidebar Menu */}
-          <aside 
+          <aside
             className={`fixed top-[72px] right-0 bottom-0 z-40 flex flex-col transition-all duration-300 ease-in-out
               ${isSidebarOpen ? 'w-[280px] translate-x-0' : 'w-[280px] lg:w-[80px] translate-x-full lg:translate-x-0'} 
               ${isDarkMode ? 'bg-[#0f172a] border-l border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.3)]' : 'bg-white border-l border-slate-200 shadow-[0_0_40px_rgba(0,0,0,0.05)]'}`}
@@ -532,17 +532,17 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
               <div className={`mb-4 mt-2 px-3 transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
                 <h3 className={`text-[11px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>القائمة الرئيسية</h3>
               </div>
-              
+
               <div className="flex flex-col gap-1.5">
                 {sidebarLinks.map((link, idx) => {
                   const Icon = link.icon;
-                  const isActive = link.href === '/owner' 
+                  const isActive = link.href === '/owner'
                     ? pathname === '/owner' || pathname === '/owner/'
                     : pathname.includes(link.href);
-                  
+
                   return (
-                    <Link 
-                      key={idx} 
+                    <Link
+                      key={idx}
                       href={link.href}
                       onMouseEnter={(e) => {
                         if (!isSidebarOpen && window.innerWidth >= 1024) {
@@ -554,21 +554,20 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
                       onClick={() => {
                         if (window.innerWidth < 1024) setIsSidebarOpen(false);
                       }}
-                      className={`relative flex items-center ${isSidebarOpen ? 'gap-3.5 px-4 py-3.5 mx-0' : 'justify-center p-3 mx-1'} rounded-2xl transition-all duration-200 font-bold text-[13px] group overflow-hidden ${
-                        isActive 
-                          ? (isDarkMode 
-                              ? 'bg-gradient-to-l from-blue-600/20 to-transparent text-blue-400 border border-blue-500/20 shadow-inner' 
-                              : 'bg-gradient-to-l from-blue-50 to-transparent text-blue-700 border border-blue-100') 
-                          : (isDarkMode 
-                              ? 'text-slate-400 hover:bg-white/5 hover:text-slate-200' 
-                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900')
-                      }`}
+                      className={`relative flex items-center ${isSidebarOpen ? 'gap-3.5 px-4 py-3.5 mx-0' : 'justify-center p-3 mx-1'} rounded-2xl transition-all duration-200 font-bold text-[13px] group overflow-hidden ${isActive
+                          ? (isDarkMode
+                            ? 'bg-gradient-to-l from-blue-600/20 to-transparent text-blue-400 border border-blue-500/20 shadow-inner'
+                            : 'bg-gradient-to-l from-blue-50 to-transparent text-blue-700 border border-blue-100')
+                          : (isDarkMode
+                            ? 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900')
+                        }`}
                     >
                       {/* Active Indicator Line */}
                       {isActive && (
                         <div className={`absolute right-0 top-0 bottom-0 w-1 bg-blue-500 ${isSidebarOpen ? 'rounded-l-full' : 'rounded-full'}`} />
                       )}
-                      
+
                       <div className={`p-2 rounded-xl transition-colors shrink-0 ${isActive ? (isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100') : (isDarkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-slate-100 group-hover:bg-slate-200')}`}>
                         <Icon className={`w-5 h-5 transition-transform duration-200 ${!isSidebarOpen && 'group-hover:scale-110'} ${isActive ? 'text-blue-500' : (isDarkMode ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-700')}`} />
                       </div>
@@ -580,10 +579,10 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
                 })}
               </div>
             </div>
-            
+
             {/* Sidebar Footer */}
             <div className={`mt-auto border-t transition-all duration-300 flex flex-col gap-2 ${isSidebarOpen ? 'p-4' : 'p-2'} ${isDarkMode ? 'border-white/10' : 'border-slate-100'}`}>
-              <div 
+              <div
                 className={`relative flex items-center justify-center rounded-2xl transition-all duration-300 ${isSidebarOpen ? 'p-4' : 'py-4 px-2'} ${isDarkMode ? 'bg-white/5' : 'bg-slate-50'} text-center overflow-hidden group`}
                 onMouseEnter={(e) => {
                   if (!isSidebarOpen && window.innerWidth >= 1024) {
@@ -605,7 +604,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
               </div>
 
               {/* Toggle Button */}
-              <button 
+              <button
                 onClick={toggleSidebar}
                 onMouseEnter={(e) => {
                   if (window.innerWidth >= 1024) {
@@ -628,7 +627,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
           </aside>
         </>
       )}
-      
+
       {/* Main Content Area */}
       <div className={`flex-1 transition-all duration-300 ${!isAuthPage ? 'pt-[72px]' : ''} ${!isAuthPage ? (isSidebarOpen ? 'lg:pr-[280px]' : 'lg:pr-[80px]') : ''}`}>
         {isAuthPage ? (
@@ -645,11 +644,11 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
 
       {/* Global Portal for Floating Tooltips */}
       {hoveredTooltip && (
-        <div 
+        <div
           className={`fixed px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap z-[100] shadow-xl animate-in fade-in duration-200 ${hoveredTooltip.placement === 'bottom' ? 'slide-in-from-top-2' : 'slide-in-from-right-2'} ${isDarkMode ? 'bg-[#1e293b] text-slate-200 border border-slate-700' : 'bg-slate-800 text-white'}`}
           style={
-            hoveredTooltip.placement === 'bottom' 
-              ? { top: hoveredTooltip.top, right: hoveredTooltip.right, transform: 'translateX(50%)' } 
+            hoveredTooltip.placement === 'bottom'
+              ? { top: hoveredTooltip.top, right: hoveredTooltip.right, transform: 'translateX(50%)' }
               : { top: hoveredTooltip.top, right: hoveredTooltip.right, transform: 'translateY(-50%)' }
           }
         >
