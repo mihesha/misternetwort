@@ -3,9 +3,9 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Light Mode: Soft Off-white background, deep slate for text */
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* Light Mode: Soft White background, Navy text */
+  --background: #F8FCFF;
+  --foreground: #062B63;
 }
 
 @theme inline {
@@ -13,13 +13,85 @@
   --color-foreground: var(--foreground);
   --font-sans: 'Alexandria', var(--font-geist-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
+
+  /* User Primary Colors */
+  --color-cardbox-navy: #062B63;
+  --color-cardbox-deepblue: #0759A8;
+  --color-cardbox-blue: #087FE8;
+  --color-cardbox-cyan: #00D9E8;
+  --color-cardbox-turquoise: #12C9D2;
+  --color-cardbox-lightcyan: #7DEEF2;
+  --color-cardbox-white: #F8FCFF;
+  --color-cardbox-lightgray: #9BAFC4;
+
+  /* Override Indigo (Primary Brand Color) -> Navy / Blue */
+  --color-indigo-50: #F8FCFF;
+  --color-indigo-100: #E1F0FE;
+  --color-indigo-200: #BCE0FD;
+  --color-indigo-300: #80C8FA;
+  --color-indigo-400: #3BA9F5;
+  --color-indigo-500: #087FE8; /* Blue */
+  --color-indigo-600: #0759A8; /* Deep Blue */
+  --color-indigo-700: #062B63; /* Navy */
+  --color-indigo-800: #041E45;
+  --color-indigo-900: #02122B;
+  --color-indigo-950: #010A18;
+
+  /* Override Blue (Same as Indigo for consistency) */
+  --color-blue-50: #F8FCFF;
+  --color-blue-100: #E1F0FE;
+  --color-blue-200: #BCE0FD;
+  --color-blue-300: #80C8FA;
+  --color-blue-400: #3BA9F5;
+  --color-blue-500: #087FE8; /* Blue */
+  --color-blue-600: #0759A8; /* Deep Blue */
+  --color-blue-700: #062B63; /* Navy */
+  --color-blue-800: #041E45;
+  --color-blue-900: #02122B;
+  --color-blue-950: #010A18;
+
+  /* Override Violet & Purple (Accents) -> Turquoise / Cyan */
+  --color-violet-50: #F0FDFF;
+  --color-violet-100: #CCF8FB;
+  --color-violet-200: #7DEEF2; /* Light Cyan */
+  --color-violet-300: #4FE5EC;
+  --color-violet-400: #12C9D2; /* Turquoise */
+  --color-violet-500: #00D9E8; /* Cyan */
+  --color-violet-600: #00A9B5;
+  --color-violet-700: #008791;
+  --color-violet-800: #006B73;
+  --color-violet-900: #00555C;
+  --color-violet-950: #00363B;
+
+  --color-purple-50: var(--color-violet-50);
+  --color-purple-100: var(--color-violet-100);
+  --color-purple-200: var(--color-violet-200);
+  --color-purple-300: var(--color-violet-300);
+  --color-purple-400: var(--color-violet-400);
+  --color-purple-500: var(--color-violet-500);
+  --color-purple-600: var(--color-violet-600);
+  --color-purple-700: var(--color-violet-700);
+  --color-purple-800: var(--color-violet-800);
+  --color-purple-900: var(--color-violet-900);
+  --color-purple-950: var(--color-violet-950);
+
+  /* Override Slate (Neutrals) -> Cool Blue Grays */
+  --color-slate-50: #F8FCFF; /* White */
+  --color-slate-100: #EBF2F9;
+  --color-slate-200: #D5E3F0;
+  --color-slate-300: #B8CEE3;
+  --color-slate-400: #9BAFC4; /* Light Gray */
+  --color-slate-500: #758DA6;
+  --color-slate-600: #5B728A;
+  --color-slate-700: #465A70;
+  --color-slate-800: #2E3E52;
+  --color-slate-900: #062B63; /* Navy for dark mode surfaces */
+  --color-slate-950: #020C1F;
 }
 
-
-
 .dark {
-  --background: #020617;
-  --foreground: #f8fafc;
+  --background: #020C1F;
+  --foreground: #F8FCFF;
 }
 
 body {

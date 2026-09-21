@@ -145,18 +145,18 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
         </div>
 
         {/* Balance Display */}
-        <div className="bg-gradient-to-br from-purple-900 to-indigo-950 p-6 sm:p-8 rounded-2xl shadow-xl relative overflow-hidden border border-purple-500/30">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl -ml-5 -mb-5 pointer-events-none"></div>
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-slate-900 dark:to-slate-950 p-6 sm:p-8 rounded-2xl shadow-xl relative overflow-hidden border border-indigo-400/30 dark:border-indigo-500/20">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 dark:bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-400/20 dark:bg-indigo-500/10 rounded-full blur-xl -ml-5 -mb-5 pointer-events-none"></div>
 
           <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
-              <p className="text-purple-200 text-sm font-bold mb-1">الرصيد الحالي المتوفر</p>
+              <p className="text-indigo-100 dark:text-slate-200 text-sm font-bold mb-1">الرصيد الحالي المتوفر</p>
               <div className="flex items-baseline gap-2">
                 <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
                   {(user.wallet_balance || 0).toFixed(2)}
                 </h2>
-                <span className="text-purple-300 font-bold">ر.ي</span>
+                <span className="text-indigo-200 dark:text-indigo-400 font-bold">ر.ي</span>
               </div>
             </div>
 
@@ -165,14 +165,14 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                 <button
                   type="button"
                   onClick={() => setIsRechargeMode(true)}
-                  className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-50 text-purple-900 font-black rounded-2xl shadow-lg border-none flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-50 text-indigo-900 dark:text-slate-900 font-black rounded-2xl shadow-lg border-none flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                 >
                   <span className="text-xl leading-none">+</span>
                   تغذية الرصيد
                 </button>
               )}
-              <div className="w-14 h-14 bg-white/10 rounded-2xl hidden sm:flex items-center justify-center backdrop-blur-sm border border-white/10 shadow-inner">
-                <Wallet className="w-7 h-7 text-white/90" />
+              <div className="w-14 h-14 bg-white/20 dark:bg-white/10 rounded-2xl hidden sm:flex items-center justify-center backdrop-blur-sm border border-white/20 dark:border-white/10 shadow-inner">
+                <Wallet className="w-7 h-7 text-white" />
               </div>
             </div>
           </div>

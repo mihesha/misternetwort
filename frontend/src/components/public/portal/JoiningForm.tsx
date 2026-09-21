@@ -235,7 +235,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
       
       {/* Compact Modern Responsive Hero Header */}
       <div className="relative mb-10 overflow-hidden rounded-[2rem] shadow-xl group">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#4f46e5] to-[#8b5cf6] opacity-95 transition-all duration-700" />
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-violet-500 opacity-95 transition-all duration-700" />
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-overlay" />
         
         <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-5 md:gap-6 text-center md:text-right">
