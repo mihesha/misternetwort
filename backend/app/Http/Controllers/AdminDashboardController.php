@@ -124,6 +124,8 @@ class AdminDashboardController extends Controller
         return response()->json([
             'platformCommissionType' => $settings['platformCommissionType'] ?? 'fixed',
             'platformCommissionRate' => (float) ($settings['platformCommissionRate'] ?? 5),
+            'posCommissionType' => $settings['posCommissionType'] ?? 'fixed',
+            'posCommissionRate' => (float) ($settings['posCommissionRate'] ?? 5),
             'supportPhone' => $settings['supportPhone'] ?? '784999804',
             'maintenanceMode' => filter_var($settings['maintenanceMode'] ?? 'false', FILTER_VALIDATE_BOOLEAN),
             'autoApproveApplications' => filter_var($settings['autoApproveApplications'] ?? 'false', FILTER_VALIDATE_BOOLEAN),
@@ -135,7 +137,7 @@ class AdminDashboardController extends Controller
     {
         $data = $request->all();
         foreach ($data as $key => $value) {
-            if (in_array($key, ['platformCommissionType', 'platformCommissionRate', 'supportPhone', 'maintenanceMode', 'autoApproveApplications', 'mikrotikGlobalPort'])) {
+            if (in_array($key, ['platformCommissionType', 'platformCommissionRate', 'posCommissionType', 'posCommissionRate', 'supportPhone', 'maintenanceMode', 'autoApproveApplications', 'mikrotikGlobalPort'])) {
                 $valStr = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
                 SystemSetting::updateOrCreate(['key' => $key], ['value' => $valStr]);
             }

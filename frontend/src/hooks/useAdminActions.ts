@@ -395,6 +395,8 @@ export const useAdminActions = () => {
         body: JSON.stringify({
           platformCommissionType: ctx.platformCommissionType,
           platformCommissionRate: ctx.platformCommissionRate,
+          posCommissionType: ctx.posCommissionType,
+          posCommissionRate: ctx.posCommissionRate,
           supportPhone: ctx.supportPhone,
           maintenanceMode: ctx.maintenanceMode,
           autoApproveApplications: ctx.autoApproveApplications,

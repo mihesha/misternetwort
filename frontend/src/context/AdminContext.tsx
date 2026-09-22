@@ -19,6 +19,10 @@ interface AdminContextType {
   setPlatformCommissionType: (type: 'fixed' | 'percentage') => void;
   platformCommissionRate: number;
   setPlatformCommissionRate: (rate: number) => void;
+  posCommissionType: 'fixed' | 'percentage';
+  setPosCommissionType: (type: 'fixed' | 'percentage') => void;
+  posCommissionRate: number;
+  setPosCommissionRate: (rate: number) => void;
   supportPhone: string;
   setSupportPhone: (phone: string) => void;
   isAdminDataLoaded: boolean;
@@ -159,6 +163,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   
   const [platformCommissionType, setPlatformCommissionType] = useState<'fixed' | 'percentage'>('fixed');
   const [platformCommissionRate, setPlatformCommissionRate] = useState<number>(5);
+  const [posCommissionType, setPosCommissionType] = useState<'fixed' | 'percentage'>('fixed');
+  const [posCommissionRate, setPosCommissionRate] = useState<number>(5);
   const [supportPhone, setSupportPhone] = useState<string>('784999804');
   const [isAdminDataLoaded, setIsAdminDataLoaded] = useState<boolean>(false);
 
@@ -278,6 +284,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         const set = await settingsRes.json();
         setPlatformCommissionType(set.platformCommissionType ?? 'fixed');
         setPlatformCommissionRate(set.platformCommissionRate ?? 5);
+        setPosCommissionType(set.posCommissionType ?? 'fixed');
+        setPosCommissionRate(set.posCommissionRate ?? 5);
         setSupportPhone(set.supportPhone ?? '784999804');
         setMaintenanceMode(set.maintenanceMode ?? false);
         setAutoApproveApplications(set.autoApproveApplications ?? false);
@@ -374,7 +382,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AdminContext.Provider
       value={{
-        stats, activeNetworks, withdrawals, auditLogs, dataEditRequests, platformCommissionType, setPlatformCommissionType, platformCommissionRate, setPlatformCommissionRate, supportPhone, setSupportPhone, isAdminDataLoaded, setIsAdminDataLoaded, fetchAdminData, setActiveNetworks, setWithdrawals, setDataEditRequests,
+        stats, activeNetworks, withdrawals, auditLogs, dataEditRequests, platformCommissionType, setPlatformCommissionType, platformCommissionRate, setPlatformCommissionRate, posCommissionType, setPosCommissionType, posCommissionRate, setPosCommissionRate, supportPhone, setSupportPhone, isAdminDataLoaded, setIsAdminDataLoaded, fetchAdminData, setActiveNetworks, setWithdrawals, setDataEditRequests,
     
         inspectDataEditReq, setInspectDataEditReq,
     adminUsers, setAdminUsers,

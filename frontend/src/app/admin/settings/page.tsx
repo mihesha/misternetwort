@@ -12,6 +12,10 @@ export default function SettingsPage() {
     setPlatformCommissionType,
     platformCommissionRate,
     setPlatformCommissionRate,
+    posCommissionType,
+    setPosCommissionType,
+    posCommissionRate,
+    setPosCommissionRate,
     supportPhone,
     setSupportPhone,
     maintenanceMode,
@@ -28,6 +32,10 @@ export default function SettingsPage() {
       setPlatformCommissionType={setPlatformCommissionType}
       platformCommissionRate={platformCommissionRate}
       setPlatformCommissionRate={setPlatformCommissionRate}
+      posCommissionType={posCommissionType}
+      setPosCommissionType={setPosCommissionType}
+      posCommissionRate={posCommissionRate}
+      setPosCommissionRate={setPosCommissionRate}
       supportPhone={supportPhone}
       setSupportPhone={setSupportPhone}
       maintenanceMode={maintenanceMode}

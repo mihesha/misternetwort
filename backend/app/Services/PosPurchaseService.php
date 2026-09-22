@@ -86,8 +86,8 @@ class PosPurchaseService
             $category->decrement('stock', $quantity);
 
             // Financial math
-            $commissionType = \App\Models\SystemSetting::where('key', 'platformCommissionType')->value('value') ?? 'fixed';
-            $commissionValue = (float) (\App\Models\SystemSetting::where('key', 'platformCommissionRate')->value('value') ?? 5);
+            $commissionType = \App\Models\SystemSetting::where('key', 'posCommissionType')->value('value') ?? 'fixed';
+            $commissionValue = (float) (\App\Models\SystemSetting::where('key', 'posCommissionRate')->value('value') ?? 5);
 
             if ($commissionType === 'fixed') {
                 $commission = $commissionValue * $quantity;
