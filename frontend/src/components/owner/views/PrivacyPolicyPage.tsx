@@ -15,87 +15,10 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
   onBack,
 }) => {
   return (
-    <div
-      dir="rtl"
-      className={`min-h-screen transition-colors font-['Cairo',sans-serif] ${
-        isDarkMode ? 'bg-[#0a0f18] text-slate-100' : 'bg-slate-100 text-slate-800'
-      }`}
-    >
-      {/* Top Navbar */}
-      <header
-        className={`w-full px-4 md:px-8 py-3 flex items-center justify-between transition-colors ${
-          isDarkMode
-            ? 'bg-[#111823] border-b border-slate-800/80'
-            : 'bg-white border-b border-slate-200 shadow-sm'
-        }`}
-      >
-        {/* Right side: Logo & Navigation items */}
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="shrink-0 flex items-center justify-center">
-              <img 
-                src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} 
-                alt="Card Box Logo" 
-                className="w-10 h-10 object-cover rounded-xl"
-              />
-            </div>
-            <span className={`text-sm md:text-base font-extrabold tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-              Card Box
-            </span>
-          </div>
-
-          <nav className={`hidden md:flex items-center gap-4 text-xs font-bold mr-4 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-            <div className={`flex items-center gap-1.5 transition-colors cursor-pointer ${isDarkMode ? 'hover:text-white' : 'hover:text-slate-900'}`}>
-              <Globe className="w-4 h-4 text-indigo-500" />
-              <span>لوحة التحكم</span>
-            </div>
-            <div className={`flex items-center gap-1.5 transition-colors cursor-pointer ${isDarkMode ? 'hover:text-white' : 'hover:text-slate-900'}`}>
-              <Settings className={`w-4 h-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
-              <span>إعدادات الشبكة</span>
-            </div>
-          </nav>
-        </div>
-
-        {/* Left side: Profile Menu & Theme Toggle */}
-        <div className="flex items-center gap-3">
-          <div
-            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-              isDarkMode
-                ? 'bg-[#1b2535] hover:bg-[#222f43] border border-slate-700/50'
-                : 'bg-slate-100 hover:bg-slate-200 border border-slate-200'
-            }`}
-          >
-            <ChevronDown className={`w-4 h-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
-            <div className="text-right">
-              <span className={`text-xs font-bold block ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{ownerName}</span>
-              <span className={`text-[10px] block -mt-0.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>مالك شبكة</span>
-            </div>
-            <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
-              م
-            </div>
-          </div>
-
-          <button
-            onClick={onToggleTheme}
-            className={`p-2 rounded-xl transition-colors cursor-pointer ${
-              isDarkMode
-                ? 'bg-[#1b2535] hover:bg-[#222f43] border border-slate-700/50 text-slate-300'
-                : 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600'
-            }`}
-            title="تغيير المظهر"
-          >
-            {isDarkMode ? <Moon className="w-4 h-4 text-slate-300" /> : <Sun className="w-4 h-4 text-amber-500" />}
-          </button>
-        </div>
-      </header>
-
+    <div dir="rtl" className="animate-fadeIn">
       {/* Main Content Container */}
-      <main className="max-w-4xl mx-auto px-4 md:px-8 py-8">
-        {/* Page Title Top Bar */}
-        <div className="mb-8 text-right">
-          
-        </div>
-
+      <div className="max-w-4xl mx-auto space-y-6">
+        
         {/* Policy Header Icon & Title */}
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mx-auto mb-4">
@@ -263,11 +186,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
           </div>
         </div>
 
-        {/* Back Button */}
-        <div className="flex justify-center">
-          
-        </div>
-      </main>
+      </div>
     </div>
   );
 };

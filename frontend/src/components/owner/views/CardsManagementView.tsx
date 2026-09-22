@@ -201,6 +201,7 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
   // Data State
   const [cards, setCards] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [networkData, setNetworkData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   // Filtering State
@@ -235,8 +236,11 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
       if (netRes.ok) {
         const nets = await netRes.json();
         const found = nets.find((n: any) => n.id.toString() === networkId.toString());
-        if (found && found.card_categories) {
-          setCategories(found.card_categories);
+        if (found) {
+          setNetworkData(found);
+          if (found.card_categories) {
+            setCategories(found.card_categories);
+          }
         }
       }
 
@@ -449,15 +453,49 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
           </div>
         </div>
 
+        {/* Out of Stock Inventory Alert Box */}
+        {(() => {
+          if (networkData?.notif_out_of_stock === false) return null;
+          const outOfStockCats = categories.filter(c => (c.stock === 0 || c.stock === undefined || c.stock === null) && c.status !== 'inactive');
+          
+          if (outOfStockCats.length === 0) return null;
+
+          return (
+            <div
+              className={`rounded-2xl p-5 border transition-colors mb-4 shadow-sm ${
+                isDarkMode
+                  ? 'bg-rose-950/90 border-rose-600/60 text-rose-200'
+                  : 'bg-rose-50 border-rose-300 text-rose-900'
+              }`}
+            >
+              <div className="flex items-start gap-3 text-right">
+                <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                <div className="space-y-2 flex-1">
+                  <h3 className="font-bold text-sm md:text-base text-rose-600 dark:text-rose-400">تنبيه: نفاذ المخزون</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-semibold">
+                    {outOfStockCats.map((cat, idx) => (
+                      <div key={idx} className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-between gap-4">
+                        <span className="truncate">فئة "{cat.name || cat.price}" - نفذت بالكامل!</span>
+                        <Link href={`/owner/import-cards?category=${cat.id}`} className="text-rose-600 dark:text-rose-400 underline font-bold cursor-pointer shrink-0">أضف كروت</Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Low Stock Inventory Alert Box */}
         {(() => {
-          const lowStockCats = categories.filter(c => (c.stock || 0) <= 5 && c.status !== 'inactive');
+          if (networkData?.notif_low_stock === false) return null;
+          const lowStockCats = categories.filter(c => (c.stock || 0) > 0 && (c.stock || 0) <= (c.min_threshold ?? 10) && c.status !== 'inactive');
           
           if (lowStockCats.length === 0) return null;
 
           return (
             <div
-              className={`rounded-2xl p-5 border transition-colors shadow-sm ${
+              className={`rounded-2xl p-5 border transition-colors mb-4 shadow-sm ${
                 isDarkMode
                   ? 'bg-[#2a1700]/90 border-amber-600/60 text-amber-200'
                   : 'bg-amber-50 border-amber-300 text-amber-900'
@@ -466,14 +504,12 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
               <div className="flex items-start gap-3 text-right">
                 <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <div className="space-y-2 flex-1">
-                  <h3 className="font-bold text-sm md:text-base">تنبيه: مخزون منخفض</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-semibold mt-2">
+                  <h3 className="font-bold text-sm md:text-base text-amber-600 dark:text-amber-500">تنبيه: مخزون منخفض</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-semibold">
                     {lowStockCats.map((cat, idx) => (
-                      <div key={idx} className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-4">
-                        <span className="truncate text-amber-600 dark:text-amber-400">فئة "{cat.name || cat.price}" - باقي {cat.stock || 0} كرت فقط</span>
-                        <Link href="/owner/import-cards" className="text-amber-500 hover:text-amber-600 dark:hover:text-amber-300 underline font-black cursor-pointer shrink-0 transition-colors">
-                          أضف كروت
-                        </Link>
+                      <div key={idx} className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-4">
+                        <span className="truncate">فئة "{cat.name || cat.price}" - باقي {cat.stock || 0} كرت فقط</span>
+                        <Link href={`/owner/import-cards?category=${cat.id}`} className="text-amber-600 dark:text-amber-500 underline font-bold cursor-pointer shrink-0">أضف كروت</Link>
                       </div>
                     ))}
                   </div>

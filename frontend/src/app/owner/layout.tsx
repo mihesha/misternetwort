@@ -170,7 +170,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
 
   const unreadCount = combinedNotifications.length;
 
-  const isAuthPage = pathname.includes('/login') || pathname.includes('/change-password') || pathname.includes('/privacy-policy');
+  const isAuthPage = pathname.includes('/login') || pathname.includes('/change-password');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   // Handle sidebar initial state and resize
@@ -263,6 +263,13 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
       router.replace(`/owner/login?redirect=${encodeURIComponent(pathname)}`);
     }
   }, [pathname, isAuthPage, router]);
+
+  useEffect(() => {
+    if (isAuthenticated === true && !isAuthPage) {
+      fetchOwnerNetworks();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, isAuthPage]);
 
   // Global Real-time Sync
   useEffect(() => {
