@@ -212,13 +212,7 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
               <span>استيراد كروت</span>
             </Link>
 
-            <Link
-              href="/owner/mikrotik"
-              className="px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow-md shadow-purple-900/40 cursor-pointer"
-            >
-              <Sliders className="w-3.5 h-3.5 text-purple-200" />
-              <span>إعداد MikroTik</span>
-            </Link>
+
 
             <Link
               href="/owner/withdrawals"

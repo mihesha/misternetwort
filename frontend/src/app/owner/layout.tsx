@@ -329,7 +329,6 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
     { href: '/owner/import-cards', label: 'استيراد الكروت', icon: Download },
     { href: '/owner/withdrawals', label: 'طلبات السحب', icon: CreditCard },
     { href: '/owner/new-withdrawal', label: 'طلب سحب جديد', icon: PlusCircle },
-    { href: '/owner/mikrotik', label: 'إعداد المايكروتك', icon: Wifi },
     { href: '/owner/settings', label: 'إعدادات الشبكة', icon: Settings },
     { href: '/owner/edit-data', label: 'تعديل بيانات الشبكة', icon: Edit },
   ];
