@@ -37,4 +37,9 @@ class Network extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'agent_id');
+    }
 }

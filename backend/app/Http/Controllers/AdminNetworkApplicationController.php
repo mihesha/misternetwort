@@ -19,10 +19,13 @@ class AdminNetworkApplicationController extends Controller
                 'referenceNumber' => $app->reference_number,
                 'createdAt' => $app->created_at,
                 'status' => $app->status,
+                'applicationType' => $app->application_type,
+                'agentId' => $app->agent_id,
+                'agentName' => $app->agent ? $app->agent->name : null,
                 'formData' => [
                     'owner' => [
                         'ownerName' => $app->owner_name, 
-                        'ownerId' => $app->owner_identity,
+                        'ownerId' => $app->owner_identity, // For agents, this is email
                         'contactNumber' => $app->owner_phone
                     ],
                     'network' => [
@@ -48,7 +51,29 @@ class AdminNetworkApplicationController extends Controller
         $app->update(['status' => $request->status]);
 
         if ($request->status === 'approved') {
-            $user = User::firstOrCreate(
+            if ($app->application_type === 'agent') {
+                $user = User::updateOrCreate(
+                    ['phone' => $app->owner_phone],
+                    [
+                        'name' => $app->owner_name,
+                        'email' => $app->owner_identity,
+                        'password' => Hash::make($request->tempPassword ?? '12345678'),
+                        'role' => 'agent',
+                        'must_change_password' => true,
+                        'jaib_wallet' => $app->jaib_wallet,
+                        'governorate' => $app->governorate,
+                        'city' => $app->city,
+                    ]
+                );
+                return response()->json([
+                    'message' => 'Status updated successfully',
+                    'type' => 'agent',
+                    'agent_phone' => $user->phone
+                ]);
+            }
+
+            // Normal network application
+            $user = User::updateOrCreate(
                 ['phone' => $app->owner_identity],
                 [
                     'name' => $app->owner_name,
@@ -64,6 +89,7 @@ class AdminNetworkApplicationController extends Controller
             if (!$network) {
                 $network = clone Network::create([
                     'user_id' => $user->id,
+                    'agent_id' => $app->agent_id, // Link to agent if it came from one
                     'name' => $app->network_name,
                     'english_name' => $app->english_name,
                     'external_link' => $app->external_link,
@@ -95,7 +121,8 @@ class AdminNetworkApplicationController extends Controller
             
             return response()->json([
                 'message' => 'Status updated successfully',
-                'network_code' => $network->network_code
+                'network_code' => $network->network_code,
+                'type' => 'network'
             ]);
         }
 

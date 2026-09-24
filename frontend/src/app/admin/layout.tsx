@@ -85,7 +85,9 @@ type AdminTab =
   | 'pos_management'
   | 'pos_recharges'
   | 'settings'
-  | 'app_deposits';
+  | 'app_deposits'
+  | 'agent_applications'
+  | 'agents';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -214,10 +216,17 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       items: [
         {
           id: 'applications' as AdminTab,
-          label: 'طلبات الانضمام',
+          label: 'طلبات الشبكات',
           icon: FileText,
-          badge: applications.filter((a) => a.status === 'pending' || a.status === 'under_review').length || null,
+          badge: applications.filter((a) => (a.status === 'pending' || a.status === 'under_review') && a.applicationType !== 'agent').length || null,
           badgeColor: 'bg-amber-500',
+        },
+        {
+          id: 'agent_applications' as AdminTab,
+          label: 'طلبات الوكلاء',
+          icon: Users,
+          badge: applications.filter((a) => (a.status === 'pending' || a.status === 'under_review') && a.applicationType === 'agent').length || null,
+          badgeColor: 'bg-emerald-500',
         },
         {
           id: 'data_edits' as AdminTab,
@@ -232,6 +241,13 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           icon: Globe,
           badge: activeNetworks.length,
           badgeColor: 'bg-indigo-500',
+        },
+        {
+          id: 'agents' as AdminTab,
+          label: 'إدارة المهندسين',
+          icon: Users,
+          badge: null,
+          badgeColor: 'bg-emerald-500',
         },
       ],
     },
@@ -318,7 +334,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       }`}
     >
       {isStillLoading && !isLoginPage && (
-        <div className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center font-['Cairo',sans-serif] transition-opacity duration-500 ${isDarkMode ? 'bg-[#0b101d]' : 'bg-[#f4f7fb]'}`}>
+        <div className={`fixed inset-0 z-99999 flex flex-col items-center justify-center font-['Cairo',sans-serif] transition-opacity duration-500 ${isDarkMode ? 'bg-[#0b101d]' : 'bg-[#f4f7fb]'}`}>
           <div className={`relative flex items-center justify-center w-24 h-24 mb-8 rounded-2xl shadow-2xl ${isDarkMode ? 'bg-white/5 shadow-black/50' : 'bg-white shadow-indigo-900/10'}`}>
             <img 
               src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} 
@@ -397,7 +413,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer relative group ${
                       isActive
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-900/40 ring-2 ring-indigo-400/30'
+                        ? 'bg-linear-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-900/40 ring-2 ring-indigo-400/30'
                         : isDarkMode
                         ? 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
                         : 'text-slate-700 hover:bg-slate-200/70 hover:text-slate-900'
@@ -494,6 +510,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                   {activeTab === 'pos_recharges' && '💰 طلبات شحن محافظ نقاط البيع'}
                   {activeTab === 'app_deposits' && '📱 إيداعات المحافظ وتطبيق الهاتف'}
                   {activeTab === 'settings' && '⚙️ الإعدادات العامة وعمولات المنظومة'}
+                  {activeTab === 'agents' && '👷‍♂️ إدارة الوكلاء والمهندسين'}
                 </span>
               </h2>
               <p className="text-[11px] text-slate-400">لوحة تحكم إدارية مركزية للتحكم بالشبكات وحسابات محفظة جيب</p>

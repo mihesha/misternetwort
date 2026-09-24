@@ -49,6 +49,8 @@ class NetworkController extends Controller
             'jaib_wallet' => $validated['jaibWalletNumber'],
             'card_categories_json' => json_encode($validated['cardCategories']),
             'status' => 'pending',
+            'application_type' => 'network',
+            'agent_id' => ($request->user('sanctum') && $request->user('sanctum')->role === 'agent') ? $request->user('sanctum')->id : null,
         ]);
 
         return response()->json([
@@ -59,6 +61,44 @@ class NetworkController extends Controller
                 'createdAt' => $application->created_at,
                 'status' => $application->status,
                 'formData' => $validated
+            ]
+        ], 201);
+    }
+
+    public function submitAgentApplication(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:50',
+            'email' => 'required|string|email|max:255',
+            'jaibWalletNumber' => 'required|string|max:50',
+            'governorate' => 'required|string|max:100',
+            'city' => 'required|string|max:100',
+            'neighborhood' => 'nullable|string|max:100',
+        ]);
+
+        $application = NetworkApplication::create([
+            'reference_number' => 'AGT-' . date('Y') . '-' . rand(1000, 9999),
+            'owner_name' => $validated['name'],
+            'owner_phone' => $validated['phone'],
+            'owner_identity' => $validated['email'], // Using identity for email
+            'network_name' => 'طلب انضمام وكيل: ' . $validated['name'], 
+            'english_name' => 'agent-' . Str::slug($validated['name']) . '-' . rand(100, 999),
+            'governorate' => $validated['governorate'],
+            'city' => $validated['city'],
+            'neighborhood' => $validated['neighborhood'] ?? null,
+            'jaib_wallet' => $validated['jaibWalletNumber'],
+            'application_type' => 'agent',
+            'status' => 'pending',
+            'card_categories_json' => json_encode([]),
+        ]);
+
+        return response()->json([
+            'message' => 'تم إرسال طلب انضمام الوكيل بنجاح قيد المراجعة',
+            'application' => [
+                'id' => $application->id,
+                'referenceNumber' => $application->reference_number,
+                'status' => $application->status,
             ]
         ], 201);
     }

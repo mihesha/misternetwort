@@ -67,8 +67,30 @@ class AdminDashboardController extends Controller
         }));
     }
 
-    public function getUsers()
+    public function getUsers(Request $request)
     {
+        $role = $request->query('role');
+        
+        if ($role === 'agent') {
+            $agents = User::where('role', 'agent')->withCount('agentNetworks')->get();
+            return response()->json($agents->map(function($u) {
+                return [
+                    'id' => (string) $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'phone' => $u->phone ?? '',
+                    'role' => 'agent',
+                    'wallet_balance' => (float) $u->wallet_balance,
+                    'commission_rate' => $u->custom_commission_rate ?? (float) (SystemSetting::where('key', 'agentCommissionRate')->value('value') ?? 5),
+                    'networks_count' => $u->agent_networks_count,
+                    'status' => 'active',
+                    'governorate' => $u->governorate ?? '',
+                    'city' => $u->city ?? '',
+                    'jaib_wallet' => $u->jaib_wallet ?? ''
+                ];
+            }));
+        }
+
         $users = User::whereIn('role', ['admin', 'super_admin'])->get();
         if ($users->isEmpty()) {
             return response()->json([
@@ -122,6 +144,7 @@ class AdminDashboardController extends Controller
     {
         $settings = SystemSetting::all()->pluck('value', 'key');
         return response()->json([
+            'agentCommissionRate' => (float) ($settings['agentCommissionRate'] ?? 5),
             'platformCommissionType' => $settings['platformCommissionType'] ?? 'fixed',
             'platformCommissionRate' => (float) ($settings['platformCommissionRate'] ?? 5),
             'posCommissionType' => $settings['posCommissionType'] ?? 'fixed',
@@ -137,7 +160,7 @@ class AdminDashboardController extends Controller
     {
         $data = $request->all();
         foreach ($data as $key => $value) {
-            if (in_array($key, ['platformCommissionType', 'platformCommissionRate', 'posCommissionType', 'posCommissionRate', 'supportPhone', 'maintenanceMode', 'autoApproveApplications', 'mikrotikGlobalPort'])) {
+            if (in_array($key, ['agentCommissionRate', 'platformCommissionType', 'platformCommissionRate', 'posCommissionType', 'posCommissionRate', 'supportPhone', 'maintenanceMode', 'autoApproveApplications', 'mikrotikGlobalPort'])) {
                 $valStr = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
                 SystemSetting::updateOrCreate(['key' => $key], ['value' => $valStr]);
             }
@@ -194,5 +217,38 @@ class AdminDashboardController extends Controller
         }
         
         return response()->json(['message' => 'تم تحديث حالة الطلب']);
+    }
+
+    public function getAgentDetails($id)
+    {
+        $agent = User::where('role', 'agent')->with(['agentNetworks', 'agentTransactions'])->findOrFail($id);
+        
+        return response()->json([
+            'id' => (string) $agent->id,
+            'name' => $agent->name,
+            'email' => $agent->email,
+            'phone' => $agent->phone,
+            'wallet_balance' => (float) $agent->wallet_balance,
+            'commission_rate' => $agent->custom_commission_rate ?? (float) (SystemSetting::where('key', 'agentCommissionRate')->value('value') ?? 5),
+            'status' => 'active',
+            'governorate' => $agent->governorate,
+            'city' => $agent->city,
+            'jaib_wallet' => $agent->jaib_wallet,
+            'networks' => $agent->agentNetworks,
+            'transactions' => $agent->agentTransactions()->orderBy('created_at', 'desc')->take(50)->get(),
+        ]);
+    }
+
+    public function updateAgentCommission($id, Request $request)
+    {
+        $validated = $request->validate(['custom_commission_rate' => 'nullable|numeric|min:0|max:100']);
+        $agent = User::where('role', 'agent')->findOrFail($id);
+        $agent->custom_commission_rate = $validated['custom_commission_rate'];
+        $agent->save();
+        
+        return response()->json([
+            'message' => 'تم تحديث النسبة المخصصة بنجاح',
+            'custom_commission_rate' => $agent->custom_commission_rate
+        ]);
     }
 }

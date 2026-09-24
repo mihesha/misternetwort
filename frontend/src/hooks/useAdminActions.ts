@@ -77,7 +77,7 @@ export const useAdminActions = () => {
   const { handleApproveWithCredentials: onApproveWithCredentials, ownerCredentials } = useAppContext();
 
   const handleApproveAndProvision = async (app: NetworkApplication) => {
-    const ownerPhone = app.formData.owner.ownerId;
+    const ownerPhone = app.applicationType === 'agent' ? app.formData.owner.contactNumber : app.formData.owner.ownerId;
     
     // Find if we already generated a credential for this owner
     const existingCred = ownerCredentials.find((c) => c.ownerPhone === ownerPhone);
@@ -98,15 +98,17 @@ export const useAdminActions = () => {
     setInspectApp(null);
 
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    const loginLink = `${baseUrl}/owner/login?phone=${ownerPhone}`;
+    const isAgent = app.applicationType === 'agent';
+    const loginLink = isAgent ? `${baseUrl}/agent/login` : `${baseUrl}/owner/login?phone=${ownerPhone}`;
 
     setWhatsappModalData({
       ownerName: app.formData.owner.ownerName,
       ownerPhone: ownerPhone,
       tempPassword: generatedTempPass,
-      networkName: app.formData.network.networkName,
+      networkName: isAgent ? 'وكيل / مهندس' : app.formData.network.networkName,
       loginUrl: loginLink,
-      networkCode: netCode,
+      networkCode: isAgent ? 'AGENT' : netCode,
+      isAgent: isAgent,
     });
   };
 
@@ -120,7 +122,8 @@ export const useAdminActions = () => {
     requestModifyApp.notes = notes;
     requestModifyApp.status = 'needs_modification';
 
-    const ownerPhone = requestModifyApp.formData.owner.ownerId;
+    const isAgent = requestModifyApp.applicationType === 'agent';
+    const ownerPhone = isAgent ? requestModifyApp.formData.owner.contactNumber : requestModifyApp.formData.owner.ownerId;
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     const editLink = `${baseUrl}/?view=register&ref=${requestModifyApp.referenceNumber}`;
 
@@ -393,6 +396,7 @@ export const useAdminActions = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          agentCommissionRate: (ctx as any).agentCommissionRate,
           platformCommissionType: ctx.platformCommissionType,
           platformCommissionRate: ctx.platformCommissionRate,
           posCommissionType: ctx.posCommissionType,

@@ -64,6 +64,7 @@ Route::get('/admin/customers/{id}/details', [AdminCustomerController::class, 'ge
 
 // Public Requests (Joining Form)
 Route::post('/requests', [NetworkController::class, 'submitApplication']);
+Route::post('/requests/agent', [NetworkController::class, 'submitAgentApplication']);
 Route::get('/requests', [AdminNetworkApplicationController::class, 'getApplications']);
 Route::patch('/requests/{id}/status', [AdminNetworkApplicationController::class, 'updateApplicationStatus']);
 
@@ -168,6 +169,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/wallet/recharge', [PosController::class, 'rechargeWallet']);
         Route::get('/sales/history', [PosController::class, 'getSalesHistory']);
     });
+
+    // Agent Dashboard Endpoints
+    Route::prefix('agent')->group(function () {
+        Route::get('/stats', [App\Http\Controllers\AgentController::class, 'getStats']);
+        Route::get('/networks', [App\Http\Controllers\AgentController::class, 'getNetworks']);
+        Route::get('/transactions', [App\Http\Controllers\AgentController::class, 'getTransactions']);
+        Route::get('/withdrawals', [App\Http\Controllers\AgentController::class, 'getWithdrawals']);
+        Route::post('/withdrawals', [App\Http\Controllers\AdminWithdrawalController::class, 'storeWithdrawal']);
+    });
 });
 
 
@@ -178,6 +188,8 @@ Route::get('/admin/stats', [AdminDashboardController::class, 'getStats']);
 Route::get('/admin/transactions', [AdminDashboardController::class, 'getTransactions']);
 Route::get('/admin/users', [AdminDashboardController::class, 'getUsers']);
 Route::post('/admin/users', [AdminDashboardController::class, 'storeUser']);
+Route::get('/admin/agents/{id}/details', [AdminDashboardController::class, 'getAgentDetails']);
+Route::patch('/admin/agents/{id}/commission', [AdminDashboardController::class, 'updateAgentCommission']);
 Route::get('/admin/settings', [AdminDashboardController::class, 'getSettings']);
 Route::post('/admin/settings', [AdminDashboardController::class, 'updateSettings']);
 Route::get('/admin/pos', [AdminDashboardController::class, 'getPosUsers']);

@@ -40,6 +40,7 @@ export interface NetworkApplication {
   referenceNumber: string; // e.g. REQ-2026-8812
   createdAt: string;
   status: ApplicationStatus;
+  applicationType?: 'network' | 'agent';
   formData: ApplicationFormData;
   notes?: string;
   tempPassword?: string;

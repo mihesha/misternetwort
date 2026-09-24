@@ -131,11 +131,15 @@ export const WhatsappConnectModal = () => {
                 </label>
                 <div className="p-3.5 rounded-2xl bg-[#0b101a] border border-slate-800 text-slate-200 text-xs font-mono leading-relaxed space-y-1 dir-rtl text-right">
                   <p className="text-emerald-400 font-bold">أهلاً بك أ/ {whatsappModalData.ownerName}! {whatsappModalData.isReset ? '👋' : '🥳'}</p>
-                  <p>{whatsappModalData.isReset ? `تم توليد كلمة مرور مؤقتة جديدة لشبكتك (${whatsappModalData.networkName}) في Card Box.` : `تمت الموافقة على طلب انضمام شبكتك (${whatsappModalData.networkName}) في Card Box.`}</p>
+                  <p>{whatsappModalData.isReset 
+                    ? `تم توليد كلمة مرور مؤقتة جديدة لحسابك (${whatsappModalData.networkName}) في Card Box.` 
+                    : `تمت الموافقة على طلب انضمامك كـ (${whatsappModalData.networkName}) في Card Box.`}</p>
                   <p className="pt-1 text-slate-300 font-bold">{whatsappModalData.isReset ? 'بيانات تسجيل الدخول الجديدة:' : 'بيانات تسجيل الدخول المؤقتة:'}</p>
-                  <p>👤 رقم المالك: <span className="text-emerald-300 font-bold">{whatsappModalData.ownerPhone}</span></p>
+                  <p>👤 رقم الهاتف: <span className="text-emerald-300 font-bold">{whatsappModalData.ownerPhone}</span></p>
                   <p>🔑 كلمة المرور المؤقتة: <span className="text-amber-300 font-bold">{whatsappModalData.tempPassword}</span></p>
-                  <p>🏢 كود الشبكة: <span className="text-pink-300 font-bold">{whatsappModalData.networkCode}</span></p>
+                  {!whatsappModalData.isAgent && (
+                    <p>🏢 كود الشبكة: <span className="text-pink-300 font-bold">{whatsappModalData.networkCode}</span></p>
+                  )}
                   <p className="break-all pt-1 text-indigo-300">🔗 رابط الدخول: {whatsappModalData.loginUrl}</p>
                   <p className="text-slate-400 text-[11px] pt-1">ملاحظة: عند تسجيل الدخول بالكلمة المؤقتة سيطلب منك النظام مباشرة تعيين كلمة مرور جديدة خاصة بك.</p>
                 </div>
@@ -146,7 +150,7 @@ export const WhatsappConnectModal = () => {
             <div className="flex flex-col gap-2 pt-1">
               <a
                 href={`https://wa.me/967${whatsappModalData.ownerPhone.replace(/^0+/, '')}?text=${encodeURIComponent(
-                  `أهلاً بك أ/ ${whatsappModalData.ownerName}! ${whatsappModalData.isReset ? '👋' : '🥳'}\n${whatsappModalData.isReset ? `تم توليد كلمة مرور مؤقتة جديدة لشبكتك (${whatsappModalData.networkName}) في Card Box.` : `تمت الموافقة على طلب انضمام شبكتك (${whatsappModalData.networkName}) في Card Box.`}\n\n${whatsappModalData.isReset ? 'بيانات تسجيل الدخول الجديدة الخاصة بك:' : 'بيانات تسجيل الدخول المؤقتة الخاصة بك:'}\n👤 رقم المالك: ${whatsappModalData.ownerPhone}\n🔑 كلمة المرور المؤقتة: ${whatsappModalData.tempPassword}\n🏢 كود الشبكة: ${whatsappModalData.networkCode}\n🔗 رابط الدخول: ${whatsappModalData.loginUrl}\n\nيرجى الدخول وتغيير كلمة المرور المؤقتة للوصول للوحة التحكم.`
+                  `أهلاً بك أ/ ${whatsappModalData.ownerName}! ${whatsappModalData.isReset ? '👋' : '🥳'}\n${whatsappModalData.isReset ? `تم توليد كلمة مرور مؤقتة جديدة لحسابك (${whatsappModalData.networkName}) في Card Box.` : `تمت الموافقة على طلب انضمامك كـ (${whatsappModalData.networkName}) في Card Box.`}\n\n${whatsappModalData.isReset ? 'بيانات تسجيل الدخول الجديدة الخاصة بك:' : 'بيانات تسجيل الدخول المؤقتة الخاصة بك:'}\n👤 رقم الهاتف: ${whatsappModalData.ownerPhone}\n🔑 كلمة المرور المؤقتة: ${whatsappModalData.tempPassword}\n${whatsappModalData.isAgent ? '' : `🏢 كود الشبكة: ${whatsappModalData.networkCode}\n`}🔗 رابط الدخول: ${whatsappModalData.loginUrl}\n\nيرجى الدخول وتغيير كلمة المرور المؤقتة للوصول للوحة التحكم.`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -163,7 +167,7 @@ export const WhatsappConnectModal = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    const textToCopy = `أهلاً بك أ/ ${whatsappModalData.ownerName}! ${whatsappModalData.isReset ? '👋' : '🥳'}\n${whatsappModalData.isReset ? `تم توليد كلمة مرور مؤقتة جديدة لشبكتك (${whatsappModalData.networkName}) في Card Box.` : `تمت الموافقة على طلب انضمام شبكتك (${whatsappModalData.networkName}) في Card Box.`}\n\n${whatsappModalData.isReset ? 'بيانات تسجيل الدخول الجديدة الخاصة بك:' : 'بيانات تسجيل الدخول المؤقتة الخاصة بك:'}\n👤 رقم المالك: ${whatsappModalData.ownerPhone}\n🔑 كلمة المرور المؤقتة: ${whatsappModalData.tempPassword}\n🏢 كود الشبكة: ${whatsappModalData.networkCode}\n🔗 رابط الدخول: ${whatsappModalData.loginUrl}\n\nيرجى الدخول وتغيير كلمة المرور المؤقتة للوصول للوحة التحكم.`;
+                    const textToCopy = `أهلاً بك أ/ ${whatsappModalData.ownerName}! ${whatsappModalData.isReset ? '👋' : '🥳'}\n${whatsappModalData.isReset ? `تم توليد كلمة مرور مؤقتة جديدة لحسابك (${whatsappModalData.networkName}) في Card Box.` : `تمت الموافقة على طلب انضمامك كـ (${whatsappModalData.networkName}) في Card Box.`}\n\n${whatsappModalData.isReset ? 'بيانات تسجيل الدخول الجديدة الخاصة بك:' : 'بيانات تسجيل الدخول المؤقتة الخاصة بك:'}\n👤 رقم الهاتف: ${whatsappModalData.ownerPhone}\n🔑 كلمة المرور المؤقتة: ${whatsappModalData.tempPassword}\n${whatsappModalData.isAgent ? '' : `🏢 كود الشبكة: ${whatsappModalData.networkCode}\n`}🔗 رابط الدخول: ${whatsappModalData.loginUrl}\n\nيرجى الدخول وتغيير كلمة المرور المؤقتة للوصول للوحة التحكم.`;
                     navigator.clipboard.writeText(textToCopy);
                     setCopiedWpText(true);
                     setTimeout(() => setCopiedWpText(false), 2000);

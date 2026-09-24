@@ -13,7 +13,7 @@ interface ApplicationsViewProps {
   onDeleteApplication: (id: string) => void;
 }
 
-export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
+export const AgentApplicationsView: React.FC<ApplicationsViewProps> = ({
   isDarkMode,
   applications,
   handleApproveAndProvision,
@@ -33,9 +33,9 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
     return applications.filter((app) => {
       // Completely hide approved applications from this view
       if (app.status === 'approved') return false;
-      
-      // Hide Agent Applications
-      if (app.applicationType === 'agent') return false;
+
+      // Show ONLY Agent Applications
+      if (app.applicationType !== 'agent') return false;
 
       if (filterGov !== 'all' && app.formData.network.governorate !== filterGov) return false;
       if (filterStatus !== 'all' && app.status !== filterStatus) return false;
@@ -47,7 +47,8 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
           app.formData.owner.ownerName.toLowerCase().includes(term) ||
           app.formData.network.networkName.toLowerCase().includes(term) ||
           app.formData.jaibWalletNumber.includes(term) ||
-          app.formData.owner.contactNumber.includes(term)
+          app.formData.owner.contactNumber.includes(term) ||
+          'وكيل مهندس'.includes(term)
         );
       }
       return true;
@@ -63,8 +64,8 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-            <Filter className="w-4 h-4 text-indigo-400" />
-            <span>تصفية والبحث في طلبات الانضمام الخاصة بالشبكات:</span>
+            <Filter className="w-4 h-4 text-emerald-400" />
+            <span>تصفية والبحث في طلبات الانضمام للوكلاء:</span>
           </div>
           <span className="text-xs text-indigo-400 font-bold">عدد النتائج: {filteredApps.length}</span>
         </div>
@@ -127,11 +128,14 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 pb-4 border-b border-slate-800/60">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <span className="font-mono font-bold text-lg text-indigo-400">{app.referenceNumber}</span>
+                    <span className="font-mono font-bold text-lg text-emerald-400">{app.referenceNumber}</span>
                     <span className="text-xs text-slate-400">{new Date(app.createdAt).toLocaleString('ar-YE')}</span>
+                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-black bg-[#12C9D2]/20 text-[#12C9D2] border border-[#12C9D2]/30">
+                      طلب وكيل / مهندس
+                    </span>
                   </div>
                   <h3 className="font-extrabold text-lg text-white">
-                    {app.formData.network.networkName}
+                    طلب انضمام الوكيل: {app.formData.owner.ownerName}
                   </h3>
                 </div>
 
@@ -145,7 +149,7 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                     }`}
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>اعتماد وتفعيل كشبكة نشطة</span>
+                    <span>اعتماد كوكيل</span>
                   </button>
 
                   <button
@@ -160,21 +164,6 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                     <span>قيد المراجعة</span>
                   </button>
 
-
-                    <button
-                      onClick={() => {
-                        setRequestModifyApp(app);
-                        setModificationReasonText(app.notes || 'يرجى مراجعة وتعديل بيانات الطلب وفئات الكروت.');
-                      }}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                        app.status === 'needs_modification'
-                          ? 'bg-amber-600 text-white shadow-md'
-                          : 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30'
-                      }`}
-                    >
-                      <FileEdit className="w-4 h-4" />
-                      <span>طلب تعديل البيانات</span>
-                    </button>
 
 
                   <button
@@ -209,14 +198,13 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                 <div className="p-3.5 rounded-2xl bg-slate-800/40 border border-slate-700/50">
-                  <span className="text-slate-400 block mb-1">بيانات {app.applicationType === 'agent' ? 'الوكيل:' : 'مالك الشبكة:'}</span>
+                  <span className="text-slate-400 block mb-1">بيانات الوكيل:</span>
                   <p className="font-bold text-white text-sm">{app.formData.owner.ownerName}</p>
                   <p className="text-slate-300 font-mono" dir="ltr">
                     هاتف: {app.formData.owner.contactNumber}
                   </p>
                   <p className="text-slate-400">
-                    {app.applicationType === 'agent' ? 'البريد: ' : 'رقم المالك: '}
-                    {app.formData.owner.ownerId}
+                    البريد: {app.formData.owner.ownerId}
                   </p>
                 </div>
 
@@ -226,9 +214,6 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                     {app.formData.network.governorate} - {app.formData.network.city}
                   </p>
                   <p className="text-slate-400">{app.formData.network.neighborhood || 'بدون حي محدد'}</p>
-                  {app.applicationType !== 'agent' && (
-                    <p className="text-indigo-300">هاتف الشبكة: {app.formData.network.networkPhone || 'غير مدخل'}</p>
-                  )}
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-500/30">

@@ -87,7 +87,7 @@ export const InspectApplicationModal = () => {
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-black text-white text-lg">{inspectApp.formData.network.networkName}</h3>
+                  <h3 className="font-black text-white text-lg">{inspectApp.applicationType === 'agent' ? `طلب انضمام وكيل: ${inspectApp.formData.owner.ownerName}` : inspectApp.formData.network.networkName}</h3>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
                     {inspectApp.status === 'pending' ? 'قيد المراجعة' : inspectApp.status === 'approved' ? 'معتمد' : inspectApp.status}
                   </span>
@@ -103,12 +103,12 @@ export const InspectApplicationModal = () => {
               <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/70 space-y-2">
                 <p className="font-bold text-indigo-400 text-sm flex items-center gap-1.5 border-b border-slate-700/60 pb-1.5">
                   <Users className="w-4 h-4" />
-                  <span>بيانات مالك الشبكة الشخصية:</span>
+                  <span>{inspectApp.applicationType === 'agent' ? 'بيانات الوكيل الشخصية:' : 'بيانات مالك الشبكة الشخصية:'}</span>
                 </p>
                 <div className="space-y-1 text-slate-200">
                   <p><span className="text-slate-400">اسم المالك الرباعي:</span> <strong className="text-white">{inspectApp.formData.owner.ownerName}</strong></p>
                   <p><span className="text-slate-400">رقم التواصل:</span> <strong className="text-emerald-400 font-mono" dir="ltr">{inspectApp.formData.owner.contactNumber}</strong></p>
-                  <p><span className="text-slate-400">رقم المالك:</span> <strong className="font-mono text-slate-300">{inspectApp.formData.owner.ownerId}</strong></p>
+                  <p><span className="text-slate-400">{inspectApp.applicationType === 'agent' ? 'البريد الإلكتروني:' : 'رقم المالك:'}</span> <strong className="font-mono text-slate-300">{inspectApp.formData.owner.ownerId}</strong></p>
                 </div>
               </div>
 
@@ -119,54 +119,62 @@ export const InspectApplicationModal = () => {
                 </p>
                 <div className="space-y-1 text-slate-200">
                   <p><span className="text-slate-400">المحافظة / المدينة:</span> <strong className="text-white">{inspectApp.formData.network.governorate} - {inspectApp.formData.network.city}</strong></p>
-                  <p><span className="text-slate-400">اسم الشبكة بالإنجليزي:</span> <strong className="text-white">{inspectApp.formData.network.englishName || 'لا يوجد'}</strong></p>
-                  <p><span className="text-slate-400">رابط الشبكة:</span> <strong className="text-blue-400 font-mono" dir="ltr">{inspectApp.formData.network.externalLink || 'لا يوجد'}</strong></p>
+                  {inspectApp.applicationType !== 'agent' && (
+                    <>
+                      <p><span className="text-slate-400">اسم الشبكة بالإنجليزي:</span> <strong className="text-white">{inspectApp.formData.network.englishName || 'لا يوجد'}</strong></p>
+                      <p><span className="text-slate-400">رابط الشبكة:</span> <strong className="text-blue-400 font-mono" dir="ltr">{inspectApp.formData.network.externalLink || 'لا يوجد'}</strong></p>
+                    </>
+                  )}
                   <p><span className="text-slate-400">الحي / التغطية:</span> <strong className="text-slate-300">{inspectApp.formData.network.neighborhood || 'المنطقة الرئيسية'}</strong></p>
-                  <p><span className="text-slate-400">هاتف الشبكة المعتمد:</span> <strong className="font-mono text-slate-300" dir="ltr">{inspectApp.formData.network.networkPhone || inspectApp.formData.owner.contactNumber}</strong></p>
+                  {inspectApp.applicationType !== 'agent' && (
+                    <p><span className="text-slate-400">هاتف الشبكة المعتمد:</span> <strong className="font-mono text-slate-300" dir="ltr">{inspectApp.formData.network.networkPhone || inspectApp.formData.owner.contactNumber}</strong></p>
+                  )}
                   <p><span className="text-slate-400">رقم محفظة جيب المعتمدة:</span> <strong className="text-emerald-400 font-mono font-bold">{inspectApp.formData.jaibWalletNumber}</strong></p>
                 </div>
               </div>
             </div>
 
-            {/* Comprehensive Card Categories Table */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
-                  <CreditCard className="w-4 h-4 text-emerald-400" />
-                  <span>جدول كروت الفئات المقدمة من المالك ({inspectApp.formData.cardCategories.length} فئات):</span>
-                </h4>
-              </div>
-              <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/90">
-                <table className="w-full text-right text-xs">
-                  <thead className="bg-slate-800/80 text-slate-300 border-b border-slate-700">
-                    <tr>
-                      <th className="py-2.5 px-3">اسم الفئة</th>
-                      <th className="py-2.5 px-3">السعر (ر.ي)</th>
-                      <th className="py-2.5 px-3">حجم الميجا</th>
-                      <th className="py-2.5 px-3">الزمن (ساعات)</th>
-                      <th className="py-2.5 px-3">الصلاحية (أيام)</th>
-                      <th className="py-2.5 px-3">نوع الكرت</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800 text-slate-200">
-                    {inspectApp.formData.cardCategories.map((c, i) => (
-                      <tr key={i} className="hover:bg-slate-800/40">
-                        <td className="py-2.5 px-3 font-bold text-white">{c.name || c.price}</td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-emerald-400">{Number(c.price)} ر.ي</td>
-                        <td className="py-2.5 px-3 font-mono">{c.mega ? `${c.mega} MB` : 'غير محدد'}</td>
-                        <td className="py-2.5 px-3 font-mono">{c.hours ? `${c.hours} ساعة` : 'مفتوح'}</td>
-                        <td className="py-2.5 px-3 font-mono">{c.validityDays ? `${c.validityDays} يوم` : 'بلا حد'}</td>
-                        <td className="py-2.5 px-3">
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[11px]">
-                            {c.cardType || 'مستخدم وكلمة مرور'}
-                          </span>
-                        </td>
+            {/* Comprehensive Card Categories Table (Only for Networks) */}
+            {inspectApp.applicationType !== 'agent' && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4 text-emerald-400" />
+                    <span>جدول كروت الفئات المقدمة من المالك ({inspectApp.formData.cardCategories?.length || 0} فئات):</span>
+                  </h4>
+                </div>
+                <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/90">
+                  <table className="w-full text-right text-xs">
+                    <thead className="bg-slate-800/80 text-slate-300 border-b border-slate-700">
+                      <tr>
+                        <th className="py-2.5 px-3">اسم الفئة</th>
+                        <th className="py-2.5 px-3">السعر (ر.ي)</th>
+                        <th className="py-2.5 px-3">حجم الميجا</th>
+                        <th className="py-2.5 px-3">الزمن (ساعات)</th>
+                        <th className="py-2.5 px-3">الصلاحية (أيام)</th>
+                        <th className="py-2.5 px-3">نوع الكرت</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800 text-slate-200">
+                      {inspectApp.formData.cardCategories?.map((c, i) => (
+                        <tr key={i} className="hover:bg-slate-800/40">
+                          <td className="py-2.5 px-3 font-bold text-white">{c.name || c.price}</td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-emerald-400">{Number(c.price)} ر.ي</td>
+                          <td className="py-2.5 px-3 font-mono">{c.mega ? `${c.mega} MB` : 'غير محدد'}</td>
+                          <td className="py-2.5 px-3 font-mono">{c.hours ? `${c.hours} ساعة` : 'مفتوح'}</td>
+                          <td className="py-2.5 px-3 font-mono">{c.validityDays ? `${c.validityDays} يوم` : 'بلا حد'}</td>
+                          <td className="py-2.5 px-3">
+                            <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[11px]">
+                              {c.cardType || 'مستخدم وكلمة مرور'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-3 border-t border-slate-800">
               <button

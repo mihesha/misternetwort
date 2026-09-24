@@ -15,6 +15,8 @@ interface AdminContextType {
   withdrawals: WithdrawalRequest[];
   auditLogs: CentralAuditLog[];
   dataEditRequests: NetworkDataEditRequest[];
+  agentCommissionRate: number;
+  setAgentCommissionRate: (rate: number) => void;
   platformCommissionType: 'fixed' | 'percentage';
   setPlatformCommissionType: (type: 'fixed' | 'percentage') => void;
   platformCommissionRate: number;
@@ -161,6 +163,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [auditLogs, setAuditLogs] = useState<CentralAuditLog[]>([]);
   const [dataEditRequests, setDataEditRequests] = useState<NetworkDataEditRequest[]>([]);
   
+  const [agentCommissionRate, setAgentCommissionRate] = useState<number>(5);
   const [platformCommissionType, setPlatformCommissionType] = useState<'fixed' | 'percentage'>('fixed');
   const [platformCommissionRate, setPlatformCommissionRate] = useState<number>(5);
   const [posCommissionType, setPosCommissionType] = useState<'fixed' | 'percentage'>('fixed');
@@ -282,6 +285,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       }
       if (settingsRes.ok) {
         const set = await settingsRes.json();
+        setAgentCommissionRate(set.agentCommissionRate ?? 5);
         setPlatformCommissionType(set.platformCommissionType ?? 'fixed');
         setPlatformCommissionRate(set.platformCommissionRate ?? 5);
         setPosCommissionType(set.posCommissionType ?? 'fixed');
@@ -382,7 +386,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AdminContext.Provider
       value={{
-        stats, activeNetworks, withdrawals, auditLogs, dataEditRequests, platformCommissionType, setPlatformCommissionType, platformCommissionRate, setPlatformCommissionRate, posCommissionType, setPosCommissionType, posCommissionRate, setPosCommissionRate, supportPhone, setSupportPhone, isAdminDataLoaded, setIsAdminDataLoaded, fetchAdminData, setActiveNetworks, setWithdrawals, setDataEditRequests,
+        stats, activeNetworks, withdrawals, auditLogs, dataEditRequests, agentCommissionRate, setAgentCommissionRate, platformCommissionType, setPlatformCommissionType, platformCommissionRate, setPlatformCommissionRate, posCommissionType, setPosCommissionType, posCommissionRate, setPosCommissionRate, supportPhone, setSupportPhone, isAdminDataLoaded, setIsAdminDataLoaded, fetchAdminData, setActiveNetworks, setWithdrawals, setDataEditRequests,
     
         inspectDataEditReq, setInspectDataEditReq,
     adminUsers, setAdminUsers,

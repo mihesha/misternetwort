@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'phone', 'role', 'must_change_password', 'password', 'wallet_balance', 'otp_code'])]
+#[Fillable(['name', 'email', 'phone', 'role', 'must_change_password', 'password', 'wallet_balance', 'otp_code', 'jaib_wallet', 'governorate', 'city'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -44,5 +44,15 @@ class User extends Authenticatable
     public function posProfile(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(PosProfile::class);
+    }
+
+    public function agentTransactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AgentTransaction::class, 'agent_id');
+    }
+
+    public function agentNetworks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Network::class, 'agent_id');
     }
 }

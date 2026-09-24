@@ -2,6 +2,8 @@ import React from 'react';
 
 interface SettingsViewProps {
   isDarkMode: boolean;
+  agentCommissionRate: number;
+  setAgentCommissionRate: (val: number) => void;
   platformCommissionType?: 'fixed' | 'percentage';
   setPlatformCommissionType?: (val: 'fixed' | 'percentage') => void;
   platformCommissionRate: number;
@@ -21,6 +23,8 @@ interface SettingsViewProps {
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   isDarkMode,
+  agentCommissionRate,
+  setAgentCommissionRate,
   platformCommissionType,
   setPlatformCommissionType,
   platformCommissionRate,
@@ -50,6 +54,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+          <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/60 space-y-3">
+            <label className="block text-slate-200 font-bold">نسبة عمولة الوكيل (الافتراضية %):</label>
+            <input
+              type="number"
+              step="0.5"
+              value={agentCommissionRate}
+              onChange={(e) => setAgentCommissionRate(Number(e.target.value))}
+              className={`w-full px-3.5 py-2.5 rounded-xl border ${
+                isDarkMode ? 'bg-[#1d273a] border-slate-700 text-white' : 'bg-slate-50 border-slate-300'
+              }`}
+            />
+            <p className="text-[11px] text-slate-400">هذه النسبة ستطبق على جميع المهندسين والوكلاء بشكل افتراضي ما لم تخصص لهم نسبة خاصة في ملفهم.</p>
+          </div>
+
           <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/60 space-y-3">
             <div className="flex items-center gap-2 mb-2">
               <label className="text-slate-200 font-bold">نوع العمولة:</label>

@@ -16,4 +16,9 @@ class NetworkApplication extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'agent_id');
+    }
 }

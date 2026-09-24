@@ -138,7 +138,7 @@ export const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
         {/* Centered Change Password Form Card */}
         <div className="flex justify-center items-center py-6">
           <div
-            className={`w-full max-w-[440px] rounded-2xl p-6 md:p-8 relative transition-colors ${
+            className={`w-full max-w-md rounded-2xl p-6 md:p-8 relative transition-colors ${
               isDarkMode
                 ? 'bg-[#141d2b] border border-slate-800 shadow-2xl shadow-black/60'
                 : 'bg-white border border-slate-200 shadow-xl shadow-slate-300/40 text-slate-800'
@@ -150,7 +150,7 @@ export const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
                 isDarkMode ? 'bg-[#141d2b]/95' : 'bg-white/95'
               }`}>
                 <div className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center text-white mb-3 shadow-lg shadow-emerald-500/30">
-                  <Check className="w-8 h-8 stroke-[3]" />
+                  <Check className="w-8 h-8 stroke-3" />
                 </div>
                 <h3 className={`text-xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>تم تغيير كلمة المرور بنجاح!</h3>
                 <p className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>جاري توجيهك لشاشة تسجيل الدخول...</p>

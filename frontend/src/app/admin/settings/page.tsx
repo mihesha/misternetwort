@@ -8,6 +8,8 @@ import { SettingsView } from '../../../components/admin/views/SettingsView';
 export default function SettingsPage() {
   const { isDarkMode } = useAppContext();
   const {
+    agentCommissionRate,
+    setAgentCommissionRate,
     platformCommissionType,
     setPlatformCommissionType,
     platformCommissionRate,
@@ -28,6 +30,8 @@ export default function SettingsPage() {
   return (
     <SettingsView
       isDarkMode={isDarkMode}
+      agentCommissionRate={agentCommissionRate}
+      setAgentCommissionRate={setAgentCommissionRate}
       platformCommissionType={platformCommissionType}
       setPlatformCommissionType={setPlatformCommissionType}
       platformCommissionRate={platformCommissionRate}

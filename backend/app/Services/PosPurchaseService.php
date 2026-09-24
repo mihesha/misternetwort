@@ -95,11 +95,35 @@ class PosPurchaseService
                 $commission = $totalPrice * ($commissionValue / 100);
             }
             
+            // Calculate agent commission (percentage of platform's commission)
+            $agentCommission = 0;
+            if ($network->agent_id) {
+                $agentCommissionRate = (float) (\App\Models\SystemSetting::where('key', 'agentCommissionRate')->value('value') ?? 50); // Default 50% of platform commission
+                $agentCommission = $commission * ($agentCommissionRate / 100);
+            }
+
             $platformOwesNetwork = $amountFromWallet - $commission;
             
             // Add to network balance (platform debt to network)
             $network->increment('balance', (float)$platformOwesNetwork);
             $network->increment('total_sales', (float)$totalPrice);
+
+            // Reward the Agent
+            if ($agentCommission > 0 && $network->agent_id) {
+                $agent = \App\Models\User::find($network->agent_id);
+                if ($agent) {
+                    $agent->increment('wallet_balance', $agentCommission);
+                    
+                    \App\Models\AgentTransaction::create([
+                        'agent_id' => $agent->id,
+                        'network_id' => $network->id,
+                        'amount' => $agentCommission,
+                        'type' => 'commission',
+                        'description' => "عمولة مبيعات شبكة ({$network->name}) - نقطة بيع - فئة {$category->name} - كمية {$quantity}",
+                        'reference_number' => 'AGT-COM-' . time() . '-' . rand(100, 999)
+                    ]);
+                }
+            }
 
             // Get cards
             $cards = Card::where('card_category_id', $category->id)

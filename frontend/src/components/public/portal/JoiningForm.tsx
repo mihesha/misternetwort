@@ -1,3 +1,4 @@
+/* eslint-disable tailwindcss/no-contradicting-classname */
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Globe, Wallet, Tag, Plus, Send, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, ShieldCheck, Zap, ChevronDown, ListChecks, X } from 'lucide-react';
 import { ApplicationFormData, CardCategory } from '../../../types';
@@ -14,52 +15,7 @@ interface JoiningFormProps {
   onCancelEdit?: () => void;
 }
 
-const CustomSelect = ({ value, onChange, options, placeholder, error, isDarkMode, disabled = false }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative" ref={wrapperRef}>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between w-full px-4 py-3.5 rounded-xl text-sm transition-all border outline-none ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${error ? 'border-rose-500 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400' : isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-2 focus:ring-indigo-500' : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-indigo-300 focus:ring-2 focus:ring-indigo-500'}`}
-      >
-        <span className={!value ? 'text-slate-400' : ''}>{value || placeholder}</span>
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180 text-indigo-500' : 'text-slate-400'}`} />
-      </button>
-      {isOpen && !disabled && (
-        <div className={`absolute z-50 w-full mt-2 py-2 rounded-xl shadow-2xl border ${isDarkMode ? 'bg-[#1e293b] border-slate-700 shadow-black/50' : 'bg-white border-slate-100'} max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2`}>
-          {options.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-slate-400 text-center font-medium">لا يوجد خيارات</div>
-          ) : (
-            options.map((opt: string) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => { onChange(opt); setIsOpen(false); }}
-                className={`flex items-center w-full text-right px-4 py-3 text-sm transition-colors font-medium hover:bg-indigo-50 dark:hover:bg-indigo-500/10 ${value === opt ? 'bg-indigo-50 dark:bg-indigo-500/20 font-bold text-indigo-600 dark:text-indigo-400' : isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}
-              >
-                {opt}
-              </button>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
+import { CustomSelect } from '../../common/CustomSelect';
 
 export const JoiningForm: React.FC<JoiningFormProps> = ({
   onSubmit,
@@ -234,8 +190,8 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
     <div className="w-full max-w-4xl mx-auto pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* Compact Modern Responsive Hero Header */}
-      <div className="relative mb-10 overflow-hidden rounded-[2rem] shadow-xl group">
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-violet-500 opacity-95 transition-all duration-700" />
+      <div className="relative mb-10 overflow-hidden rounded-4xl shadow-xl group">
+        <div className="absolute inset-0 bg-linear-to-r from-indigo-600 to-violet-500 opacity-95 transition-all duration-700" />
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-overlay" />
         
         <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-5 md:gap-6 text-center md:text-right">
@@ -256,7 +212,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
       </div>
 
       {adminNotes && (
-        <div className="mb-8 p-5 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/40 text-amber-200 shadow-xl backdrop-blur-md animate-in fade-in duration-500">
+        <div className="mb-8 p-5 rounded-2xl bg-linear-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/40 text-amber-200 shadow-xl backdrop-blur-md animate-in fade-in duration-500">
           <div className="flex items-center gap-2 font-bold text-sm text-amber-400 mb-3">
             <AlertCircle className="w-5 h-5 shrink-0" />
             <span>ملاحظات إدارية هامة {referenceNumber ? `(رقم المرجع: ${referenceNumber})` : ''}</span>
@@ -271,7 +227,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
       <div className="mb-10 px-2 md:px-10 relative">
         <div className="absolute top-1/2 left-4 right-4 md:left-14 md:right-14 h-1 -translate-y-1/2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-700 ease-out"
+            className="h-full bg-linear-to-r from-indigo-500 to-purple-500 transition-all duration-700 ease-out"
             style={{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }}
           />
         </div>
@@ -284,7 +240,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
                 <div 
                   className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center font-bold shadow-lg transition-all duration-500 z-10 ${
                     isActive 
-                      ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white scale-110 ring-4 ring-indigo-500/30 shadow-indigo-500/40' 
+                      ? 'bg-linear-to-br from-indigo-500 to-purple-600 text-white scale-110 ring-4 ring-indigo-500/30 shadow-indigo-500/40' 
                       : isCompleted
                       ? 'bg-indigo-500 text-white shadow-indigo-500/20'
                       : isDarkMode ? 'bg-slate-800 text-slate-500 border border-slate-700' : 'bg-white text-slate-400 border border-slate-200'
@@ -659,7 +615,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
               <button
                 type="button"
                 onClick={nextStep}
-                className="w-full md:w-auto flex justify-center items-center gap-2 px-10 py-3.5 rounded-xl text-sm font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+                className="w-full md:w-auto flex justify-center items-center gap-2 px-10 py-3.5 rounded-xl text-sm font-black text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
               >
                 <span>متابعة للخطوة التالية</span>
                 <ChevronLeft className="w-4 h-4" />
@@ -669,7 +625,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="w-full md:w-auto flex justify-center items-center gap-2 px-10 py-3.5 rounded-xl text-sm font-black text-white bg-gradient-to-r from-[#10b981] to-[#059669] hover:from-[#059669] hover:to-[#047857] shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full md:w-auto flex justify-center items-center gap-2 px-10 py-3.5 rounded-xl text-sm font-black text-white bg-linear-to-r from-[#10b981] to-[#059669] hover:from-[#059669] hover:to-[#047857] shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isSubmitting ? (
                   <>
@@ -715,7 +671,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
 
         {/* Privacy Policy Modal */}
         {showPrivacyPolicy && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPrivacyPolicy(false)} />
             <div className={`relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 ${isDarkMode ? 'bg-[#141d2b] border border-slate-800 text-slate-200' : 'bg-white border border-slate-200 text-slate-800'}`}>
               <div className={`flex items-center justify-between p-5 border-b ${isDarkMode ? 'border-slate-800/80 bg-[#101726]' : 'border-slate-100 bg-slate-50'}`}>
