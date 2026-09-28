@@ -139,7 +139,7 @@ const AgentLayoutContent = ({ children }: { children: React.ReactNode }) => {
               </button>
               <Link href="/agent" className="flex items-center gap-2.5">
                 <img src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} alt="CardBox" className="h-8 object-contain" />
-                <span className={`font-black text-lg tracking-tight hidden sm:block ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>بوابة المهندسين</span>
+                <span className={`font-black text-lg tracking-tight hidden sm:block ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>بوابة الوكلاء</span>
               </Link>
             </div>
 
@@ -149,7 +149,7 @@ const AgentLayoutContent = ({ children }: { children: React.ReactNode }) => {
                   <ChevronDown className="w-4 h-4 hidden sm:block opacity-50" />
                   <div className="text-right hidden sm:block">
                     <span className="text-xs font-bold block">{agentName}</span>
-                    <span className="text-[10px] block opacity-70">مهندس معتمد</span>
+                    <span className="text-[10px] block opacity-70">وكيل معتمد</span>
                   </div>
                   <div className={`w-8 h-8 rounded-full bg-linear-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center font-bold text-sm shadow-md ring-2 ${isDarkMode ? 'ring-[#0f172a]' : 'ring-white'}`}>
                     {agentName.charAt(0)}

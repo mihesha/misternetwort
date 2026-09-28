@@ -105,7 +105,7 @@ export const useAdminActions = () => {
       ownerName: app.formData.owner.ownerName,
       ownerPhone: ownerPhone,
       tempPassword: generatedTempPass,
-      networkName: isAgent ? 'وكيل / مهندس' : app.formData.network.networkName,
+      networkName: isAgent ? 'وكيل' : app.formData.network.networkName,
       loginUrl: loginLink,
       networkCode: isAgent ? 'AGENT' : netCode,
       isAgent: isAgent,

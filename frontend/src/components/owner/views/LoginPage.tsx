@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Moon, Sun, Key } from 'lucide-react';
+import { Moon, Sun, Key, Eye, EyeOff } from 'lucide-react';
 
 interface LoginPageProps {
   isDarkMode: boolean;
@@ -25,6 +25,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [ownerIdReadOnly, setOwnerIdReadOnly] = useState(true);
+  const [passReadOnly, setPassReadOnly] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,8 +120,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               type="text"
               value={ownerId}
               onChange={(e) => setOwnerId(e.target.value)}
+              onFocus={() => { setOwnerIdReadOnly(false); setPassReadOnly(false); }}
+              readOnly={ownerIdReadOnly}
               placeholder="أدخل رقم الهاتف"
-              autoComplete="off"
+              autoComplete="username"
+              name="owner-phone-login"
               className={`w-full rounded-lg py-2.5 px-3.5 text-sm text-right focus:outline-none focus:ring-1 transition-all font-mono ${
                 isDarkMode
                   ? 'bg-[#253247] text-white border border-slate-700/60 focus:border-blue-500 focus:ring-blue-500'
@@ -133,19 +139,32 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <label className={`block text-right text-xs md:text-sm font-bold mb-1.5 ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
               كلمة المرور
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="أدخل كلمة المرور"
-              autoComplete="new-password"
-              className={`w-full rounded-lg py-2.5 px-3.5 text-sm text-right focus:outline-none focus:ring-1 transition-all ${
-                isDarkMode
-                  ? 'bg-[#253247] text-white border border-slate-700/60 focus:border-blue-500 focus:ring-blue-500'
-                  : 'bg-slate-50 text-slate-900 border border-slate-300 focus:bg-white focus:border-blue-600 focus:ring-blue-600'
-              }`}
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => { setOwnerIdReadOnly(false); setPassReadOnly(false); }}
+                readOnly={passReadOnly}
+                placeholder="أدخل كلمة المرور"
+                autoComplete="current-password"
+                name="owner-password-login"
+                className={`w-full rounded-lg py-2.5 pl-10 pr-3.5 text-sm text-right focus:outline-none focus:ring-1 transition-all ${
+                  isDarkMode
+                    ? 'bg-[#253247] text-white border border-slate-700/60 focus:border-blue-500 focus:ring-blue-500'
+                    : 'bg-slate-50 text-slate-900 border border-slate-300 focus:bg-white focus:border-blue-600 focus:ring-blue-600'
+                }`}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className={`absolute inset-y-0 left-2 flex items-center px-2 transition-colors ${isDarkMode ? 'text-slate-400 hover:text-blue-400' : 'text-slate-400 hover:text-blue-600'}`}
+                tabIndex={-1}
+              >
+                {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           {/* Remember Me Checkbox */}

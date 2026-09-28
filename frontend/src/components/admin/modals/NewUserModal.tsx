@@ -124,7 +124,7 @@ export const NewUserModal = () => {
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#1d273a] border border-slate-700 text-white"
                 >
                   <option value="مشرف حسابات">مشرف حسابات وتحصيل</option>
-                  <option value="مهندس شبكات">مهندس مايكروتك وشبكات</option>
+                  <option value="وكيل شبكات">وكيل شبكات</option>
                   <option value="الآدمن الرئيسي">الآدمن الرئيسي (صلاحية كاملة)</option>
                 </select>
               </div>

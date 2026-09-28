@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Shield, Phone, Lock, ArrowRight, Loader2, Sparkles, Network } from 'lucide-react';
+import { Shield, Phone, Lock, ArrowRight, Loader2, Sparkles, Network, Eye, EyeOff } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { PublicHeader } from '../../../components/public/PublicHeader';
 
@@ -13,6 +13,9 @@ export default function AgentLoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [phoneReadOnly, setPhoneReadOnly] = useState(true);
+  const [passReadOnly, setPassReadOnly] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,17 +33,17 @@ export default function AgentLoginPage() {
 
       if (res.ok) {
         if (data.user.role !== 'agent') {
-           setError('هذا الحساب ليس حساب وكيل/مهندس.');
-           setIsLoading(false);
-           return;
+          setError('هذا الحساب ليس حساب وكيل.');
+          setIsLoading(false);
+          return;
         }
         localStorage.setItem('auth_token', data.token);
         localStorage.setItem('agent_user', JSON.stringify(data.user));
-        
+
         if (data.user.must_change_password) {
-           router.push('/agent/change-password'); // Redirect to agent change password logic
+          router.push('/agent/change-password'); // Redirect to agent change password logic
         } else {
-           router.push('/agent');
+          router.push('/agent');
         }
       } else {
         setError(data.message || 'رقم الهاتف أو كلمة المرور غير صحيحة');
@@ -55,19 +58,19 @@ export default function AgentLoginPage() {
   return (
     <div dir="rtl" className={`min-h-screen flex flex-col font-['Cairo',sans-serif] ${isDarkMode ? 'bg-[#0a0f1c] text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       <PublicHeader showNav={false} />
-      
+
       <div className="flex-1 flex flex-col items-center justify-center p-4 pt-32 pb-12 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-        
+
         <div className={`w-full p-8 sm:p-10 rounded-4xl shadow-xl relative border overflow-hidden ${isDarkMode ? 'bg-[#101726] border-slate-800/80 shadow-black/50' : 'bg-white border-slate-200 shadow-slate-300/40'}`}>
-          
+
           <div className="absolute top-0 left-0 w-full h-32 bg-linear-to-r from-indigo-600 to-violet-500 opacity-90"></div>
           <div className="absolute top-0 left-0 w-full h-32 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-overlay"></div>
-          
+
           <div className="text-center mb-8 relative z-10 pt-4">
             <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 shadow-xl relative backdrop-blur-md border bg-white/20 border-white/30 text-white`}>
               <Network className="w-10 h-10" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">تسجيل دخول المهندس</h1>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">تسجيل دخول الوكيل</h1>
             <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
               أدخل بياناتك للوصول إلى لوحة التحكم الخاصة بك
             </p>
@@ -87,13 +90,16 @@ export default function AgentLoginPage() {
                   <Phone className="w-5 h-5" />
                 </div>
                 <input
-                  type="tel"
+                  type="text"
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  dir="ltr"
-                  className={`w-full pl-4 pr-12 py-3.5 rounded-xl outline-none font-bold text-left transition-all border ${isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-2 focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
-                  placeholder="7X XXXXXXX"
+                  onFocus={() => { setPhoneReadOnly(false); setPassReadOnly(false); }}
+                  readOnly={phoneReadOnly}
+                  autoComplete="username"
+                  name="agent-phone-login"
+                  className={`w-full pl-4 pr-12 py-3.5 rounded-xl outline-none font-bold font-mono text-right transition-all border ${isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-2 focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
+                  placeholder="7XXXXXXXX"
                 />
               </div>
             </div>
@@ -105,14 +111,25 @@ export default function AgentLoginPage() {
                   <Lock className="w-5 h-5" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  dir="ltr"
-                  className={`w-full pl-4 pr-12 py-3.5 rounded-xl outline-none font-bold text-left transition-all border ${isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-2 focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
+                  onFocus={() => { setPhoneReadOnly(false); setPassReadOnly(false); }}
+                  readOnly={passReadOnly}
+                  autoComplete="current-password"
+                  name="agent-password-login"
+                  className={`w-full pl-12 pr-12 py-3.5 rounded-xl outline-none font-bold text-right transition-all border ${isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-2 focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={`absolute inset-y-0 left-0 w-12 flex items-center justify-center transition-colors ${isDarkMode ? 'text-slate-400 hover:text-indigo-400' : 'text-slate-400 hover:text-indigo-500'}`}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -135,7 +152,7 @@ export default function AgentLoginPage() {
           <div className={`mt-8 pt-6 border-t flex flex-col items-center gap-4 relative z-10 ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
             <Link href="/agent/join" className={`text-sm font-bold transition-colors flex items-center gap-1.5 ${isDarkMode ? 'text-indigo-400 hover:text-white' : 'text-indigo-600 hover:text-indigo-800'}`}>
               <Sparkles className="w-4 h-4" />
-              <span>ليس لديك حساب؟ انضم كمهندس</span>
+              <span>ليس لديك حساب؟ انضم كوكيل</span>
             </Link>
           </div>
         </div>

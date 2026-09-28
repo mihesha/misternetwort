@@ -65,7 +65,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 isDarkMode ? 'bg-[#1d273a] border-slate-700 text-white' : 'bg-slate-50 border-slate-300'
               }`}
             />
-            <p className="text-[11px] text-slate-400">هذه النسبة ستطبق على جميع المهندسين والوكلاء بشكل افتراضي ما لم تخصص لهم نسبة خاصة في ملفهم.</p>
+            <p className="text-[11px] text-slate-400">هذه النسبة ستطبق على جميع الوكلاء بشكل افتراضي ما لم تخصص لهم نسبة خاصة في ملفهم.</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/60 space-y-3">

@@ -48,7 +48,7 @@ export const AgentApplicationsView: React.FC<ApplicationsViewProps> = ({
           app.formData.network.networkName.toLowerCase().includes(term) ||
           app.formData.jaibWalletNumber.includes(term) ||
           app.formData.owner.contactNumber.includes(term) ||
-          'وكيل مهندس'.includes(term)
+          'وكيل'.includes(term)
         );
       }
       return true;
@@ -131,7 +131,7 @@ export const AgentApplicationsView: React.FC<ApplicationsViewProps> = ({
                     <span className="font-mono font-bold text-lg text-emerald-400">{app.referenceNumber}</span>
                     <span className="text-xs text-slate-400">{new Date(app.createdAt).toLocaleString('ar-YE')}</span>
                     <span className="px-2 py-0.5 rounded-lg text-[10px] font-black bg-[#12C9D2]/20 text-[#12C9D2] border border-[#12C9D2]/30">
-                      طلب وكيل / مهندس
+                      طلب وكيل معتمد
                     </span>
                   </div>
                   <h3 className="font-extrabold text-lg text-white">

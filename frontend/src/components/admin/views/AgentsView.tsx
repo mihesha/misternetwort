@@ -101,7 +101,7 @@ export const AgentsView = () => {
           <div className="absolute top-0 right-0 w-1.5 h-full bg-cyan-500" />
           <div className="flex justify-between items-center">
             <div>
-              <p className={`text-xs font-bold mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>إجمالي المهندسين</p>
+              <p className={`text-xs font-bold mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>إجمالي الوكلاء</p>
               <h3 className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{agents.length}</h3>
             </div>
             <div className="w-12 h-12 bg-cyan-500/10 rounded-xl flex items-center justify-center text-cyan-500">
@@ -144,7 +144,7 @@ export const AgentsView = () => {
            <div className="w-10 h-10 bg-cyan-500 text-white rounded-full flex items-center justify-center mb-2 shadow-lg shadow-cyan-500/40">
              <Plus className="w-5 h-5" />
            </div>
-           <h4 className="font-bold text-cyan-600 dark:text-cyan-400 text-sm">إضافة مهندس جديد</h4>
+           <h4 className="font-bold text-cyan-600 dark:text-cyan-400 text-sm">إضافة وكيل جديد</h4>
         </div>
       </div>
 
@@ -155,7 +155,7 @@ export const AgentsView = () => {
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <h2 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>إدارة المهندسين والوكلاء</h2>
+              <h2 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>إدارة الوكلاء</h2>
               <p className="text-sm text-slate-500 mt-1 font-medium">سجل الوكلاء المعتمدين والمؤشرات المالية ونسب العمولات لكل وكيل</p>
             </div>
           </div>
@@ -175,7 +175,7 @@ export const AgentsView = () => {
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ابحث باسم المهندس أو رقم الجوال..." 
+                placeholder="ابحث باسم الوكيل أو رقم الجوال..." 
                 className={`w-full pr-10 pl-4 py-3 rounded-xl text-sm font-medium transition-all focus:outline-none focus:ring-2 ${isDarkMode ? 'bg-slate-800/50 border-slate-700 text-white focus:ring-cyan-500/50' : 'bg-slate-50 border-slate-200 text-slate-800 focus:ring-cyan-500/50'}`}
               />
             </div>
@@ -185,13 +185,13 @@ export const AgentsView = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
-            <p className="text-sm font-bold text-slate-500">جاري تحميل بيانات المهندسين...</p>
+            <p className="text-sm font-bold text-slate-500">جاري تحميل بيانات الوكلاء...</p>
           </div>
         ) : filteredAgents.length === 0 ? (
           <div className={`text-center py-20 rounded-2xl border border-dashed ${isDarkMode ? 'border-slate-800 text-slate-500' : 'border-slate-300 text-slate-400'}`}>
             <ShieldCheck className="w-16 h-16 mx-auto mb-4 opacity-20" />
-            <p className="text-lg font-black mb-2">لا يوجد مهندسين</p>
-            <p className="text-sm">لم يتم العثور على بيانات تطابق بحثك أو لم يتم تسجيل أي مهندس بعد.</p>
+            <p className="text-lg font-black mb-2">لا يوجد وكلاء</p>
+            <p className="text-sm">لم يتم العثور على بيانات تطابق بحثك أو لم يتم تسجيل أي وكيل بعد.</p>
           </div>
         ) : (
           viewMode === 'grid' ? (
@@ -213,7 +213,7 @@ export const AgentsView = () => {
                       <div>
                         <h3 className={`font-black text-base truncate max-w-37.5 ${isDarkMode ? 'text-white' : 'text-slate-800'}`} title={agent.name}>{agent.name}</h3>
                         <div className="flex items-center gap-1.5 mt-1 text-xs text-cyan-600 dark:text-cyan-400 font-bold bg-cyan-50 dark:bg-cyan-500/10 px-2 py-1 rounded-lg w-max">
-                          <ShieldCheck className="w-3.5 h-3.5" /> <span>مهندس وكيل</span>
+                          <ShieldCheck className="w-3.5 h-3.5" /> <span>وكيل معتمد</span>
                         </div>
                       </div>
                     </div>
@@ -291,7 +291,7 @@ export const AgentsView = () => {
               <table className="w-full text-sm text-right">
                 <thead className={`text-xs uppercase ${isDarkMode ? 'bg-slate-800/50 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
                   <tr>
-                    <th className="px-6 py-4 font-bold rounded-r-xl">المهندس / الوكيل</th>
+                    <th className="px-6 py-4 font-bold rounded-r-xl">الوكيل</th>
                     <th className="px-6 py-4 font-bold">معلومات التواصل</th>
                     <th className="px-6 py-4 font-bold">الموقع</th>
                     <th className="px-6 py-4 font-bold text-center">الشبكات</th>
@@ -315,7 +315,7 @@ export const AgentsView = () => {
                           </div>
                           <div>
                             <p className={`font-black text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{agent.name}</p>
-                            <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold bg-cyan-50 dark:bg-cyan-500/10 px-2 py-0.5 rounded-md">مهندس وكيل</span>
+                            <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold bg-cyan-50 dark:bg-cyan-500/10 px-2 py-0.5 rounded-md">وكيل معتمد</span>
                           </div>
                         </div>
                       </td>
@@ -373,7 +373,7 @@ export const AgentsView = () => {
                   <Users className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className={`text-lg font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>البروفايل التفصيلي للمهندس</h3>
+                  <h3 className={`text-lg font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>البروفايل التفصيلي للوكيل</h3>
                   <p className="text-xs text-slate-500 mt-1 font-bold">العمليات المالية، الشبكات، وسجل الأداء</p>
                 </div>
               </div>

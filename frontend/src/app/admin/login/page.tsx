@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Lock, Phone, ArrowLeft, Loader2, Moon, Sun } from 'lucide-react';
+import { ShieldCheck, Lock, Phone, ArrowLeft, Loader2, Moon, Sun, Eye, EyeOff } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 
 export default function AdminLoginPage() {
@@ -12,6 +12,9 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [phoneReadOnly, setPhoneReadOnly] = useState(true);
+  const [passReadOnly, setPassReadOnly] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,12 +100,14 @@ export default function AdminLoginPage() {
               <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
                 type="text"
-                dir="ltr"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                onFocus={() => { setPhoneReadOnly(false); setPassReadOnly(false); }}
+                readOnly={phoneReadOnly}
                 placeholder="أدخل رقم الهاتف"
-                autoComplete="off"
-                className={`w-full pr-12 pl-4 py-3.5 rounded-xl text-left text-sm font-bold outline-none transition-all ${
+                autoComplete="username"
+                name="admin-phone-login"
+                className={`w-full pr-12 pl-4 py-3.5 rounded-xl text-right text-sm font-bold font-mono outline-none transition-all ${
                   isDarkMode 
                     ? 'bg-[#182232] border-slate-700 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500' 
                     : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600'
@@ -116,18 +121,28 @@ export default function AdminLoginPage() {
             <div className="relative">
               <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
-                type="password"
-                dir="ltr"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => { setPhoneReadOnly(false); setPassReadOnly(false); }}
+                readOnly={passReadOnly}
                 placeholder="أدخل كلمة المرور"
-                autoComplete="new-password"
-                className={`w-full pr-12 pl-4 py-3.5 rounded-xl text-left text-sm font-bold outline-none transition-all ${
+                autoComplete="current-password"
+                name="admin-password-login"
+                className={`w-full pr-12 pl-12 py-3.5 rounded-xl text-right text-sm font-bold outline-none transition-all ${
                   isDarkMode 
                     ? 'bg-[#182232] border-slate-700 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500' 
                     : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600'
                 } border`}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className={`absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center transition-colors ${isDarkMode ? 'text-slate-400 hover:text-indigo-400' : 'text-slate-400 hover:text-indigo-500'}`}
+                tabIndex={-1}
+              >
+                {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 

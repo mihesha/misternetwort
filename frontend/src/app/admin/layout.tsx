@@ -244,7 +244,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         },
         {
           id: 'agents' as AdminTab,
-          label: 'إدارة المهندسين',
+          label: 'إدارة الوكلاء',
           icon: Users,
           badge: null,
           badgeColor: 'bg-emerald-500',
@@ -510,7 +510,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                   {activeTab === 'pos_recharges' && '💰 طلبات شحن محافظ نقاط البيع'}
                   {activeTab === 'app_deposits' && '📱 إيداعات المحافظ وتطبيق الهاتف'}
                   {activeTab === 'settings' && '⚙️ الإعدادات العامة وعمولات المنظومة'}
-                  {activeTab === 'agents' && '👷‍♂️ إدارة الوكلاء والمهندسين'}
+                  {activeTab === 'agents' && '👷‍♂️ إدارة الوكلاء'}
                 </span>
               </h2>
               <p className="text-[11px] text-slate-400">لوحة تحكم إدارية مركزية للتحكم بالشبكات وحسابات محفظة جيب</p>

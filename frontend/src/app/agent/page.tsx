@@ -51,7 +51,7 @@ export default function AgentDashboard() {
           <div className="text-right w-full md:w-auto">
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold mb-4 bg-white/20 text-white border border-white/30 backdrop-blur-md">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>أهلاً بك في بوابة المهندسين</span>
+              <span>أهلاً بك في بوابة الوكلاء</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-2 text-white drop-shadow-md">
               مرحباً، {agentName.split(' ')[0]} 👋
