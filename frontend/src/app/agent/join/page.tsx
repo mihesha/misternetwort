@@ -60,11 +60,6 @@ export default function AgentJoinPage() {
         const ref = data.application.referenceNumber;
         setRefNumber(ref);
         setSubmitted(true);
-        
-        // Auto Redirect to WhatsApp
-        const whatsappNumber = "967775945393"; 
-        const message = `مرحباً كارد بوكس،%0Aأنا الوكيل: ${formData.name}%0Aقمت بتقديم طلب انضمام كوكيل شبكات.%0Aرقم الطلب (المرجع): ${ref}%0Aيرجى تفعيل حسابي، وشكراً.`;
-        window.location.href = `https://wa.me/${whatsappNumber}?text=${message}`;
       } else {
         setErrors({ general: data.message || 'حدث خطأ أثناء تقديم الطلب' });
       }
@@ -76,7 +71,7 @@ export default function AgentJoinPage() {
   };
 
   const handleWhatsAppRedirect = () => {
-    const whatsappNumber = "967775945393"; 
+    const whatsappNumber = "967780880280"; 
     const message = `مرحباً كارد بوكس،%0Aأنا الوكيل: ${formData.name}%0Aقمت بتقديم طلب انضمام كوكيل شبكات.%0Aرقم الطلب (المرجع): ${refNumber}%0Aيرجى تفعيل حسابي، وشكراً.`;
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
     window.open(whatsappUrl, '_blank');
@@ -107,9 +102,6 @@ export default function AgentJoinPage() {
               <ExternalLink className="w-5 h-5" />
               <span>إرسال رسالة التفعيل للإدارة</span>
             </button>
-            <Link href="/" className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${isDarkMode ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'}`}>
-              العودة للرئيسية
-            </Link>
           </div>
         </div>
       </div>

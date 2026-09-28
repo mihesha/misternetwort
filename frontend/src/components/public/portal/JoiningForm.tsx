@@ -660,10 +660,10 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
           <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium flex flex-wrap items-center justify-center gap-1.5">
             <span>للاستفسار تواصل مع</span>
             <span className="font-bold text-indigo-500">خدمة العملاء:</span>
-            <a href="tel:777310606" className="font-black tracking-wider text-indigo-600 dark:text-indigo-400 hover:underline" dir="ltr">777310606</a>
+            <a href="tel:780880280" className="font-black tracking-wider text-indigo-600 dark:text-indigo-400 hover:underline" dir="ltr">780880280</a>
             <span className="mx-2 opacity-50">|</span>
             <span className="font-bold text-indigo-500">الدعم الفني:</span>
-            <a href="tel:775945393" className="font-black tracking-wider text-indigo-600 dark:text-indigo-400 hover:underline" dir="ltr">775945393</a>
+            <a href="tel:777310606" className="font-black tracking-wider text-indigo-600 dark:text-indigo-400 hover:underline" dir="ltr">777310606</a>
           </p>
         </div>
 

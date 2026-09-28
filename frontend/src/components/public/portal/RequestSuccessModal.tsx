@@ -23,7 +23,7 @@ export const RequestSuccessModal: React.FC<RequestSuccessModalProps> = ({
     `رقم المالك: ${formData.owner.ownerId || ''}`
   );
 
-  const whatsappUrl = `https://wa.me/967777310606?text=${whatsappMessage}`;
+  const whatsappUrl = `https://wa.me/967780880280?text=${whatsappMessage}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
@@ -60,7 +60,7 @@ export const RequestSuccessModal: React.FC<RequestSuccessModalProps> = ({
         {/* Subtitle / Instructions */}
         <p className={`text-xs md:text-sm leading-relaxed mb-6 font-medium px-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
           يرجى تأكيد طلبك بإرسال طلب الموافقة الى الرقم{' '}
-          <span className={`font-bold font-mono ${isDarkMode ? 'text-white' : 'text-slate-900'}`} dir="ltr">777310606</span>
+          <span className={`font-bold font-mono ${isDarkMode ? 'text-white' : 'text-slate-900'}`} dir="ltr">780880280</span>
         </p>
 
         {/* Confirm and Send WhatsApp Button */}
