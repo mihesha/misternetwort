@@ -193,6 +193,29 @@ class CustomerPurchaseService
             $network->increment('balance', (float)$totalNetEarnings);
             $network->increment('total_sales', (float)$overallTotalPrice);
 
+            // Reward the Agent (Agent commission is calculated from the platform's commission)
+            if ($totalCommission > 0 && $network->agent_id) {
+                $agent = \App\Models\User::find($network->agent_id);
+                if ($agent) {
+                    // Check if agent has a custom rate, otherwise fallback to system default (default 50% of platform commission)
+                    $agentCommissionRate = $agent->custom_commission_rate ?? (float) (SystemSetting::where('key', 'agentCommissionRate')->value('value') ?? 50);
+                    $agentCommission = $totalCommission * ($agentCommissionRate / 100);
+                    
+                    if ($agentCommission > 0) {
+                        $agent->increment('wallet_balance', $agentCommission);
+                        
+                        \App\Models\AgentTransaction::create([
+                            'agent_id' => $agent->id,
+                            'network_id' => $network->id,
+                            'amount' => $agentCommission,
+                            'type' => 'commission',
+                            'description' => "عمولة مبيعات شبكة ({$network->name}) - شراء مباشر للعميل",
+                            'reference_number' => 'AGT-COM-' . time() . '-' . rand(100, 999)
+                        ]);
+                    }
+                }
+            }
+
             // Handle Payment Deduction / Overpayment processing
             if ($isInternalWallet) {
                 $user->decrement('wallet_balance', $overallTotalPrice);

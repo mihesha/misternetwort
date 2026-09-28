@@ -52,19 +52,42 @@ class AdminNetworkApplicationController extends Controller
 
         if ($request->status === 'approved') {
             if ($app->application_type === 'agent') {
-                $user = User::updateOrCreate(
-                    ['phone' => $app->owner_phone],
-                    [
-                        'name' => $app->owner_name,
-                        'email' => $app->owner_identity,
-                        'password' => Hash::make($request->tempPassword ?? '12345678'),
-                        'role' => 'agent',
-                        'must_change_password' => true,
-                        'jaib_wallet' => $app->jaib_wallet,
-                        'governorate' => $app->governorate,
-                        'city' => $app->city,
-                    ]
-                );
+                // Find by phone first to avoid unique email constraint crash
+                $user = User::where('phone', $app->owner_phone)->first();
+
+                if ($user) {
+                    // Update existing user
+                    $user->name = $app->owner_name;
+                    $user->password = Hash::make($request->tempPassword ?? '12345678');
+                    $user->role = 'agent';
+                    $user->must_change_password = true;
+                    $user->jaib_wallet = $app->jaib_wallet;
+                    $user->governorate = $app->governorate;
+                    $user->city = $app->city;
+                    // Only update email if it's not taken by another user
+                    $emailTaken = User::where('email', $app->owner_identity)
+                        ->where('phone', '!=', $app->owner_phone)
+                        ->exists();
+                    if (!$emailTaken) {
+                        $user->email = $app->owner_identity;
+                    }
+                    $user->save();
+                } else {
+                    // Create new agent user
+                    // Check if email is taken by another account
+                    $emailTaken = User::where('email', $app->owner_identity)->exists();
+                    $user = User::create([
+                        'name'                => $app->owner_name,
+                        'phone'               => $app->owner_phone,
+                        'email'               => $emailTaken ? ($app->owner_phone . '@agent.local') : $app->owner_identity,
+                        'password'            => Hash::make($request->tempPassword ?? '12345678'),
+                        'role'                => 'agent',
+                        'must_change_password'=> true,
+                        'jaib_wallet'         => $app->jaib_wallet,
+                        'governorate'         => $app->governorate,
+                        'city'                => $app->city,
+                    ]);
+                }
                 return response()->json([
                     'message' => 'Status updated successfully',
                     'type' => 'agent',

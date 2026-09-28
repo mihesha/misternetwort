@@ -456,16 +456,22 @@ export const AgentsView = () => {
                           <p className="text-slate-500 text-sm font-bold text-center py-4">لا توجد عمليات مالية بعد.</p>
                         ) : (
                           selectedAgentDetails.transactions.map((txn: any, idx: number) => (
-                            <div key={idx} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white border-slate-100'}`}>
-                              <div>
+                            <div key={idx} className={`p-3 rounded-xl border flex flex-col gap-2 ${isDarkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white border-slate-100'}`}>
+                              <div className="flex items-center justify-between">
                                 <p className={`font-bold text-sm ${txn.type === 'commission' ? 'text-cyan-500' : 'text-rose-500'}`}>
                                   {txn.type === 'commission' ? 'استلام عمولة مبيعات' : 'سحب أرباح'}
                                 </p>
-                                <p className="text-xs text-slate-500 mt-1">{new Date(txn.created_at).toLocaleDateString('ar-YE')}</p>
+                                <p className={`font-black text-sm ${txn.type === 'commission' ? 'text-cyan-600 dark:text-cyan-400' : 'text-rose-600 dark:text-rose-400'}`} dir="ltr">
+                                  {txn.type === 'commission' ? '+' : '-'}{Number(txn.amount).toLocaleString()} <span className="text-[10px]">ر.ي</span>
+                                </p>
                               </div>
-                              <p className={`font-black text-sm ${txn.type === 'commission' ? 'text-cyan-600 dark:text-cyan-400' : 'text-rose-600 dark:text-rose-400'}`} dir="ltr">
-                                {txn.type === 'commission' ? '+' : '-'}{Number(txn.amount).toLocaleString()} <span className="text-[10px]">ر.ي</span>
+                              <p className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                                {txn.description || 'لا يوجد وصف متاح'}
                               </p>
+                              <div className="flex justify-between items-center mt-1">
+                                <p className="text-[10px] font-mono text-slate-500">المرجع: {txn.reference_number || '---'}</p>
+                                <p className="text-[10px] text-slate-500">{new Date(txn.created_at).toLocaleString('ar-YE')}</p>
+                              </div>
                             </div>
                           ))
                         )}
