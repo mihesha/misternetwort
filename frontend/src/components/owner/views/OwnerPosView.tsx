@@ -244,7 +244,7 @@ export const OwnerPosView: React.FC = () => {
                 <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">إدارة نقاط البيع</h2>
               </div>
               <p className={`text-sm leading-relaxed max-w-md ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                أدر شبكة وكلائك ونقاط البيع الخاصة بك. قم بتعيين أسعار خاصة للكروت، إدارة السقوف المالية، ومتابعة مبيعاتهم الآجلة بكل سهولة.
+                أدر شبكة نقاط البيع الخاصة بك. قم بتعيين أسعار خاصة للكروت، إدارة السقوف المالية، ومتابعة مبيعاتهم الآجلة بكل سهولة.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 mt-6">
@@ -253,7 +253,7 @@ export const OwnerPosView: React.FC = () => {
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
               >
                 <Plus className="w-4 h-4" />
-                <span>إضافة وكيل جديد</span>
+                <span>إضافة نقطة بيع جديدة</span>
               </button>
               <button
                 onClick={() => {
@@ -264,7 +264,7 @@ export const OwnerPosView: React.FC = () => {
                 className={`px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all hover:-translate-y-0.5 active:translate-y-0 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-white shadow-lg shadow-slate-900/50 border border-slate-700' : 'bg-white hover:bg-slate-50 text-slate-800 shadow-lg shadow-slate-200/50 border border-slate-200'}`}
               >
                 <Tag className="w-4 h-4" />
-                <span>أسعار الوكلاء</span>
+                <span>أسعار نقاط البيع</span>
               </button>
             </div>
           </div>
@@ -277,7 +277,7 @@ export const OwnerPosView: React.FC = () => {
               <Activity className="w-8 h-8" />
             </div>
             <div>
-              <p className={`text-xs font-bold mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>الوكلاء النشطين</p>
+              <p className={`text-xs font-bold mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>نقاط البيع النشطة</p>
               <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-500">{activeMemberships.length}</div>
               <p className={`text-[10px] mt-1.5 font-bold ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>من إجمالي {memberships.length} نقطة مسجلة</p>
             </div>
@@ -348,7 +348,7 @@ export const OwnerPosView: React.FC = () => {
             <table className="w-full text-right">
               <thead>
                 <tr className={`text-xs font-black uppercase tracking-wider ${isDarkMode ? 'bg-slate-800/40 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
-                  <th className="py-4 px-6 whitespace-nowrap">الوكيل</th>
+                  <th className="py-4 px-6 whitespace-nowrap">نقطة البيع</th>
                   <th className="py-4 px-6 whitespace-nowrap text-center">الحالة</th>
                   <th className="py-4 px-6 whitespace-nowrap text-center">السقف المالي</th>
                   <th className="py-4 px-6 whitespace-nowrap text-center">الديون الحالية</th>
@@ -413,7 +413,7 @@ export const OwnerPosView: React.FC = () => {
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ status: 'active' })
                                 });
-                                showToast('تم قبول الوكيل بنجاح');
+                                showToast('تم قبول نقطة البيع بنجاح');
                                 fetchMemberships();
                               }}
                               className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
@@ -428,7 +428,7 @@ export const OwnerPosView: React.FC = () => {
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ status: 'rejected' })
                                 });
-                                showToast('تم رفض الوكيل', 'error');
+                                showToast('تم رفض نقطة البيع', 'error');
                                 fetchMemberships();
                               }}
                               className="p-2 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
@@ -523,12 +523,12 @@ export const OwnerPosView: React.FC = () => {
 
             <div className="mt-12 text-center mb-6">
               <h3 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>ضم نقطة بيع جديدة</h3>
-              <p className={`text-sm mt-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>أدخل رقم الهاتف للوكيل لإضافته لشبكتك</p>
+              <p className={`text-sm mt-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>أدخل رقم الهاتف لنقطة البيع لإضافتها لشبكتك</p>
             </div>
 
             <div className="space-y-5">
               <div>
-                <label className={`block text-xs font-bold mb-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>رقم هاتف الوكيل</label>
+                <label className={`block text-xs font-bold mb-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>رقم هاتف نقطة البيع</label>
                 <div className="relative">
                   <Phone className={`absolute right-4 top-3.5 w-5 h-5 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} />
                   <input
@@ -546,12 +546,12 @@ export const OwnerPosView: React.FC = () => {
                 </div>
                 <div className={`flex items-center gap-2 mt-3 text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                   <AlertCircle className="w-4 h-4 text-amber-500" />
-                  <span>يجب أن يكون حساب الوكيل مسجلاً مسبقاً في التطبيق.</span>
+                  <span>يجب أن يكون حساب نقطة البيع مسجلاً مسبقاً في التطبيق.</span>
                 </div>
               </div>
               <div className="flex gap-3 pt-4">
                 <button onClick={handleAddPos} className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-[0.98]">
-                  بحث وإضافة الوكيل
+                  بحث وإضافة نقطة البيع
                 </button>
                 <button onClick={() => setShowAddModal(false)} className={`flex-[1] py-3.5 rounded-xl font-bold transition-all active:scale-[0.98] ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}>
                   إلغاء

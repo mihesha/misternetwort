@@ -319,7 +319,7 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
 
       // Date Range
       if (dateRangeType !== 'all') {
-        const cardDate = new Date(card.created_at);
+        const cardDate = new Date(card.purchased_at || card.created_at);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -678,20 +678,21 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
                   <th className="py-4 px-4 font-black text-center">الفئة</th>
                   <th className="py-4 px-4 font-black text-center">الحالة</th>
                   <th className="py-4 px-4 font-black text-center">تاريخ الإضافة</th>
+                  <th className="py-4 px-4 font-black text-center">تاريخ البيع</th>
                   <th className="py-4 px-4 font-black text-center">الإجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/40">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-20 text-center">
+                    <td colSpan={8} className="py-20 text-center">
                       <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-500 mb-3" />
                       <span className="text-sm text-slate-400 font-bold">جاري تحميل الكروت...</span>
                     </td>
                   </tr>
                 ) : paginatedCards.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-20 text-center flex flex-col items-center justify-center">
+                    <td colSpan={8} className="py-20 text-center flex flex-col items-center justify-center">
                       <Search className="w-10 h-10 text-slate-500/50 mb-3 mx-auto" />
                       <span className="text-sm text-slate-500 font-bold block">لا توجد كروت مطابقة للفلاتر الحالية</span>
                     </td>
@@ -725,6 +726,11 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
                       <td className="py-3 px-4 text-center">
                         <span dir="ltr" className={`inline-block font-mono text-[10px] md:text-[11px] font-bold px-2 py-1 rounded-md ${isDarkMode ? 'bg-slate-800/60 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                           {formatDate(card.created_at)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span dir="ltr" className={`inline-block font-mono text-[10px] md:text-[11px] font-bold px-2 py-1 rounded-md ${card.purchased_at ? (isDarkMode ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-100 text-emerald-700') : (isDarkMode ? 'bg-slate-800/40 text-slate-500' : 'bg-slate-100 text-slate-400')}`}>
+                          {card.purchased_at ? formatDate(card.purchased_at) : '-'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">

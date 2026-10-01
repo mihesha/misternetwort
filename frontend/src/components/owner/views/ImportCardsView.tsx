@@ -130,11 +130,11 @@ export const ImportCardsView: React.FC<ImportCardsViewProps> = ({
           parsedRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         }
 
-        const extractedCards: { code: string; password?: string }[] = [];
+        const extractedCards: { code: string; password?: string; serial_number?: string }[] = [];
 
+        const cleanRows: string[][] = [];
         for (const row of parsedRows) {
           if (!row || !Array.isArray(row) || row.length === 0) continue;
-
           const cols = row.map((c: any) => String(c || '').trim()).filter((c: string) => c);
           if (cols.length === 0) continue;
 
@@ -148,21 +148,51 @@ export const ImportCardsView: React.FC<ImportCardsViewProps> = ({
               s.includes('بطاق') || s.includes('حساب');
           };
 
-          const hasHeaderKeyword = cols.some((col: any) => isHeader(String(col)));
-          if (hasHeaderKeyword) {
+          if (cols.some((col: any) => isHeader(String(col)))) {
             continue;
           }
+          cleanRows.push(cols);
+        }
 
-          if (isPasswordRequired) {
+        if (isPasswordRequired) {
+          for (const cols of cleanRows) {
             const code = cols[0];
             const password = cols.length > 1 ? cols[1] : undefined;
             if (code.length >= 6 && password && password.length >= 1) {
               extractedCards.push({ code, password });
             }
-          } else {
+          }
+        } else {
+          // خطوة 1: جمع كل الأرقام في الملف لمعرفة من منها يمتلك رقماً متسلسلاً
+          const numericSet = new Set<bigint>();
+          for (const cols of cleanRows) {
+            for (const col of cols) {
+              if (col.length >= 6 && /^\d+$/.test(col)) {
+                try { numericSet.add(BigInt(col)); } catch (e) {}
+              }
+            }
+          }
+
+          // خطوة 2: المرور على الكود تماماً كما كان في السابق (سطراً بسطر وخلية بخلية)
+          for (const cols of cleanRows) {
             for (const col of cols) {
               if (col.length >= 6) {
-                extractedCards.push({ code: col });
+                let isSerial = false;
+                
+                // فحص ما إذا كان هذا الرقم متسلسلاً (لديه أخ أكبر أو أصغر في نفس الملف)
+                if (/^\d+$/.test(col)) {
+                  try {
+                    const num = BigInt(col);
+                    if (numericSet.has(num + BigInt(1)) || numericSet.has(num - BigInt(1))) {
+                      isSerial = true; // تم اكتشافه كرقم تسلسلي!
+                    }
+                  } catch (e) {}
+                }
+
+                // إذا لم يكن متسلسلاً، فهو بكل تأكيد كرت للبيع
+                if (!isSerial) {
+                  extractedCards.push({ code: col });
+                }
               }
             }
           }

@@ -18,6 +18,7 @@ class AdminCardManagementController extends Controller
             'cards' => 'required|array',
             'cards.*.code' => 'required|string|min:6',
             'cards.*.password' => 'nullable|string',
+            'cards.*.serial_number' => 'nullable|string',
             'file_type' => 'nullable|string',
             'uploaded_by' => 'nullable|string'
         ]);
@@ -28,7 +29,8 @@ class AdminCardManagementController extends Controller
         $duplicateErrors = [];
         
         foreach ($validated['cards'] as $index => $cardData) {
-            $exists = Card::where('serial_number', $cardData['code'])
+            $serialToCheck = $cardData['serial_number'] ?? $cardData['code'];
+            $exists = Card::where('serial_number', $serialToCheck)
                 ->whereHas('cardCategory', function($q) use ($network) {
                     $q->where('network_id', $network->id);
                 })->exists();
@@ -60,7 +62,7 @@ class AdminCardManagementController extends Controller
             Card::create([
                 'card_category_id' => $category->id,
                 'card_batch_id' => $batch->id,
-                'serial_number' => $cardData['code'],
+                'serial_number' => $cardData['serial_number'] ?? $cardData['code'],
                 'card_code' => $cardData['code'],
                 'password' => $cardData['password'] ?? null,
                 'status' => 'available'
