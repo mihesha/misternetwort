@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
-import { YEMENI_WALLETS } from '@/data/public-content';
 import { UserAccount, WalletOption } from '@/types';
 import { useRouter } from 'next/navigation';
 
@@ -38,9 +37,43 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
   const [filter, setFilter] = useState<'all' | 'deposit' | 'purchase'>('all');
   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
 
+  const [wallets, setWallets] = useState<WalletOption[]>([]);
+  const [isWalletsLoading, setIsWalletsLoading] = useState(true);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [isFetchingTxs, setIsFetchingTxs] = useState(false);
+
+  useEffect(() => {
+    const fetchWallets = async () => {
+      try {
+        const res = await fetch('/api/bank-wallets');
+        if (res.ok) {
+          const data = await res.json();
+          const mappedWallets: WalletOption[] = data.map((w: any) => ({
+            id: w.id.toString(),
+            name: w.name,
+            nameAr: w.name,
+            category: 'wallet',
+            icon: w.logo_url || 'wallet',
+            bgColor: 'bg-emerald-500/10 dark:bg-emerald-500/20',
+            textColor: 'text-emerald-600 dark:text-emerald-400',
+            borderColor: 'border-emerald-500/30',
+            accountNumber: w.pos_number || '',
+            accountName: w.pos_name || '',
+            steps: w.steps || [],
+            inputLabel: w.input_label || 'الرقم المرجعي',
+          }));
+          setWallets(mappedWallets);
+        }
+      } catch (err) {
+        console.error('Failed to fetch bank wallets', err);
+      } finally {
+        setIsWalletsLoading(false);
+      }
+    };
+    fetchWallets();
+  }, []);
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastTransactionElementRef = useCallback((node: HTMLDivElement | null) => {
@@ -273,21 +306,31 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                     اختر المحفظة التي تريد الإيداع من خلالها:
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                    {YEMENI_WALLETS.map((wallet) => (
-                      <button
-                        key={wallet.id}
-                        type="button"
-                        onClick={() => setSelectedWallet(wallet)}
-                        className="relative p-3 sm:p-4 rounded-3xl border-2 text-center transition-all duration-300 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer active:scale-[0.98] group border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 hover:border-purple-300 dark:hover:border-purple-700/60 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md"
-                      >
-                        <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-xs sm:text-sm font-bold shadow-inner transition-transform group-hover:-translate-y-1 ${wallet.bgColor} ${wallet.textColor}`}>
-                          <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
-                        </div>
-                        <span className="text-[13px] sm:text-base font-black text-slate-700 dark:text-slate-300">
-                          {wallet.nameAr}
-                        </span>
-                      </button>
-                    ))}
+                    {isWalletsLoading ? (
+                      <div className="col-span-full flex justify-center p-6">
+                        <div className="animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent"></div>
+                      </div>
+                    ) : (
+                      wallets.map((wallet) => (
+                        <button
+                          key={wallet.id}
+                          type="button"
+                          onClick={() => setSelectedWallet(wallet)}
+                          className="relative p-3 sm:p-4 rounded-3xl border-2 text-center transition-all duration-300 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer active:scale-[0.98] group border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 hover:border-purple-300 dark:hover:border-purple-700/60 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md"
+                        >
+                          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center overflow-hidden text-xs sm:text-sm font-bold shadow-inner transition-transform group-hover:-translate-y-1 ${wallet.bgColor} ${wallet.textColor}`}>
+                            {wallet.icon && wallet.icon.startsWith('http') ? (
+                              <img src={wallet.icon} alt={wallet.nameAr} className="w-full h-full object-cover" />
+                            ) : (
+                              <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
+                            )}
+                          </div>
+                          <span className="text-[13px] sm:text-base font-black text-slate-700 dark:text-slate-300">
+                            {wallet.nameAr}
+                          </span>
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
               ) : (
@@ -320,7 +363,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
 
                     <div className="flex items-center justify-between bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-purple-100 dark:border-purple-800/80 shadow-sm">
                       <span className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
-                        رقم حساب {selectedWallet.nameAr}:
+                        رقم نقطة الدفع:
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-black text-purple-700 dark:text-purple-300 text-lg sm:text-xl dir-ltr">
@@ -339,6 +382,13 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                           )}
                         </button>
                       </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 px-2 font-medium pb-1 border-b border-purple-100 dark:border-slate-800/50">
+                      <span>اسم نقطة الدفع:</span>
+                      <span className="font-extrabold text-slate-800 dark:text-slate-200 text-sm sm:text-base">
+                        {selectedWallet.accountName}
+                      </span>
                     </div>
 
                     <div className="pt-2 text-xs text-slate-600 dark:text-slate-400 space-y-1">
@@ -360,12 +410,12 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                     </h4>
                     <form onSubmit={handleRecharge} className="space-y-4">
                       <Input
-                        label="رقم مرجع العملية"
-                        placeholder="أدخل رقم مرجع العملية"
+                        label={selectedWallet?.inputLabel || "الرقم المرجعي"}
+                        placeholder={`أدخل ${selectedWallet?.inputLabel || "الرقم المرجعي"}`}
                         value={transactionRef}
                         onChange={(e) => setTransactionRef(e.target.value)}
                         leadingIcon={<Hash className="w-4 h-4" />}
-                        helperText="قم بلصق رقم مرجع العملية الذي نسخته بعد إتمام التحويل هنا"
+                        helperText={`قم بلصق ${selectedWallet?.inputLabel || "الرقم المرجعي"} الذي نسخته بعد إتمام التحويل هنا`}
                         className="text-sm font-bold placeholder:text-sm placeholder:font-normal"
                         required
                       />

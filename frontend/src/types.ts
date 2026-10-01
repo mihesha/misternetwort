@@ -205,6 +205,7 @@ export interface WalletOption {
   accountNumber: string;
   accountName: string;
   steps: string[];
+  inputLabel?: string;
 }
 
 export interface CartItem {

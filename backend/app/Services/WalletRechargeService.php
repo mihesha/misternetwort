@@ -26,26 +26,46 @@ class WalletRechargeService
                 ->where('status', 'pending')
                 ->where(function ($query) use ($data) {
                     $walletType = strtolower($data['bank_name']);
-                    $walletMapAr = [
-                        'jaib' => 'جيب',
-                        'jeeb' => 'جيب',
-                        'jawali' => 'جوالي',
-                        'saba_cash' => 'سبأ',
-                        'one_cash' => 'ون كاش',
-                        'pyes' => 'بيس',
-                        'floosak' => 'فلوسك',
-                        'easy' => 'ايزي',
-                        'cash_wallet' => 'كاش',
-                        'jawwal' => 'جوال'
-                    ];
-                    $walletSearchAr = $walletMapAr[$walletType] ?? $walletType;
                     
-                    $query->where('wallet_name', 'LIKE', "%{$walletType}%")
-                          ->orWhere('wallet_name', 'LIKE', "%{$walletSearchAr}%");
-                          
-                    if ($walletType === 'jaib' || $walletType === 'jeeb') {
-                        $query->orWhere('wallet_name', 'LIKE', "%jaib%")
-                              ->orWhere('wallet_name', 'LIKE', "%jeeb%");
+                    // 1. Check if there's a dynamic Bank Wallet with this name or ID
+                    $bankWallet = \App\Models\BankWallet::with('sources')
+                        ->where('id', $data['bank_name'])
+                        ->orWhere('name', 'LIKE', $data['bank_name'])
+                        ->first();
+
+                    if ($bankWallet && $bankWallet->sources->count() > 0) {
+                        // Use dynamic sources from database
+                        foreach ($bankWallet->sources as $index => $source) {
+                            $sourceName = $source->source_name;
+                            if ($index === 0) {
+                                $query->where('wallet_name', 'LIKE', "%{$sourceName}%");
+                            } else {
+                                $query->orWhere('wallet_name', 'LIKE', "%{$sourceName}%");
+                            }
+                        }
+                    } else {
+                        // 2. Fallback to old hardcoded logic for backward compatibility
+                        $walletMapAr = [
+                            'jaib' => 'جيب',
+                            'jeeb' => 'جيب',
+                            'jawali' => 'جوالي',
+                            'saba_cash' => 'سبأ',
+                            'one_cash' => 'ون كاش',
+                            'pyes' => 'بيس',
+                            'floosak' => 'فلوسك',
+                            'easy' => 'ايزي',
+                            'cash_wallet' => 'كاش',
+                            'jawwal' => 'جوال'
+                        ];
+                        $walletSearchAr = $walletMapAr[$walletType] ?? $walletType;
+                        
+                        $query->where('wallet_name', 'LIKE', "%{$walletType}%")
+                              ->orWhere('wallet_name', 'LIKE', "%{$walletSearchAr}%");
+                              
+                        if ($walletType === 'jaib' || $walletType === 'jeeb') {
+                            $query->orWhere('wallet_name', 'LIKE', "%jaib%")
+                                  ->orWhere('wallet_name', 'LIKE', "%jeeb%");
+                        }
                     }
                 })
                 ->first();

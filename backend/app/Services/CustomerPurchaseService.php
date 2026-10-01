@@ -162,21 +162,30 @@ class CustomerPurchaseService
         return AppDeposit::where('reference_number', $data['transaction_ref'])
             ->where(function ($query) use ($data) {
                 $walletType = strtolower($data['wallet_type']);
-                $walletMapAr = [
-                    'jaib' => 'جيب', 'jeeb' => 'جيب', 'jawali' => 'جوالي',
-                    'saba_cash' => 'سبأ', 'one_cash' => 'ون كاش', 'pyes' => 'بيس',
-                    'floosak' => 'فلوسك', 'easy' => 'ايزي', 'cash_wallet' => 'كاش',
-                    'jawwal' => 'جوال'
-                ];
                 
-                $walletSearchAr = $walletMapAr[$walletType] ?? $walletType;
+                $wallet = \App\Models\BankWallet::with('sources')->find($data['wallet_type']);
+                
+                if ($wallet && $wallet->sources->isNotEmpty()) {
+                    foreach ($wallet->sources as $source) {
+                        $query->orWhere('wallet_name', 'LIKE', '%' . $source->source_name . '%');
+                    }
+                } else {
+                    $walletMapAr = [
+                        'jaib' => 'جيب', 'jeeb' => 'جيب', 'jawali' => 'جوالي',
+                        'saba_cash' => 'سبأ', 'one_cash' => 'ون كاش', 'pyes' => 'بيس',
+                        'floosak' => 'فلوسك', 'easy' => 'ايزي', 'cash_wallet' => 'كاش',
+                        'jawwal' => 'جوال'
+                    ];
+                    
+                    $walletSearchAr = $walletMapAr[$walletType] ?? $walletType;
 
-                $query->where('wallet_name', 'LIKE', "%{$walletType}%")
-                      ->orWhere('wallet_name', 'LIKE', "%{$walletSearchAr}%");
-                      
-                if (in_array($walletType, ['jaib', 'jeeb'])) {
-                    $query->orWhere('wallet_name', 'LIKE', "%jaib%")
-                          ->orWhere('wallet_name', 'LIKE', "%jeeb%");
+                    $query->where('wallet_name', 'LIKE', "%{$walletType}%")
+                          ->orWhere('wallet_name', 'LIKE', "%{$walletSearchAr}%");
+                          
+                    if (in_array($walletType, ['jaib', 'jeeb'])) {
+                        $query->orWhere('wallet_name', 'LIKE', "%jaib%")
+                              ->orWhere('wallet_name', 'LIKE', "%jeeb%");
+                    }
                 }
             })
             ->first();

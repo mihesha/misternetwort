@@ -88,7 +88,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
     const isInternal = selectedWallet.id === 'internal_wallet';
     if (!isInternal && (!transactionRef || transactionRef.length < 4)) {
-      setError('يرجى إدخال رقم مرجع العملية المولد من تطبيق المحفظة');
+      setError(`يرجى إدخال ${selectedWallet.inputLabel || "الرقم المرجعي"} المولد من تطبيق المحفظة`);
       return;
     }
 
@@ -404,7 +404,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                           <>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white dark:bg-slate-950 p-4 rounded-2xl border border-purple-100 dark:border-purple-800/80 shadow-sm gap-3 sm:gap-0">
                               <span className="font-bold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
-                                رقم حساب {walletDisplayName}:
+                                رقم نقطة الدفع:
                               </span>
                               <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
                                 <span className="font-mono font-black text-purple-700 dark:text-purple-300 text-xl sm:text-2xl dir-ltr tracking-wider">
@@ -430,7 +430,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                             </div>
 
                             <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-400 px-2 font-medium">
-                              <span>اسم الحساب المستلم:</span>
+                              <span>اسم نقطة الدفع:</span>
                               <span className="font-extrabold text-slate-800 dark:text-slate-200 text-sm sm:text-base">
                                 {selectedWallet.accountName}
                               </span>
@@ -459,12 +459,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     </h4>
 
                     <Input
-                      label="رقم مرجع العملية"
-                      placeholder="أدخل رقم مرجع العملية"
+                      label={selectedWallet?.inputLabel || "الرقم المرجعي"}
+                      placeholder={`أدخل ${selectedWallet?.inputLabel || "الرقم المرجعي"}`}
                       value={transactionRef}
                       onChange={(e) => setTransactionRef(e.target.value)}
                       leadingIcon={<Hash className="w-5 h-5 text-slate-400" />}
-                      helperText="قم بلصق رقم مرجع العملية الذي نسخته بعد إتمام التحويل هنا"
+                      helperText={`قم بلصق ${selectedWallet?.inputLabel || "الرقم المرجعي"} الذي نسخته بعد إتمام التحويل هنا`}
                       className="bg-slate-50 dark:bg-slate-950/50 text-sm font-bold placeholder:text-sm placeholder:font-normal"
                     />
                   </div>

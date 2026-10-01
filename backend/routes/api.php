@@ -22,6 +22,7 @@ use App\Http\Controllers\MobileAppIntegrationController;
 
 // Public Wallet / Purchase Endpoints
 Route::get('/wallet/network/{networkCode}', [NetworkController::class, 'getByCode']);
+Route::get('/bank-wallets', [\App\Http\Controllers\Public\BankWalletController::class, 'index']);
 
 
 Route::post('/cards/generate-batch', [CardController::class, 'generateBatch']);
@@ -198,6 +199,10 @@ Route::get('/admin/pos', [AdminDashboardController::class, 'getPosUsers']);
 Route::patch('/admin/pos/{id}/balance', [AdminDashboardController::class, 'updatePosBalance']);
 Route::get('/admin/pos-recharges', [AdminDashboardController::class, 'getPosRecharges']);
 Route::patch('/admin/pos-recharges/{id}/status', [AdminDashboardController::class, 'updatePosRechargeStatus']);
+
+// Admin Bank Wallets
+Route::apiResource('/admin/bank-wallets', \App\Http\Controllers\Admin\BankWalletController::class);
+Route::patch('/admin/bank-wallets/{id}/toggle-active', [\App\Http\Controllers\Admin\BankWalletController::class, 'toggleActive']);
 
 // Admin Network Endpoints
 Route::get('/admin/networks', [AdminNetworkController::class, 'index']);

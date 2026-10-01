@@ -87,7 +87,8 @@ type AdminTab =
   | 'settings'
   | 'app_deposits'
   | 'agent_applications'
-  | 'agents';
+  | 'agents'
+  | 'bank_wallets';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -268,6 +269,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           icon: CreditCard,
           badge: null,
         },
+        { id: 'bank_wallets' as AdminTab, label: 'المحافظ البنكية', icon: Wallet, badge: null },
         { id: 'ledger' as AdminTab, label: 'كشف الحساب والسجل المالي', icon: BarChart3, badge: null },
       ],
     },
@@ -509,6 +511,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                   {activeTab === 'pos_management' && '🛒 إدارة حسابات وأرصدة نقاط البيع (POS)'}
                   {activeTab === 'pos_recharges' && '💰 طلبات شحن محافظ نقاط البيع'}
                   {activeTab === 'app_deposits' && '📱 إيداعات المحافظ وتطبيق الهاتف'}
+                  {activeTab === 'bank_wallets' && '🏦 إدارة المحافظ البنكية ووسائل الدفع'}
                   {activeTab === 'settings' && '⚙️ الإعدادات العامة وعمولات المنظومة'}
                   {activeTab === 'agents' && '👷‍♂️ إدارة الوكلاء'}
                 </span>
