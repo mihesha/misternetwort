@@ -114,13 +114,11 @@ export default function GlobalPurchasesRoute() {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-50 dark:bg-slate-950 overflow-y-auto">
-      <PurchasesPage
-        user={user}
-        orders={orders}
-        onNavigate={handleNavigate}
-        onLogout={handleLogout}
-      />
-    </div>
+    <PurchasesPage
+      user={user}
+      orders={orders}
+      onNavigate={handleNavigate}
+      onLogout={handleLogout}
+    />
   );
 }

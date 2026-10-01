@@ -121,24 +121,26 @@ export default function NetworksLayout({
         }}
       />
 
-      <footer className="relative border-t border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-xl py-12 mt-16 text-center text-xs text-slate-500 dark:text-slate-400 dir-rtl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent pointer-events-none" />
-        <div className="max-w-6xl mx-auto px-4 flex flex-col items-center justify-center space-y-5 relative z-10">
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 inline-flex">
-            <CardBoxLogo size="sm" showText={true} />
+      {!pathname.endsWith('/purchases') && (
+        <footer className="relative border-t border-slate-200/50 dark:border-slate-800/50 bg-white/30 dark:bg-slate-950/30 backdrop-blur-xl py-12 mt-16 text-center text-xs text-slate-500 dark:text-slate-400 dir-rtl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent pointer-events-none" />
+          <div className="max-w-6xl mx-auto px-4 flex flex-col items-center justify-center space-y-5 relative z-10">
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 inline-flex">
+              <CardBoxLogo size="sm" showText={true} />
+            </div>
+            <p className="font-bold tracking-wide">© {new Date().getFullYear()} كارد بوكس (CardBox) - جميع الحقوق محفوظة</p>
+            <div className="flex items-center gap-5 text-sm font-black text-slate-600 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-900/50 px-6 py-2.5 rounded-full border border-slate-200/50 dark:border-slate-800/50 backdrop-blur-sm">
+              <button onClick={() => router.push(`/`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">الرئيسية</button>
+              <span className="text-purple-300 dark:text-purple-700">•</span>
+              <button onClick={() => router.push(`/networks`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">الشبكات</button>
+              <span className="text-purple-300 dark:text-purple-700">•</span>
+              <button onClick={() => router.push(`/networks/guide`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">دليل الشراء</button>
+              <span className="text-purple-300 dark:text-purple-700">•</span>
+              <button onClick={() => router.push(`/networks/about`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">عن الخدمة</button>
+            </div>
           </div>
-          <p className="font-bold tracking-wide">© {new Date().getFullYear()} كارد بوكس (CardBox) - جميع الحقوق محفوظة</p>
-          <div className="flex items-center gap-5 text-sm font-black text-slate-600 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-900/50 px-6 py-2.5 rounded-full border border-slate-200/50 dark:border-slate-800/50 backdrop-blur-sm">
-            <button onClick={() => router.push(`/`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">الرئيسية</button>
-            <span className="text-purple-300 dark:text-purple-700">•</span>
-            <button onClick={() => router.push(`/networks`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">الشبكات</button>
-            <span className="text-purple-300 dark:text-purple-700">•</span>
-            <button onClick={() => router.push(`/networks/guide`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">دليل الشراء</button>
-            <span className="text-purple-300 dark:text-purple-700">•</span>
-            <button onClick={() => router.push(`/networks/about`)} className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">عن الخدمة</button>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

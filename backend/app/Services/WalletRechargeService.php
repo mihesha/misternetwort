@@ -70,7 +70,8 @@ class WalletRechargeService
                 'amount' => $deposit->amount,
                 'bank_name' => $deposit->wallet_name,
                 'receipt_image' => 'automated_deposit',
-                'status' => 'approved'
+                'status' => 'approved',
+                'reference_number' => $data['reference_number']
             ]);
 
             return [
@@ -96,7 +97,8 @@ class WalletRechargeService
             'amount' => $data['amount'],
             'bank_name' => $data['bank_name'],
             'receipt_image' => $path,
-            'status' => 'pending'
+            'status' => 'pending',
+            'reference_number' => $data['reference_number'] ?? null
         ]);
 
         return [

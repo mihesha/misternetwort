@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Wallet,
   ArrowRight,
@@ -9,7 +9,11 @@ import {
   Check,
   RefreshCw,
   Info,
-  Hash
+  Hash,
+  ArrowDownRight,
+  ArrowUpRight,
+  ShoppingCart,
+  X
 } from 'lucide-react';
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
@@ -30,27 +34,62 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
   const [success, setSuccess] = useState('');
 
   const [isRechargeMode, setIsRechargeMode] = useState(false);
-  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [filter, setFilter] = useState<'all' | 'deposit' | 'purchase'>('all');
+  const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isFetchingTxs, setIsFetchingTxs] = useState(false);
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastTransactionElementRef = useCallback((node: HTMLDivElement | null) => {
+    if (isFetchingTxs) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setCurrentPage(prevPage => prevPage + 1);
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [isFetchingTxs, hasMore]);
+
+  useEffect(() => {
+    if (user?.token && currentPage > 1) {
+      fetchWalletData(user.token, currentPage, true);
+    }
+  }, [currentPage]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('cardbox_user');
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
       setUser(parsedUser);
-      fetchWalletData(parsedUser.token);
+      fetchWalletData(parsedUser.token, 1, false);
     } else {
       window.dispatchEvent(new CustomEvent('open_auth', { detail: 'login' }));
     }
   }, []);
 
-  const fetchWalletData = async (token: string) => {
+  const fetchWalletData = async (token: string, page = 1, append = false) => {
     try {
-      const res = await fetch('/api/pos/wallet/balance', {
+      setIsFetchingTxs(true);
+      const res = await fetch(`/api/customer/wallet/transactions?page=${page}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        setRecentTransactions(data.recent_transactions || []);
+        
+        if (append) {
+          setTransactions(prev => [...prev, ...(data.transactions || [])]);
+        } else {
+          setTransactions(data.transactions || []);
+        }
+        
+        setCurrentPage(data.current_page || 1);
+        setHasMore(data.has_more || false);
 
         // Update user balance globally
         const savedUser = localStorage.getItem('cardbox_user');
@@ -64,6 +103,8 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsFetchingTxs(false);
     }
   };
 
@@ -86,7 +127,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
     setSuccess('');
 
     try {
-      const res = await fetch('/api/pos/wallet/recharge', {
+      const res = await fetch('/api/customer/wallet/recharge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,6 +156,31 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
       setIsLoading(false);
     }
   };
+
+  const filteredTransactions = transactions.filter(tx => {
+    if (filter === 'all') return true;
+    return tx.type === filter;
+  });
+
+  // Group by date
+  const groupedTransactions = filteredTransactions.reduce((acc, tx) => {
+    const dateObj = new Date(tx.date);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    let dateKey = dateObj.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+    
+    if (dateObj.toDateString() === today.toDateString()) {
+      dateKey = 'اليوم';
+    } else if (dateObj.toDateString() === yesterday.toDateString()) {
+      dateKey = 'الأمس';
+    }
+
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(tx);
+    return acc;
+  }, {} as Record<string, any[]>);
 
   if (!user) {
     return (
@@ -145,18 +211,18 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
         </div>
 
         {/* Balance Display */}
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-slate-900 dark:to-slate-950 p-6 sm:p-8 rounded-2xl shadow-xl relative overflow-hidden border border-indigo-400/30 dark:border-indigo-500/20">
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-slate-800 dark:to-slate-900 p-6 sm:p-8 rounded-2xl shadow-xl relative overflow-hidden border border-indigo-400/30 dark:border-slate-700/50">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 dark:bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-400/20 dark:bg-indigo-500/10 rounded-full blur-xl -ml-5 -mb-5 pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-400/20 dark:bg-slate-700/20 rounded-full blur-xl -ml-5 -mb-5 pointer-events-none"></div>
 
           <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
-              <p className="text-indigo-100 dark:text-slate-200 text-sm font-bold mb-1">الرصيد الحالي المتوفر</p>
+              <p className="text-indigo-100 dark:text-slate-300 text-sm font-bold mb-1">الرصيد الحالي المتوفر</p>
               <div className="flex items-baseline gap-2">
                 <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
                   {(user.wallet_balance || 0).toFixed(2)}
                 </h2>
-                <span className="text-indigo-200 dark:text-indigo-400 font-bold">ر.ي</span>
+                <span className="text-indigo-200 dark:text-slate-400 font-bold">ر.ي</span>
               </div>
             </div>
 
@@ -182,7 +248,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Main Recharge Form */}
         {isRechargeMode && (
-          <div className="lg:col-span-7 space-y-6 animate-fadeIn">
+          <div className="lg:col-span-12 space-y-6 animate-fadeIn">
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base flex items-center gap-2">
@@ -225,11 +291,11 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                   </div>
                 </div>
               ) : (
-                <div className="space-y-6 animate-slide-up">
+                <div className="space-y-6 animate-slide-up grid grid-cols-1 md:grid-cols-2 gap-6">
 
                   {/* Selected Wallet Info */}
-                  <div className="p-5 bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-3xl space-y-4 shadow-sm">
-                    <div className="flex items-center justify-between border-b border-purple-200 dark:border-purple-800/80 pb-3">
+                  <div className="p-5 bg-purple-50 dark:bg-slate-800/40 border-2 border-purple-200 dark:border-slate-700/50 rounded-3xl space-y-4 shadow-sm h-fit">
+                    <div className="flex items-center justify-between border-b border-purple-200 dark:border-slate-700 pb-3">
                       <div className="flex items-center gap-2.5">
                         <span className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
                           ✓
@@ -248,7 +314,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                         onClick={() => setSelectedWallet(null)}
                         className="px-3.5 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
                       >
-                        تغيير المحفظة
+                        تغيير
                       </button>
                     </div>
 
@@ -340,63 +406,246 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
           </div>
         )}
 
-        {/* Transaction History Sidebar */}
-        <div className={isRechargeMode ? "lg:col-span-5" : "lg:col-span-12"}>
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm h-full">
-            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-6 bg-slate-300 dark:bg-slate-700 rounded-full"></span>
-                سجل العمليات الأخير
-              </div>
-              <button
-                onClick={() => user?.token && fetchWalletData(user.token)}
-                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            </h3>
+        {/* Transaction History Section */}
+        <div className="lg:col-span-12">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm min-h-[400px]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base flex items-center gap-2">
+                <span className="w-2 h-6 bg-indigo-500 rounded-full"></span>
+                السجل المالي
+              </h3>
 
-            {recentTransactions.length === 0 ? (
-              <div className="py-12 flex flex-col items-center justify-center text-slate-400 space-y-3">
-                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center">
-                  <Wallet className="w-8 h-8 opacity-20" />
+              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl">
+                <button
+                  onClick={() => setFilter('all')}
+                  className={`px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${filter === 'all' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                >
+                  الكل
+                </button>
+                <button
+                  onClick={() => setFilter('deposit')}
+                  className={`px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${filter === 'deposit' ? 'bg-white dark:bg-slate-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600'}`}
+                >
+                  إيداعات
+                </button>
+                <button
+                  onClick={() => setFilter('purchase')}
+                  className={`px-4 py-1.5 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${filter === 'purchase' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                >
+                  مشتريات
+                </button>
+              </div>
+            </div>
+
+            {Object.keys(groupedTransactions).length === 0 ? (
+              <div className="py-20 flex flex-col items-center justify-center text-slate-400 space-y-4">
+                <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center">
+                  <Wallet className="w-10 h-10 opacity-20" />
                 </div>
-                <p className="text-sm font-semibold">لا يوجد عمليات سابقة</p>
+                <p className="text-base font-semibold">لا يوجد عمليات لعرضها</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {recentTransactions.map((tx, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm ${tx.status === 'approved' ? 'bg-emerald-500' :
-                          tx.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'
-                        }`}>
-                        {tx.status === 'approved' ? '+' : tx.status === 'rejected' ? '×' : '⋯'}
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">
-                          {tx.bank_name.startsWith('إيداع') ? tx.bank_name : `إيداع عبر ${tx.bank_name}`}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{tx.date}</p>
-                      </div>
-                    </div>
-                    <div className="text-left">
-                      <span className={`font-black block text-sm sm:text-base ${tx.status === 'approved' ? 'text-emerald-600 dark:text-emerald-400' :
-                          tx.status === 'rejected' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
-                        }`}>
-                        {tx.amount} ر.ي
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400">
-                        {tx.status === 'approved' ? 'ناجح' : tx.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}
-                      </span>
+              <div className="space-y-8">
+                {Object.entries(groupedTransactions).map(([dateLabel, groupTxs]: [string, any], groupIndex, groupArray) => (
+                  <div key={dateLabel} className="space-y-3">
+                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 px-2 flex items-center gap-2">
+                      <span className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></span>
+                      {dateLabel}
+                    </h4>
+                    
+                    <div className="space-y-2.5">
+                      {(groupTxs as any[]).map((tx: any, txIndex) => {
+                        const isLastElement = groupIndex === groupArray.length - 1 && txIndex === groupTxs.length - 1;
+                        return (
+                        <div 
+                          key={tx.id} 
+                          ref={isLastElement ? lastTransactionElementRef : null}
+                          onClick={() => setSelectedTransaction(tx)}
+                          className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600 hover:shadow-md transition-all cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-sm shrink-0 transition-transform group-hover:scale-110 ${
+                              tx.type === 'deposit' 
+                                ? (tx.status === 'approved' || tx.status === 'used' ? 'bg-emerald-500 dark:bg-emerald-600' : tx.status === 'rejected' ? 'bg-red-500 dark:bg-red-600' : 'bg-amber-500 dark:bg-amber-600')
+                                : 'bg-slate-800 dark:bg-slate-600'
+                            }`}>
+                              {tx.type === 'deposit' ? <ArrowDownRight className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
+                            </div>
+                            <div>
+                              <p className="font-black text-slate-800 dark:text-slate-200 text-sm sm:text-base">
+                                {tx.title}
+                              </p>
+                              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                                {tx.subtitle}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="text-left flex flex-col items-end">
+                            <span className={`font-black tracking-tight text-base sm:text-lg ${
+                              tx.type === 'deposit' 
+                                ? 'text-emerald-600 dark:text-emerald-400' 
+                                : 'text-slate-800 dark:text-slate-200'
+                            }`}>
+                              {tx.type === 'deposit' ? '+' : '-'} {tx.amount} <span className="text-xs">ر.ي</span>
+                            </span>
+                            {tx.type === 'deposit' && (
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${
+                                tx.status === 'approved' || tx.status === 'used' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                tx.status === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                              }`}>
+                                {tx.status === 'approved' || tx.status === 'used' ? 'مكتمل' : tx.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
+
+                {isFetchingTxs && currentPage > 1 && (
+                  <div className="flex justify-center pt-4 pb-2 animate-fadeIn">
+                    <div className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 dark:bg-slate-800 rounded-full border border-indigo-100 dark:border-slate-700 shadow-sm">
+                      <RefreshCw className="w-4 h-4 text-indigo-500 animate-spin" />
+                      <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">جاري تحميل المزيد...</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Transaction Details Modal */}
+      {selectedTransaction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedTransaction(null)}></div>
+          <div className="relative w-full sm:w-[450px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up">
+            
+            {/* Modal Header */}
+            <div className={`p-6 text-center relative ${
+              selectedTransaction.type === 'deposit' 
+                ? 'bg-emerald-50 dark:bg-slate-800/50' 
+                : 'bg-slate-50 dark:bg-slate-800/50'
+            }`}>
+              <button 
+                onClick={() => setSelectedTransaction(null)}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/50 dark:bg-slate-700/50 hover:bg-white dark:hover:bg-slate-600 rounded-full transition-colors text-slate-500 dark:text-slate-300 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center text-white shadow-lg mb-4 ${
+                selectedTransaction.type === 'deposit' ? 'bg-emerald-500 dark:bg-emerald-600' : 'bg-slate-800 dark:bg-slate-600'
+              }`}>
+                {selectedTransaction.type === 'deposit' ? <ArrowDownRight className="w-8 h-8" /> : <ShoppingCart className="w-8 h-8" />}
+              </div>
+              
+              <h2 className="text-xl font-black text-slate-900 dark:text-white mb-1">
+                {selectedTransaction.type === 'deposit' ? 'إيداع رصيد' : 'شراء كروت'}
+              </h2>
+              <div className={`text-3xl font-black tracking-tighter ${
+                selectedTransaction.type === 'deposit' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'
+              }`}>
+                {selectedTransaction.amount} <span className="text-lg">ر.ي</span>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500 dark:text-slate-400 font-bold">الحالة</span>
+                  <span className={`font-black ${
+                    selectedTransaction.type === 'deposit' 
+                      ? (selectedTransaction.status === 'approved' || selectedTransaction.status === 'used' ? 'text-emerald-600' : selectedTransaction.status === 'rejected' ? 'text-red-600' : 'text-amber-600')
+                      : 'text-emerald-600'
+                  }`}>
+                    {selectedTransaction.type === 'deposit' 
+                      ? (selectedTransaction.status === 'approved' || selectedTransaction.status === 'used' ? 'مكتمل' : selectedTransaction.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة')
+                      : 'مكتمل'}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center text-sm border-t border-slate-200 dark:border-slate-700 pt-3">
+                  <span className="text-slate-500 dark:text-slate-400 font-bold">التاريخ والوقت</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-bold dir-ltr">
+                    {new Date(selectedTransaction.date).toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'})}
+                  </span>
+                </div>
+
+                {selectedTransaction.wallet_source && (
+                  <div className="flex justify-between items-center text-sm border-t border-slate-200 dark:border-slate-700 pt-3">
+                    <span className="text-slate-500 dark:text-slate-400 font-bold">وسيلة الدفع</span>
+                    <span className="text-slate-800 dark:text-slate-200 font-bold">
+                      {selectedTransaction.wallet_source}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center text-sm border-t border-slate-200 dark:border-slate-700 pt-3">
+                  <span className="text-slate-500 dark:text-slate-400 font-bold">الرقم المرجعي</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-800 dark:text-slate-200 font-mono font-bold">
+                      {selectedTransaction.subtitle}
+                    </span>
+                    {selectedTransaction.subtitle !== 'لا يوجد مرجع' && (
+                      <button 
+                        onClick={() => handleCopy(selectedTransaction.subtitle)}
+                        className="text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+                      >
+                        {copiedPin === selectedTransaction.subtitle ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Purchase Details Breakdown */}
+              {selectedTransaction.type === 'purchase' && selectedTransaction.details && (
+                <div className="space-y-2 mt-4">
+                  <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 px-1">{selectedTransaction.details.length > 1 ? 'تفاصيل الكروت:' : 'تفاصيل الكرت:'}</h4>
+                  <div className="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {selectedTransaction.details.map((item: any, idx: number) => (
+                      <div key={idx} className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200/60 dark:border-slate-700 flex items-center justify-between text-sm">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                          {item.network} - {item.price} ر.ي
+                        </span>
+                        
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-mono font-black text-slate-700 dark:text-slate-300 tracking-wider">
+                            {item.pin}
+                          </span>
+                          <button 
+                            onClick={() => handleCopy(item.pin)}
+                            className="p-1.5 text-indigo-500 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                            title="نسخ رقم الكرت"
+                          >
+                            {copiedPin === item.pin ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-center">
+              <button 
+                onClick={() => setSelectedTransaction(null)}
+                className="w-full py-3 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

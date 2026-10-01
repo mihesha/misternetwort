@@ -12,6 +12,7 @@ class WalletRecharge extends Model
         'bank_name',
         'receipt_image',
         'status',
+        'reference_number',
     ];
 
     public function user()

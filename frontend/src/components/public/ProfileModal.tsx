@@ -41,7 +41,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
             <p dir="ltr" className="text-xs text-purple-200 font-mono text-right flex items-center gap-1">
               <Phone className="w-3 h-3 text-purple-300" />
-              <span>{user.phone || '+967 770000000'}</span>
+              <span>{user.phone || '+967 780880280'}</span>
             </p>
           </div>
         </div>

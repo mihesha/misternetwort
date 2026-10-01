@@ -116,16 +116,12 @@ export default function PurchasesRoute({ params }: { params: Promise<{ domain: s
     return <div className="min-h-screen flex items-center justify-center">جاري التحميل...</div>;
   }
 
-  // If we want this to take over the whole screen over layout, we might need some CSS tricks,
-  // but let's render PurchasesPage. PurchasesPage already has a header, so it will look like a standalone app.
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-50 dark:bg-slate-950 overflow-y-auto">
-      <PurchasesPage
-        user={user}
-        orders={orders}
-        onNavigate={handleNavigate}
-        onLogout={handleLogout}
-      />
-    </div>
+    <PurchasesPage
+      user={user}
+      orders={orders}
+      onNavigate={handleNavigate}
+      onLogout={handleLogout}
+    />
   );
 }

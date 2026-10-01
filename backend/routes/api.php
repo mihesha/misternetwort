@@ -57,6 +57,8 @@ Route::post('/customer/auth/forgot-password', [AuthController::class, 'customerF
 Route::post('/customer/auth/check-otp', [AuthController::class, 'customerCheckOtp']);
 Route::post('/customer/auth/reset-password', [AuthController::class, 'customerResetPassword']);
 Route::get('/customer/purchases', [CardController::class, 'myPurchases'])->middleware('auth:sanctum');
+Route::get('/customer/wallet/transactions', [CardController::class, 'getCustomerWalletTransactions'])->middleware('auth:sanctum');
+Route::post('/customer/wallet/recharge', [CardController::class, 'customerRechargeWallet'])->middleware('auth:sanctum');
 
 Route::get('/admin/customers', [AdminCustomerController::class, 'getCustomers']);
 

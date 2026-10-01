@@ -35,7 +35,7 @@ export default function ContactPage() {
             <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">قنوات التواصل المباشر</h3>
 
             <a
-              href="https://wa.me/967770000000"
+              href="https://wa.me/967780880280"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 p-3.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-bold text-xs sm:text-sm hover:bg-emerald-100 transition-colors"
@@ -43,18 +43,18 @@ export default function ContactPage() {
               <MessageSquare className="w-5 h-5 text-emerald-600" />
               <div>
                 <span>خدمة العملاء عبر الواتساب</span>
-                <span className="block text-[11px] font-mono dir-ltr text-emerald-600">+967 770 000 000</span>
+                <span className="block text-[11px] font-mono dir-ltr text-emerald-600">+967 780 880 280</span>
               </div>
             </a>
 
             <a
-              href="tel:+967770000000"
+              href="tel:+967780880280"
               className="flex items-center gap-3 p-3.5 bg-purple-50 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-300 font-bold text-xs sm:text-sm hover:bg-purple-100 transition-colors"
             >
               <PhoneCall className="w-5 h-5 text-purple-600" />
               <div>
                 <span>الاتصال الهاتفي المباشر</span>
-                <span className="block text-[11px] font-mono dir-ltr text-purple-600">+967 770 000 000</span>
+                <span className="block text-[11px] font-mono dir-ltr text-purple-600">+967 780 880 280</span>
               </div>
             </a>
 

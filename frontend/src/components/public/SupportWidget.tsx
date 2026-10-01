@@ -12,7 +12,7 @@ interface SupportWidgetProps {
 }
 
 export const SupportWidget: React.FC<SupportWidgetProps> = ({
-  whatsappNumber = '967770000000',
+  whatsappNumber = '967780880280',
   isOpen: externalIsOpen,
   onClose,
   onToggle,

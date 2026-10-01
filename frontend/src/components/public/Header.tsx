@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
                 className="flex items-center justify-center gap-1.5 bg-slate-100 text-slate-800 dark:bg-slate-900/90 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 text-[10px] sm:text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm active:scale-95 whitespace-nowrap"
               >
                 <History className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-                <span className="whitespace-nowrap">مشترياتي</span>
+                <span className="whitespace-nowrap">كروتي</span>
               </button>
 
               {/* 3. Wallet Pill Button */}
