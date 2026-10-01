@@ -231,7 +231,8 @@ class PosController extends Controller
                 'pin' => $c->password,
                 'network_name' => $c->cardCategory->network->name ?? 'غير معروف',
                 'package_name' => $c->cardCategory->name ?? '',
-                'price' => $c->cardCategory->price ?? 0,
+                'price' => $c->price_at_purchase ?? $c->cardCategory->price ?? 0,
+                'pos_price' => $c->pos_price_at_purchase ?? $c->cardCategory->pos_price ?? ($c->cardCategory->price ?? 0),
                 'purchased_at' => \Carbon\Carbon::parse($c->purchased_at)->format('Y-m-d H:i'),
                 'payment_method' => $c->payment_method ?? 'unknown'
             ];

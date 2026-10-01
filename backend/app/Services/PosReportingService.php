@@ -77,8 +77,8 @@ class PosReportingService
         $totalProfit = 0;
 
         $operations = $cards->map(function (Card $c) use (&$totalSales, &$totalProfit, $user, $networkId) {
-            $price = $c->cardCategory->price ?? 0;
-            $posPrice = $c->cardCategory->pos_price ?? $price; 
+            $price = $c->price_at_purchase ?? $c->cardCategory->price ?? 0;
+            $posPrice = $c->pos_price_at_purchase ?? $c->cardCategory->pos_price ?? $price; 
             $profit = max(0, $price - $posPrice);
             
             $totalSales += $posPrice; 
@@ -188,8 +188,8 @@ class PosReportingService
 
     private function mapAdminPosOperation($c, &$totalSales, &$totalProfit, $user)
     {
-        $price = $c->cardCategory->price ?? 0;
-        $posPrice = $c->cardCategory->pos_price ?? $price; 
+        $price = $c->price_at_purchase ?? $c->cardCategory->price ?? 0;
+        $posPrice = $c->pos_price_at_purchase ?? $c->cardCategory->pos_price ?? $price; 
         $profit = max(0, $price - $posPrice);
         
         $totalSales += $price;
