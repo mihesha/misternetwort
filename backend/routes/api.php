@@ -46,7 +46,11 @@ Route::get('/networks/{code}', [NetworkController::class, 'getNetworkByCode']);
 Route::get('/networks/{code}/packages', [NetworkController::class, 'getNetworkPackagesByCode']);
 
 // Auth Endpoints
-Route::post('/login', [AuthController::class, 'login']);
+Route::get('/captcha', function () {
+    return app('captcha')->create('professional', true);
+})->middleware('throttle:30,1');
+
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/register', [AuthController::class, 'register']);
 
 // Customer Auth Endpoints

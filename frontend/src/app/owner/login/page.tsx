@@ -19,11 +19,11 @@ export default function LoginRoute() {
     }
   }, []);
 
-  const handleLoginSubmit = async (ownerId: string, password?: string) => {
+  const handleLoginSubmit = async (ownerId: string, password?: string, captcha?: string, captchaKey?: string) => {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: ownerId, password })
+      body: JSON.stringify({ phone: ownerId, password, captcha, captcha_key: captchaKey })
     });
 
     const data = await res.json();

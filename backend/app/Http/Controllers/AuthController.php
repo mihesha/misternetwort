@@ -221,7 +221,15 @@ class AuthController extends Controller
         $request->validate([
             'phone' => 'required|string',
             'password' => 'required|string',
+            'captcha' => 'required|string',
+            'captcha_key' => 'required|string',
         ]);
+
+        if (!captcha_api_check($request->captcha, $request->captcha_key, 'professional')) {
+            throw ValidationException::withMessages([
+                'captcha' => ['رمز التحقق غير صحيح.'],
+            ]);
+        }
 
         $user = User::where('phone', $request->phone)->first();
 
@@ -259,7 +267,7 @@ class AuthController extends Controller
         ]);
         
         $user = $request->user();
-        $user->password = \Illuminate\Support\Facades\Hash::make($validated['password']);
+        $user->password = Hash::make($validated['password']);
         $user->must_change_password = false;
         $user->save();
         

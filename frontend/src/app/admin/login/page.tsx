@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Lock, Phone, ArrowLeft, Loader2, Moon, Sun, Eye, EyeOff } from 'lucide-react';
+import { ShieldCheck, Lock, Phone, ArrowLeft, Loader2, Moon, Sun, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 
 export default function AdminLoginPage() {
@@ -15,11 +15,32 @@ export default function AdminLoginPage() {
   const [phoneReadOnly, setPhoneReadOnly] = useState(true);
   const [passReadOnly, setPassReadOnly] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaImg, setCaptchaImg] = useState('');
+  const [captchaKey, setCaptchaKey] = useState('');
+  const [captchaInput, setCaptchaInput] = useState('');
+
+  const fetchCaptcha = async () => {
+    try {
+      const res = await fetch('/api/captcha');
+      if (!res.ok) throw new Error('فشل تحميل الكابتشا');
+      const data = await res.json();
+      setCaptchaImg(data.img);
+      setCaptchaKey(data.key);
+      setCaptchaInput('');
+    } catch (err) {
+      console.error('Failed to load captcha', err);
+      setError('لا يمكن الاتصال بالخادم لجلب رمز التحقق، يرجى المحاولة لاحقاً');
+    }
+  };
+
+  React.useEffect(() => {
+    fetchCaptcha();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone || !password) {
-      setError('يرجى إدخال رقم الهاتف وكلمة المرور');
+    if (!phone || !password || !captchaInput) {
+      setError('يرجى إدخال جميع الحقول بما فيها رمز التحقق');
       return;
     }
     
@@ -30,7 +51,12 @@ export default function AdminLoginPage() {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, password })
+        body: JSON.stringify({ 
+          phone, 
+          password,
+          captcha: captchaInput,
+          captcha_key: captchaKey
+        })
       });
 
       const data = await res.json();
@@ -50,6 +76,7 @@ export default function AdminLoginPage() {
       }
     } catch (err: any) {
       setError(err.message || 'فشل الاتصال بالخادم، يرجى المحاولة لاحقاً');
+      fetchCaptcha(); // Reload captcha on failure
     } finally {
       setIsLoading(false);
     }
@@ -143,6 +170,41 @@ export default function AdminLoginPage() {
               >
                 {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
               </button>
+            </div>
+          </div>
+
+          <div>
+            <label className={`block text-xs font-bold mb-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>رمز التحقق (Captcha)</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={captchaInput}
+                onChange={(e) => setCaptchaInput(e.target.value)}
+                placeholder="أدخل الرمز"
+                className={`w-full px-4 py-3.5 rounded-xl text-center text-sm font-bold font-mono outline-none transition-all ${
+                  isDarkMode 
+                    ? 'bg-[#182232] border-slate-700 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500' 
+                    : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600'
+                } border`}
+              />
+              <div 
+                className="relative rounded-xl overflow-hidden cursor-pointer border border-slate-200 dark:border-slate-700 shrink-0 bg-white group"
+                onClick={fetchCaptcha}
+                title="اضغط لتغيير الصورة"
+              >
+                {captchaImg ? (
+                  <>
+                    <img src={captchaImg} alt="captcha" className="h-full w-32 object-cover transition-opacity group-hover:opacity-50" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                      <RefreshCw className="w-5 h-5 text-white" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="h-full w-32 flex items-center justify-center text-xs text-slate-400">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Moon, Sun, Key, Eye, EyeOff } from 'lucide-react';
+import { Moon, Sun, Key, Eye, EyeOff, Loader2, RefreshCw, Phone, Lock, ArrowRight } from 'lucide-react';
 
 interface LoginPageProps {
   isDarkMode: boolean;
   onToggleTheme: () => void;
-  onLoginSuccess?: (ownerId: string, password?: string) => void;
+  onLoginSuccess?: (ownerId: string, password?: string, captcha?: string, captchaKey?: string) => Promise<void> | void;
   onBackToRegister?: () => void;
 }
 
@@ -29,6 +29,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [passReadOnly, setPassReadOnly] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
+  const [captchaImg, setCaptchaImg] = useState('');
+  const [captchaKey, setCaptchaKey] = useState('');
+  const [captchaInput, setCaptchaInput] = useState('');
+
+  const fetchCaptcha = async () => {
+    try {
+      const res = await fetch('/api/captcha');
+      if (!res.ok) throw new Error('فشل تحميل الكابتشا');
+      const data = await res.json();
+      setCaptchaImg(data.img);
+      setCaptchaKey(data.key);
+      setCaptchaInput('');
+    } catch (err) {
+      console.error('Failed to load captcha', err);
+      setError('لا يمكن الاتصال بالخادم لجلب رمز التحقق، يرجى المحاولة لاحقاً');
+    }
+  };
+
+  React.useEffect(() => {
+    fetchCaptcha();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -41,158 +63,181 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       setError('يرجى إدخال كلمة المرور');
       return;
     }
+    if (!captchaInput) {
+      setError('يرجى إدخال رمز التحقق (الكابتشا)');
+      return;
+    }
 
     setLoading(true);
 
     try {
       if (onLoginSuccess) {
-        await onLoginSuccess(ownerId.trim(), password);
+        await onLoginSuccess(ownerId.trim(), password, captchaInput, captchaKey);
       } else {
         alert(`تم تسجيل الدخول بنجاح! مرحباً برقم المالك: ${ownerId}`);
       }
     } catch (err: any) {
       setError(err.message || 'بيانات الدخول غير صحيحة');
+      fetchCaptcha();
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className={`min-h-screen flex items-center justify-center p-4 transition-colors font-['Cairo',sans-serif] ${
-        isDarkMode ? 'bg-[#0a0e17] text-slate-100' : 'bg-slate-100 text-slate-800'
-      }`}
-    >
-      {/* Login Card */}
-      <div
-        className={`relative w-full max-w-[420px] rounded-2xl p-6 md:p-8 transition-colors ${
-          isDarkMode
-            ? 'bg-[#172130] border border-slate-700/50 shadow-2xl shadow-black/80'
-            : 'bg-white border border-slate-200/80 shadow-xl shadow-slate-300/40 text-slate-800'
-        }`}
-      >
-        {/* Top-Left Theme Toggle Button */}
-        <button
-          onClick={onToggleTheme}
-          type="button"
-          className={`absolute top-5 left-5 p-2 rounded-xl transition-colors cursor-pointer ${
-            isDarkMode
-              ? 'bg-[#232f43] hover:bg-[#2d3c54] text-slate-300'
-              : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200'
-          }`}
-          title={isDarkMode ? 'التحويل للوضع الفاتح' : 'التحويل للوضع الداكن'}
-        >
-          {isDarkMode ? <Moon className="w-4 h-4 text-slate-300" /> : <Sun className="w-4 h-4 text-amber-500" />}
-        </button>
-
-        {/* Logo Section */}
-        <div className="flex flex-col items-center justify-center pt-2 mb-2">
-          {/* Custom Logo */}
-          <div className="relative mb-2">
-            <img 
-              src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} 
-              alt="Card Box Logo" 
-              className="w-32 h-32 object-contain drop-shadow-xl rounded-3xl"
-            />
-          </div>
-
-          {/* Subtitle */}
-          <p className={`text-xs md:text-[13px] font-medium text-center mt-3 mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-            نظام ادارة كروت الشبكات وبيعها عبر المحافظ الالكترونية
-          </p>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-500 text-xs text-center font-bold">
-            {error}
-          </div>
-        )}
-
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
-          {/* Owner Number Field */}
-          <div>
-            <label className={`block text-right text-xs md:text-sm font-bold mb-1.5 ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-              رقم المالك
-            </label>
-            <input
-              type="text"
-              value={ownerId}
-              onChange={(e) => setOwnerId(e.target.value)}
-              onFocus={() => { setOwnerIdReadOnly(false); setPassReadOnly(false); }}
-              readOnly={ownerIdReadOnly}
-              placeholder="أدخل رقم الهاتف"
-              autoComplete="username"
-              name="owner-phone-login"
-              className={`w-full rounded-lg py-2.5 px-3.5 text-sm text-right focus:outline-none focus:ring-1 transition-all font-mono ${
-                isDarkMode
-                  ? 'bg-[#253247] text-white border border-slate-700/60 focus:border-blue-500 focus:ring-blue-500'
-                  : 'bg-slate-50 text-slate-900 border border-slate-300 focus:bg-white focus:border-blue-600 focus:ring-blue-600'
-              }`}
-              required
-            />
-          </div>
-
-          {/* Password Field */}
-          <div>
-            <label className={`block text-right text-xs md:text-sm font-bold mb-1.5 ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-              كلمة المرور
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onFocus={() => { setOwnerIdReadOnly(false); setPassReadOnly(false); }}
-                readOnly={passReadOnly}
-                placeholder="أدخل كلمة المرور"
-                autoComplete="current-password"
-                name="owner-password-login"
-                className={`w-full rounded-lg py-2.5 pl-10 pr-3.5 text-sm text-right focus:outline-none focus:ring-1 transition-all ${
-                  isDarkMode
-                    ? 'bg-[#253247] text-white border border-slate-700/60 focus:border-blue-500 focus:ring-blue-500'
-                    : 'bg-slate-50 text-slate-900 border border-slate-300 focus:bg-white focus:border-blue-600 focus:ring-blue-600'
-                }`}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className={`absolute inset-y-0 left-2 flex items-center px-2 transition-colors ${isDarkMode ? 'text-slate-400 hover:text-blue-400' : 'text-slate-400 hover:text-blue-600'}`}
-                tabIndex={-1}
-              >
-                {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Remember Me Checkbox */}
-          <div className="flex items-center justify-start gap-2 pt-1 pb-2">
-            <input
-              type="checkbox"
-              id="rememberMe"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className={`w-4 h-4 rounded text-blue-600 focus:ring-0 accent-blue-600 cursor-pointer ${
-                isDarkMode ? 'bg-[#253247] border-slate-600' : 'bg-slate-100 border-slate-300'
-              }`}
-            />
-            <label htmlFor="rememberMe" className={`text-xs md:text-sm font-medium cursor-pointer select-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-              تذكرني
-            </label>
-          </div>
-
-          {/* Login Submit Button */}
+    <div dir="rtl" className={`min-h-screen flex flex-col font-['Cairo',sans-serif] ${isDarkMode ? 'bg-[#0a0f1c] text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+      <div className="flex-1 flex flex-col items-center justify-center p-4 pt-12 pb-12 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className={`w-full p-8 sm:p-10 rounded-4xl shadow-xl relative border overflow-hidden ${isDarkMode ? 'bg-[#101726] border-slate-800/80 shadow-black/50' : 'bg-white border-slate-200 shadow-slate-300/40'}`}>
+          
+          <div className="absolute top-0 left-0 w-full h-32 bg-linear-to-r from-indigo-600 to-violet-500 opacity-90"></div>
+          <div className="absolute top-0 left-0 w-full h-32 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-overlay"></div>
+          
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] active:bg-[#1e40af] text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center gap-2 text-sm md:text-base disabled:opacity-50"
+            onClick={onToggleTheme}
+            type="button"
+            className={`absolute top-4 left-4 z-20 p-2 rounded-xl transition-colors cursor-pointer ${
+              isDarkMode ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-black/10 hover:bg-black/20 text-white'
+            }`}
+            title={isDarkMode ? 'التحويل للوضع الفاتح' : 'التحويل للوضع الداكن'}
           >
-            <span>🔑</span>
-            <span>{loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}</span>
+            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
-        </form>
+
+          <div className="text-center mb-8 relative z-10 pt-4">
+            <div className="relative mb-2 inline-block">
+              <img 
+                src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} 
+                alt="Card Box Logo" 
+                className="w-32 h-32 object-contain drop-shadow-xl rounded-3xl mx-auto"
+              />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2 mt-4">تسجيل دخول المالك</h1>
+            <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              نظام ادارة كروت الشبكات وبيعها
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+            {error && (
+              <div className={`p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-sm font-bold text-center ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className={`text-xs font-bold px-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>رقم المالك</label>
+              <div className="relative group">
+                <div className={`absolute inset-y-0 right-0 w-12 flex items-center justify-center transition-colors ${isDarkMode ? 'text-indigo-400' : 'text-indigo-500'}`}>
+                  <Phone className="w-5 h-5" />
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={ownerId}
+                  onChange={(e) => setOwnerId(e.target.value)}
+                  onFocus={() => { setOwnerIdReadOnly(false); setPassReadOnly(false); }}
+                  readOnly={ownerIdReadOnly}
+                  autoComplete="username"
+                  name="owner-phone-login"
+                  className={`w-full pl-4 pr-12 py-3.5 rounded-xl outline-none text-sm font-bold font-mono text-right transition-all border ${isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-2 focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
+                  placeholder="7XXXXXXXX"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className={`text-xs font-bold px-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>كلمة المرور</label>
+              <div className="relative group">
+                <div className={`absolute inset-y-0 right-0 w-12 flex items-center justify-center transition-colors ${isDarkMode ? 'text-indigo-400' : 'text-indigo-500'}`}>
+                  <Lock className="w-5 h-5" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => { setOwnerIdReadOnly(false); setPassReadOnly(false); }}
+                  readOnly={passReadOnly}
+                  autoComplete="current-password"
+                  name="owner-password-login"
+                  className={`w-full pl-12 pr-12 py-3.5 rounded-xl outline-none font-bold text-right transition-all border ${isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-2 focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={`absolute inset-y-0 left-0 w-12 flex items-center justify-center transition-colors ${isDarkMode ? 'text-slate-400 hover:text-indigo-400' : 'text-slate-400 hover:text-indigo-500'}`}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className={`text-xs font-bold px-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>رمز التحقق (Captcha)</label>
+              <div className="flex gap-2" dir="ltr">
+                <div 
+                  className="relative rounded-xl overflow-hidden cursor-pointer border border-slate-200 dark:border-slate-700 shrink-0 bg-white group"
+                  onClick={fetchCaptcha}
+                  title="اضغط لتغيير الصورة"
+                >
+                  {captchaImg ? (
+                    <>
+                      <img src={captchaImg} alt="captcha" className="h-[46px] w-[110px] object-cover transition-opacity group-hover:opacity-50" />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                        <RefreshCw className="w-5 h-5 text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-[46px] w-[110px] flex items-center justify-center text-xs text-slate-400">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={captchaInput}
+                  onChange={(e) => setCaptchaInput(e.target.value)}
+                  placeholder="أدخل الرمز هنا"
+                  dir="rtl"
+                  className={`w-full py-3.5 px-4 rounded-xl outline-none font-bold text-center transition-all border ${isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-2 focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-start gap-2 pt-1 pb-2">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className={`w-4 h-4 rounded text-indigo-600 focus:ring-0 accent-indigo-600 cursor-pointer ${
+                  isDarkMode ? 'bg-[#1c2638] border-slate-600' : 'bg-slate-50 border-slate-300'
+                }`}
+              />
+              <label htmlFor="rememberMe" className={`text-xs md:text-sm font-bold cursor-pointer select-none ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                تذكرني
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 mt-2 rounded-xl font-black text-lg flex items-center justify-center gap-3 transition-all transform active:scale-[0.98] shadow-lg text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-indigo-500/30 hover:shadow-indigo-500/50 disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                <>
+                  <span>تسجيل الدخول</span>
+                  <ArrowRight className="w-6 h-6 rotate-180" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Moon, Sun, Globe, Settings, ChevronDown, Key, Check } from 'lucide-react';
+import { Key, Check, Loader2, ArrowRight, Shield } from 'lucide-react';
+import { PublicHeader } from '../../public/PublicHeader';
 
 interface ChangePasswordPageProps {
   isDarkMode: boolean;
@@ -11,7 +12,7 @@ interface ChangePasswordPageProps {
 export const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
   isDarkMode,
   onToggleTheme,
-  ownerName = 'هشام محمد الجايفي',
+  ownerName = 'حسابي',
   onPasswordChanged,
 }) => {
   const [newPassword, setNewPassword] = useState('');
@@ -50,187 +51,98 @@ export const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
   };
 
   return (
-    <div
-      dir="rtl"
-      className={`min-h-screen transition-colors font-['Cairo',sans-serif] ${
-        isDarkMode ? 'bg-[#0a0f18] text-slate-100' : 'bg-slate-100 text-slate-800'
-      }`}
-    >
-      {/* Top Navbar matching screenshot */}
-      <header
-        className={`w-full px-4 md:px-8 py-3 flex items-center justify-between transition-colors ${
-          isDarkMode
-            ? 'bg-[#111823] border-b border-slate-800/80'
-            : 'bg-white border-b border-slate-200 shadow-sm'
-        }`}
-      >
-        {/* Right side: Logo & Navigation items */}
-        <div className="flex items-center gap-6">
-          {/* Logo Graphic */}
-          <div className="flex items-center gap-2">
-            <div className="shrink-0 flex items-center justify-center">
-              <img 
-                src={isDarkMode ? '/logos/logo-dark.png' : '/logos/logo-light.png'} 
-                alt="Card Box Logo" 
-                className="w-10 h-10 object-cover rounded-xl"
-              />
-            </div>
-            <span className={`text-sm md:text-base font-extrabold tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-              Card Box
-            </span>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className={`hidden md:flex items-center gap-4 text-xs font-bold mr-4 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-            <div className={`flex items-center gap-1.5 transition-colors cursor-pointer ${isDarkMode ? 'hover:text-white' : 'hover:text-slate-900'}`}>
-              <Globe className="w-4 h-4 text-indigo-500" />
-              <span>لوحة التحكم</span>
-            </div>
-            <div className={`flex items-center gap-1.5 transition-colors cursor-pointer ${isDarkMode ? 'hover:text-white' : 'hover:text-slate-900'}`}>
-              <Settings className={`w-4 h-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
-              <span>إعدادات الشبكة</span>
-            </div>
-          </nav>
-        </div>
-
-        {/* Left side: Profile Menu & Theme Toggle */}
-        <div className="flex items-center gap-3">
-          {/* User Profile Pill */}
-          <div
-            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-              isDarkMode
-                ? 'bg-[#1b2535] hover:bg-[#222f43] border border-slate-700/50'
-                : 'bg-slate-100 hover:bg-slate-200 border border-slate-200'
-            }`}
-          >
-            <ChevronDown className={`w-4 h-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
-            <div className="text-right">
-              <span className={`text-xs font-bold block ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{ownerName}</span>
-              <span className={`text-[10px] block -mt-0.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>مالك شبكة</span>
-            </div>
-            <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
-              م
-            </div>
-          </div>
-
-          {/* Dark Mode Toggle Button */}
-          <button
-            onClick={onToggleTheme}
-            className={`p-2 rounded-xl transition-colors cursor-pointer ${
-              isDarkMode
-                ? 'bg-[#1b2535] hover:bg-[#222f43] border border-slate-700/50 text-slate-300'
-                : 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600'
-            }`}
-            title="تغيير المظهر"
-          >
-            {isDarkMode ? <Moon className="w-4 h-4 text-slate-300" /> : <Sun className="w-4 h-4 text-amber-500" />}
-          </button>
-        </div>
-      </header>
-
-      {/* Main Area */}
-      <main className="max-w-6xl mx-auto px-4 md:px-8 py-6">
-        {/* Page Title Header */}
-        <div className="mb-8 text-right">
+    <div dir="rtl" className={`min-h-screen flex flex-col font-['Cairo',sans-serif] ${isDarkMode ? 'bg-[#0a0f1c] text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+      <PublicHeader showNav={false} />
+      
+      <div className="flex-1 flex flex-col items-center justify-center p-4 pt-32 pb-12 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        <div className={`w-full p-8 sm:p-10 rounded-4xl shadow-xl relative border overflow-hidden ${isDarkMode ? 'bg-[#101726] border-slate-800/80 shadow-black/50' : 'bg-white border-slate-200 shadow-slate-300/40'}`}>
           
-        </div>
-
-        {/* Centered Change Password Form Card */}
-        <div className="flex justify-center items-center py-6">
-          <div
-            className={`w-full max-w-md rounded-2xl p-6 md:p-8 relative transition-colors ${
-              isDarkMode
-                ? 'bg-[#141d2b] border border-slate-800 shadow-2xl shadow-black/60'
-                : 'bg-white border border-slate-200 shadow-xl shadow-slate-300/40 text-slate-800'
-            }`}
-          >
-            {/* Success Overlay */}
-            {success && (
-              <div className={`absolute inset-0 backdrop-blur-sm rounded-2xl z-20 flex flex-col items-center justify-center p-6 text-center animate-fadeIn ${
-                isDarkMode ? 'bg-[#141d2b]/95' : 'bg-white/95'
-              }`}>
-                <div className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center text-white mb-3 shadow-lg shadow-emerald-500/30">
-                  <Check className="w-8 h-8 stroke-3" />
+          <div className="absolute top-0 left-0 w-full h-32 bg-linear-to-r from-indigo-600 to-violet-500 opacity-90"></div>
+          <div className="absolute top-0 left-0 w-full h-32 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-overlay"></div>
+          
+          {success ? (
+            <div className="relative z-10 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300 py-8">
+              <div className="w-20 h-20 bg-indigo-500 rounded-full flex items-center justify-center text-white mb-6 shadow-xl shadow-indigo-500/40">
+                <Check className="w-10 h-10 stroke-[3]" />
+              </div>
+              <h3 className={`text-2xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>تم تغيير كلمة المرور بنجاح!</h3>
+              <p className={`text-sm font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>جاري توجيهك إلى شاشة تسجيل الدخول...</p>
+            </div>
+          ) : (
+            <>
+              <div className="text-center mb-8 relative z-10 pt-4">
+                <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 shadow-xl relative backdrop-blur-md border bg-white/20 border-white/30 text-white`}>
+                  <Shield className="w-10 h-10" />
                 </div>
-                <h3 className={`text-xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>تم تغيير كلمة المرور بنجاح!</h3>
-                <p className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>جاري توجيهك لشاشة تسجيل الدخول...</p>
-              </div>
-            )}
-
-            {/* Top Key Icon */}
-            <div className="flex justify-center mb-4">
-              <div className="w-14 h-14 rounded-full bg-[#6366f1]/20 border border-[#818cf8]/30 flex items-center justify-center text-[#6366f1]">
-                <Key className="w-7 h-7" />
-              </div>
-            </div>
-
-            {/* Header Text */}
-            <div className="text-center mb-6 space-y-1">
-              <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>تغيير كلمة المرور</h2>
-              <p className={`text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                يجب تغيير كلمة المرور الخاصة بك قبل المتابعة
-              </p>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="mb-4 p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-500 text-xs text-center font-bold">
-                {error}
-              </div>
-            )}
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Field 1: New Password */}
-              <div>
-                <label className={`block text-right text-xs font-bold mb-1.5 ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-                  كلمة المرور الجديدة <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="أدخل كلمة المرور الجديدة"
-                  className={`w-full rounded-lg py-2.5 px-3.5 text-xs md:text-sm text-right focus:outline-none focus:ring-1 transition-all ${
-                    isDarkMode
-                      ? 'bg-[#202b3c] text-white border border-slate-700/60 focus:border-indigo-500 focus:ring-indigo-500'
-                      : 'bg-slate-50 text-slate-900 border border-slate-300 focus:bg-white focus:border-indigo-600 focus:ring-indigo-600'
-                  }`}
-                  required
-                />
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">تأمين الحساب</h1>
+                <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                  أهلاً بك <span className="font-bold text-indigo-500">{ownerName}</span>، يرجى تعيين كلمة مرور جديدة لحساب المالك
+                </p>
               </div>
 
-              {/* Field 2: Confirm New Password */}
-              <div>
-                <label className={`block text-right text-xs font-bold mb-1.5 ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-                  تأكيد كلمة المرور الجديدة <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="أعد إدخال كلمة المرور الجديدة"
-                  className={`w-full rounded-lg py-2.5 px-3.5 text-xs md:text-sm text-right focus:outline-none focus:ring-1 transition-all ${
-                    isDarkMode
-                      ? 'bg-[#202b3c] text-white border border-slate-700/60 focus:border-indigo-500 focus:ring-indigo-500'
-                      : 'bg-slate-50 text-slate-900 border border-slate-300 focus:bg-white focus:border-indigo-600 focus:ring-indigo-600'
-                  }`}
-                  required
-                />
-              </div>
+              <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+                {error && (
+                  <div className={`p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-sm font-bold text-center ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                    {error}
+                  </div>
+                )}
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#6366f1] hover:bg-[#4f46e5] active:bg-[#4338ca] text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-indigo-600/30 transition-all cursor-pointer text-sm disabled:opacity-50"
-              >
-                {loading ? 'جاري الحفظ...' : 'تغيير كلمة المرور'}
-              </button>
-            </form>
-          </div>
+                <div className="space-y-1.5">
+                  <label className={`text-xs font-bold px-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>كلمة المرور الجديدة</label>
+                  <div className="relative group">
+                    <div className={`absolute inset-y-0 right-0 w-12 flex items-center justify-center transition-colors ${isDarkMode ? 'text-indigo-400' : 'text-indigo-500'}`}>
+                      <Key className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      dir="ltr"
+                      className={`w-full pl-4 pr-12 py-3.5 rounded-xl outline-none font-bold text-left transition-all border ${isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-2 focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className={`text-xs font-bold px-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>تأكيد كلمة المرور</label>
+                  <div className="relative group">
+                    <div className={`absolute inset-y-0 right-0 w-12 flex items-center justify-center transition-colors ${isDarkMode ? 'text-indigo-400' : 'text-indigo-500'}`}>
+                      <Key className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      dir="ltr"
+                      className={`w-full pl-4 pr-12 py-3.5 rounded-xl outline-none font-bold text-left transition-all border ${isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-2 focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-indigo-500'}`}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 mt-6 rounded-xl font-black text-lg flex items-center justify-center gap-3 transition-all transform active:scale-[0.98] shadow-lg text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-indigo-500/30 hover:shadow-indigo-500/50 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <>
+                      <span>تحديث كلمة المرور</span>
+                      <ArrowRight className="w-6 h-6 rotate-180" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   );
 };
