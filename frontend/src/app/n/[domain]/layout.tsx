@@ -181,7 +181,7 @@ export default function DomainLayout({
         </footer>
       )}
 
-      {currentNetwork && <SupportWidget whatsappNumber={currentNetwork.supportPhone || '967780880280'} />}
+      {currentNetwork && <SupportWidget />}
     </div>
   );
 }

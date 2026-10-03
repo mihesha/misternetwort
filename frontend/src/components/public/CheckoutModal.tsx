@@ -239,7 +239,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       {!selectedWallet && (
         <>
           {/* Step Progress Bar with Back Button */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-sm space-y-2">
+          <div className="bg-white dark:bg-purple-900/20 border border-slate-200/80 dark:border-purple-500/30 rounded-3xl p-4 sm:p-5 shadow-sm space-y-2">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <button
                 type="button"
@@ -257,7 +257,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           </div>
 
           {/* ORDER SUMMARY ACCORDION CARD */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm transition-all">
+          <div className="bg-white dark:bg-purple-900/20 border border-slate-200/80 dark:border-purple-500/30 rounded-3xl overflow-hidden shadow-sm transition-all">
             <button
               type="button"
               onClick={() => setIsSummaryOpen(!isSummaryOpen)}
@@ -334,7 +334,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       )}
 
       {/* Main Payment Step Card */}
-      <div className={selectedWallet ? "space-y-4 sm:space-y-5 animate-slide-up" : "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-8 shadow-sm"}>
+      <div className={selectedWallet ? "space-y-4 sm:space-y-5 animate-slide-up" : "bg-white dark:bg-purple-900/20 border border-slate-200/80 dark:border-purple-500/30 rounded-3xl p-5 sm:p-8 shadow-sm"}>
         {/* STEP 2: PAYMENT METHOD & DETAILS FORM */}
         {step === 'payment' && (
           <form onSubmit={handleProceedToVerification} className="space-y-6">
@@ -386,7 +386,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                             setSelectedWallet(null);
                             setIsSummaryOpen(true);
                           }}
-                          className="px-4 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
+                          className="px-4 py-2 bg-white dark:bg-purple-900/20 hover:bg-slate-50 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm active:scale-95"
                         >
                           تغيير المحفظة
                         </button>
@@ -467,7 +467,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
                 {/* 2. Inputs Container (Phone & Transaction Reference) */}
                 {selectedWallet.id !== 'internal_wallet' && (
-                  <div className="p-6 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[2rem] space-y-5 shadow-sm">
+                  <div className="p-6 bg-white dark:bg-purple-900/20 border-2 border-slate-100 dark:border-purple-500/30 rounded-[2rem] space-y-5 shadow-sm">
                     <h4 className="font-black text-slate-800 dark:text-slate-200 text-sm sm:text-base flex items-center gap-2">
                       <Hash className="w-5 h-5 text-purple-500" />
                       <span>بيانات عملية التحويل</span>
@@ -515,7 +515,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         {/* OVERPAYMENT POPUP */}
         {overpaymentData && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-amber-200 dark:border-amber-800 text-center space-y-5 animate-slide-up">
+            <div className="bg-white dark:bg-purple-900/20 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-amber-200 dark:border-purple-500/30 text-center space-y-5 animate-slide-up">
               <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center mx-auto mb-2 text-amber-600 dark:text-amber-400">
                 <Info className="w-8 h-8" />
               </div>
@@ -612,7 +612,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             {/* Generated Cards Display Grid */}
             <div className="space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar pb-2">
               {orderDetails.generatedCards.map((card, idx) => (
-                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm relative overflow-hidden flex flex-col gap-4">
+                <div key={idx} className="bg-white dark:bg-purple-900/20 border border-slate-200 dark:border-purple-500/30 rounded-2xl p-4 shadow-sm relative overflow-hidden flex flex-col gap-4">
                   {/* Decorative background */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 dark:bg-purple-500/5 blur-3xl rounded-full pointer-events-none" />
 

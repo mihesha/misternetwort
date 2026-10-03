@@ -227,7 +227,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
     <div dir="rtl" className="space-y-6 max-w-4xl mx-auto pb-12 animate-fadeIn text-right">
 
       {/* Page Header */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4">
+      <div className="bg-white dark:bg-purple-900/20 border border-slate-200/80 dark:border-purple-500/30 rounded-3xl p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
           <button
             type="button"
@@ -282,7 +282,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
         {/* Main Recharge Form */}
         {isRechargeMode && (
           <div className="lg:col-span-12 space-y-6 animate-fadeIn">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm">
+            <div className="bg-white dark:bg-purple-900/20 border border-slate-200/80 dark:border-purple-500/30 rounded-3xl p-5 sm:p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base flex items-center gap-2">
                   <span className="w-2 h-6 bg-purple-600 rounded-full"></span>
@@ -319,7 +319,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                           className="relative p-3 sm:p-4 rounded-3xl border-2 text-center transition-all duration-300 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer active:scale-[0.98] group border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 hover:border-purple-300 dark:hover:border-purple-700/60 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md"
                         >
                           <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center overflow-hidden text-xs sm:text-sm font-bold shadow-inner transition-transform group-hover:-translate-y-1 ${wallet.bgColor} ${wallet.textColor}`}>
-                            {wallet.icon && wallet.icon.startsWith('http') ? (
+                            {wallet.icon && (wallet.icon.startsWith('http') || wallet.icon.startsWith('/')) ? (
                               <img src={wallet.icon} alt={wallet.nameAr} className="w-full h-full object-cover" />
                             ) : (
                               <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -337,11 +337,15 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                 <div className="space-y-6 animate-slide-up grid grid-cols-1 md:grid-cols-2 gap-6">
 
                   {/* Selected Wallet Info */}
-                  <div className="p-5 bg-purple-50 dark:bg-slate-800/40 border-2 border-purple-200 dark:border-slate-700/50 rounded-3xl space-y-4 shadow-sm h-fit">
+                  <div className="p-5 bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-3xl space-y-4 shadow-sm h-fit">
                     <div className="flex items-center justify-between border-b border-purple-200 dark:border-slate-700 pb-3">
                       <div className="flex items-center gap-2.5">
-                        <span className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
-                          ✓
+                        <span className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md overflow-hidden">
+                          {selectedWallet.icon && (selectedWallet.icon.startsWith('http') || selectedWallet.icon.startsWith('/')) ? (
+                            <img src={selectedWallet.icon} alt={selectedWallet.nameAr} className="w-full h-full object-cover bg-white dark:bg-slate-800" />
+                          ) : (
+                            <Check className="w-4 h-4" />
+                          )}
                         </span>
                         <div>
                           <h4 className="font-extrabold text-purple-950 dark:text-slate-100 text-sm sm:text-base">
@@ -404,7 +408,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                   </div>
 
                   {/* Form Input */}
-                  <div className="p-5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
+                  <div className="p-5 bg-slate-50 dark:bg-purple-900/20 border border-slate-200 dark:border-purple-500/30 rounded-2xl space-y-4">
                     <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm border-b border-slate-200 dark:border-slate-800 pb-2">
                       بيانات عملية التحويل
                     </h4>
@@ -458,7 +462,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
 
         {/* Transaction History Section */}
         <div className="lg:col-span-12">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm min-h-[400px]">
+          <div className="bg-white dark:bg-purple-900/20 border border-slate-200/80 dark:border-purple-500/30 rounded-3xl p-5 shadow-sm min-h-[400px]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base flex items-center gap-2">
                 <span className="w-2 h-6 bg-indigo-500 rounded-full"></span>
@@ -574,7 +578,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
       {selectedTransaction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedTransaction(null)}></div>
-          <div className="relative w-full sm:w-[450px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up">
+          <div className="relative w-full sm:w-[450px] bg-white dark:bg-purple-900/20 rounded-3xl shadow-2xl border border-slate-200 dark:border-purple-500/30 overflow-hidden animate-slide-up">
             
             {/* Modal Header */}
             <div className={`p-6 text-center relative ${
