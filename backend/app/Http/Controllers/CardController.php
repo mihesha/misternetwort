@@ -62,6 +62,35 @@ class CardController extends Controller
         }
     }
 
+    public function claimGuestPurchases(Request $request)
+    {
+        $user = $request->user('sanctum');
+        if (!$user) {
+            return response()->json(['error' => 'غير مصرح'], 401);
+        }
+
+        $validated = $request->validate([
+            'serials' => 'required|array',
+            'serials.*' => 'string'
+        ]);
+
+        if (empty($validated['serials'])) {
+            return response()->json(['message' => 'No serials provided']);
+        }
+
+        // Update cards to belong to the newly logged-in user
+        // We only claim cards that currently have no customer_phone or are not already claimed by someone else.
+        // For simplicity and safety, we allow claiming if customer_phone is null.
+        $updated = Card::whereIn('serial_number', $validated['serials'])
+            ->whereNull('customer_phone')
+            ->update(['customer_phone' => $user->phone]);
+
+        return response()->json([
+            'message' => 'تم ربط الطلبات بنجاح',
+            'updated_count' => $updated
+        ]);
+    }
+
     public function myPurchases(Request $request)
     {
         $user = $request->user('sanctum');

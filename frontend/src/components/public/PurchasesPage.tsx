@@ -224,7 +224,11 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                           <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{card.dataSize}</span>
                           <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{card.duration}</span>
                           <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{card.expireDate}</span>
-                          {card.date && <span className="text-slate-400 font-mono pr-2 border-r border-slate-200 dark:border-slate-700">{card.date}</span>}
+                          {card.date && (
+                            <span className="text-slate-400 font-mono pr-2 border-r border-slate-200 dark:border-slate-700">
+                              {new Date(card.date).toLocaleString('ar-YE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

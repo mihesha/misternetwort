@@ -207,6 +207,48 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         if (data.token) {
           localStorage.setItem('cardbox_customer_token', data.token);
         }
+        
+        // --- ORDER CLAIMING (GUEST TO USER MERGE) ---
+        try {
+          const guestOrdersStr = localStorage.getItem('cardbox_orders_guest');
+          if (guestOrdersStr) {
+            const guestOrders = JSON.parse(guestOrdersStr);
+            if (Array.isArray(guestOrders) && guestOrders.length > 0) {
+              const serials: string[] = [];
+              guestOrders.forEach((order: any) => {
+                if (order.generatedCards && Array.isArray(order.generatedCards)) {
+                  order.generatedCards.forEach((card: any) => {
+                    if (card.serialNumber && card.serialNumber !== 'N/A') {
+                      serials.push(card.serialNumber);
+                    }
+                  });
+                }
+              });
+
+              if (serials.length > 0) {
+                // Execute in background
+                fetch('/api/customer/purchases/claim', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${data.token}`
+                  },
+                  body: JSON.stringify({ serials })
+                }).then(res => res.json()).then(result => {
+                  const userOrdersKey = `cardbox_orders_${data.user.phone}`;
+                  const userOrdersStr = localStorage.getItem(userOrdersKey);
+                  let userOrders = userOrdersStr ? JSON.parse(userOrdersStr) : [];
+                  userOrders = [...guestOrders, ...userOrders];
+                  localStorage.setItem(userOrdersKey, JSON.stringify(userOrders));
+                  localStorage.removeItem('cardbox_orders_guest');
+                  window.dispatchEvent(new Event('cardbox_orders_updated'));
+                }).catch(e => console.error('Order claim error:', e));
+              }
+            }
+          }
+        } catch(e) {}
+        // ---------------------------------------------
+
         const userAccount: UserAccount = {
           fullName: data.user.name,
           phone: data.user.phone,

@@ -628,7 +628,7 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
                 <div className="flex justify-between items-center text-sm border-t border-slate-200 dark:border-slate-700 pt-3">
                   <span className="text-slate-500 dark:text-slate-400 font-bold">التاريخ والوقت</span>
                   <span className="text-slate-800 dark:text-slate-200 font-bold dir-ltr">
-                    {new Date(selectedTransaction.date).toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'})}
+                    {new Date(selectedTransaction.date).toLocaleString('ar-YE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'})}
                   </span>
                 </div>
 

@@ -22,9 +22,9 @@ export const StepProgress: React.FC<StepProgressProps> = ({ currentStep }) => {
 
   return (
     <div className="w-full py-4 my-2" dir="rtl">
-      <div className="relative flex items-start justify-between max-w-2xl mx-auto px-4 sm:px-6">
+      <div className="relative flex items-start w-full max-w-2xl mx-auto">
         {/* Continuous Connecting Progress Bar Track & Fill Line */}
-        <div className="absolute top-6 left-9 right-9 sm:left-11 sm:right-11 h-2 bg-slate-200/50 dark:bg-slate-800/50 -translate-y-1/2 z-0 rounded-full overflow-hidden backdrop-blur-sm">
+        <div className="absolute top-5 sm:top-7 left-[12.5%] right-[12.5%] h-1.5 sm:h-2 bg-slate-200/50 dark:bg-slate-800/50 -translate-y-1/2 z-0 rounded-full overflow-hidden backdrop-blur-sm">
           <div
             className="h-full bg-gradient-to-l from-emerald-400 via-purple-500 to-indigo-600 transition-all duration-700 ease-out rounded-full shadow-[0_0_15px_rgba(168,85,247,0.5)]"
             style={{ width: `${progressPercentage}%` }}
@@ -38,16 +38,15 @@ export const StepProgress: React.FC<StepProgressProps> = ({ currentStep }) => {
           return (
             <div
               key={step.id}
-              className="relative z-10 flex flex-col items-center shrink-0 min-w-[64px] sm:min-w-[80px] group"
+              className="relative z-10 flex-1 flex flex-col items-center group px-0.5 sm:px-2"
             >
               {/* Step Circle Glow behind */}
               {isActive && (
                 <div className="absolute top-1 w-10 h-10 bg-purple-500/30 rounded-full blur-xl animate-pulse pointer-events-none" />
               )}
 
-              {/* Step Circle */}
               <div
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-bold text-sm transition-all duration-500 border-2 relative z-10 ${
+                className={`w-10 h-10 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-bold text-sm transition-all duration-500 border-2 relative z-10 ${
                   isCompleted
                     ? 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/30'
                     : isActive
@@ -60,7 +59,7 @@ export const StepProgress: React.FC<StepProgressProps> = ({ currentStep }) => {
 
               {/* Step Label */}
               <span
-                className={`mt-3 text-[11px] sm:text-xs font-black text-center whitespace-nowrap transition-colors duration-300 ${
+                className={`mt-2 sm:mt-3 text-[9px] sm:text-xs font-black text-center leading-tight sm:whitespace-nowrap transition-colors duration-300 w-full ${
                   isActive
                     ? 'text-purple-600 dark:text-purple-400 drop-shadow-sm scale-110'
                     : isCompleted

@@ -84,7 +84,7 @@ export const WalletSelector: React.FC<WalletSelectorProps> = ({
               })}
               className={`w-full relative p-4 sm:p-5 rounded-3xl border-2 text-center transition-all duration-300 flex items-center justify-between cursor-pointer active:scale-[0.98] shadow-lg ${isInternalSelected
                   ? 'border-emerald-400 bg-emerald-50/90 dark:bg-emerald-950/90 shadow-emerald-500/20'
-                  : 'border-white/50 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:border-emerald-400/60 dark:hover:border-emerald-600/60'
+                  : 'border-slate-200 dark:border-slate-700/50 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xl hover:border-emerald-400/60 dark:hover:border-emerald-600/60'
                 }`}
             >
               <div className="flex items-center gap-4">
@@ -125,7 +125,7 @@ export const WalletSelector: React.FC<WalletSelectorProps> = ({
                   onClick={() => onSelectWallet(wallet)}
                   className={`relative p-3 sm:p-4 rounded-3xl border-2 text-center transition-all duration-300 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer active:scale-[0.98] group ${isSelected
                       ? 'border-purple-500 bg-purple-50/90 dark:bg-purple-900/40 shadow-lg shadow-purple-500/20'
-                      : 'border-white/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md hover:border-purple-300 dark:hover:border-purple-700/60 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md'
+                      : 'border-slate-200 dark:border-slate-800/60 bg-slate-50/60 dark:bg-slate-900/60 backdrop-blur-md hover:border-purple-300 dark:hover:border-purple-700/60 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md'
                     }`}
                 >
                   {/* Selected Checkmark */}
