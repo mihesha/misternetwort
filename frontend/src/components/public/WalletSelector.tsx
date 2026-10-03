@@ -140,7 +140,7 @@ export const WalletSelector: React.FC<WalletSelectorProps> = ({
                     className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center overflow-hidden text-xs sm:text-sm font-bold shadow-inner transition-transform group-hover:-translate-y-1 ${isSelected ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-purple-500/30' : `${wallet.bgColor} ${wallet.textColor}`
                       }`}
                   >
-                    {wallet.icon && wallet.icon.startsWith('http') ? (
+                    {wallet.icon && (wallet.icon.startsWith('http') || wallet.icon.startsWith('/')) ? (
                        <img src={wallet.icon} alt={wallet.nameAr} className="w-full h-full object-cover" />
                     ) : (
                       <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />

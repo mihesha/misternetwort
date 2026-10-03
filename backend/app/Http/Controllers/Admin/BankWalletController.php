@@ -17,7 +17,7 @@ class BankWalletController extends Controller
         
         $wallets->transform(function ($wallet) {
             if ($wallet->logo_path) {
-                $wallet->logo_url = asset('storage/' . $wallet->logo_path);
+                $wallet->logo_url = '/storage/' . $wallet->logo_path;
             }
             return $wallet;
         });
@@ -57,7 +57,7 @@ class BankWalletController extends Controller
 
         $wallet->load('sources');
         if ($wallet->logo_path) {
-            $wallet->logo_url = asset('storage/' . $wallet->logo_path);
+            $wallet->logo_url = '/storage/' . $wallet->logo_path;
         }
 
         return response()->json($wallet, 201);
@@ -104,7 +104,7 @@ class BankWalletController extends Controller
 
         $wallet->load('sources');
         if ($wallet->logo_path) {
-            $wallet->logo_url = asset('storage/' . $wallet->logo_path);
+            $wallet->logo_url = '/storage/' . $wallet->logo_path;
         }
 
         return response()->json($wallet);

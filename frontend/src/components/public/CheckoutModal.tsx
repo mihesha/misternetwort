@@ -355,17 +355,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 {(() => {
                   const walletDisplayName = selectedWallet.id === 'internal_wallet'
                     ? selectedWallet.nameAr
-                    : (selectedWallet.nameAr.startsWith('محفظة')
-                      ? selectedWallet.nameAr
-                      : `محفظة ${selectedWallet.nameAr}`);
+                    : selectedWallet.nameAr.replace(/^محفظة\s*/, '');
 
                   return (
                     <div className="relative p-6 sm:p-8 rounded-[2rem] space-y-5 shadow-sm border-2 border-purple-200 dark:border-purple-500/30 overflow-hidden group bg-purple-50 dark:bg-purple-900/20">
 
                       <div className="relative z-20 flex items-center justify-between border-b border-purple-200 dark:border-purple-800/80 pb-4">
                         <div className="flex items-center gap-3">
-                          <span className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-md">
-                            ✓
+                          <span className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-md overflow-hidden">
+                            {selectedWallet.icon && (selectedWallet.icon.startsWith('http') || selectedWallet.icon.startsWith('/')) ? (
+                              <img src={selectedWallet.icon} alt={walletDisplayName} className="w-full h-full object-cover bg-white dark:bg-slate-800" />
+                            ) : (
+                              <Check className="w-6 h-6" />
+                            )}
                           </span>
                           <div>
                             <h4 className="font-extrabold text-purple-950 dark:text-slate-100 text-base sm:text-lg tracking-wide">
@@ -435,6 +437,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                                 {selectedWallet.accountName}
                               </span>
                             </div>
+
+                            {selectedWallet.steps && selectedWallet.steps.length > 0 && (
+                              <div className="pt-2 text-xs text-slate-600 dark:text-slate-400 space-y-1.5 px-2">
+                                <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                  <Info className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400 shrink-0" /> خطوات الدفع:
+                                </p>
+                                <ul className="list-disc list-inside space-y-1 pr-1 opacity-90">
+                                  {selectedWallet.steps.map((step, idx) => (
+                                    <li key={idx} className="leading-relaxed">{step}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
                           </>
                         )}
 

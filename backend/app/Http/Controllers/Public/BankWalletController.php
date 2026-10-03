@@ -19,7 +19,7 @@ class BankWalletController extends Controller
         // Transform the collection to ensure frontend gets full URL for logo
         $wallets->transform(function ($wallet) {
             if ($wallet->logo_path) {
-                $wallet->logo_url = asset('storage/' . $wallet->logo_path);
+                $wallet->logo_url = '/storage/' . $wallet->logo_path;
             } else {
                 $wallet->logo_url = null;
             }
