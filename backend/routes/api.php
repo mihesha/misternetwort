@@ -193,12 +193,14 @@ Route::middleware('auth:sanctum')->group(function () {
 // Admin Dashboard Endpoints
 Route::get('/admin/app-deposits', [AdminDashboardController::class, 'getAppDeposits']);
 Route::patch('/admin/app-deposits/{id}/status', [AdminDashboardController::class, 'updateAppDepositStatus']);
+Route::delete('/admin/app-deposits/{id}', [AdminDashboardController::class, 'deleteAppDeposit']);
 Route::get('/admin/stats', [AdminDashboardController::class, 'getStats']);
 Route::get('/admin/transactions', [AdminDashboardController::class, 'getTransactions']);
 Route::get('/admin/users', [AdminDashboardController::class, 'getUsers']);
 Route::post('/admin/users', [AdminDashboardController::class, 'storeUser']);
 Route::get('/admin/agents/{id}/details', [AdminDashboardController::class, 'getAgentDetails']);
 Route::patch('/admin/agents/{id}/commission', [AdminDashboardController::class, 'updateAgentCommission']);
+Route::post('/admin/agents/{id}/reset-password', [AdminDashboardController::class, 'resetAgentPassword']);
 Route::get('/admin/settings', [AdminDashboardController::class, 'getSettings']);
 Route::post('/admin/settings', [AdminDashboardController::class, 'updateSettings']);
 Route::get('/admin/pos', [AdminDashboardController::class, 'getPosUsers']);

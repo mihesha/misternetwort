@@ -33,6 +33,18 @@ class AdminDashboardController extends Controller
         return response()->json(['message' => 'Status updated']);
     }
 
+    public function deleteAppDeposit($id)
+    {
+        $deposit = AppDeposit::findOrFail($id);
+        
+        if ($deposit->status !== 'confirmed' && $deposit->status !== 'used') {
+            $deposit->delete();
+            return response()->json(['message' => 'تم حذف الإيداع بنجاح']);
+        }
+        
+        return response()->json(['error' => 'لا يمكن حذف عملية إيداع مؤكدة أو مستخدمة'], 400);
+    }
+
     public function getStats()
     {
         return response()->json([
@@ -249,6 +261,22 @@ class AdminDashboardController extends Controller
         return response()->json([
             'message' => 'تم تحديث النسبة المخصصة بنجاح',
             'custom_commission_rate' => $agent->custom_commission_rate
+        ]);
+    }
+
+    public function resetAgentPassword($id, Request $request)
+    {
+        $agent = User::where('role', 'agent')->findOrFail($id);
+        
+        $newPassword = $request->password ?? (string) rand(100000, 999999);
+        
+        $agent->password = Hash::make($newPassword);
+        $agent->must_change_password = true;
+        $agent->save();
+        
+        return response()->json([
+            'message' => 'Password reset successfully',
+            'tempPassword' => $newPassword
         ]);
     }
 }

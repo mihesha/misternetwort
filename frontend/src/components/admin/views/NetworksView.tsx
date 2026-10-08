@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Eye, Key } from 'lucide-react';
+import { Plus, Eye, KeyRound } from 'lucide-react';
 import { ActiveNetwork } from '../../../types';
 
 interface NetworksViewProps {
@@ -151,7 +151,7 @@ export const NetworksView: React.FC<NetworksViewProps> = ({
                     }}
                     className="w-full py-2.5 rounded-xl bg-slate-700/50 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all border border-slate-600 hover:border-slate-500"
                   >
-                    <Key className="w-4 h-4 text-amber-400" />
+                    <KeyRound className="w-4 h-4 text-amber-400" />
                     <span>توليد وإرسال كلمة مرور جديدة</span>
                   </button>
                 )}
@@ -167,7 +167,7 @@ export const NetworksView: React.FC<NetworksViewProps> = ({
           <div className="bg-[#121927] border border-slate-700 rounded-3xl p-6 max-w-sm w-full shadow-2xl shadow-black/80 animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center border border-amber-500/30">
-                <Key className="w-8 h-8" />
+                <KeyRound className="w-8 h-8" />
               </div>
               <div>
                 <h3 className="font-bold text-white text-lg mb-1">إعادة تعيين كلمة المرور</h3>

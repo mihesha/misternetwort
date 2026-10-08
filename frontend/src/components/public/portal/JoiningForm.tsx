@@ -1,6 +1,6 @@
 /* eslint-disable tailwindcss/no-contradicting-classname */
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Globe, Wallet, Tag, Plus, Send, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, ShieldCheck, Zap, ChevronDown, ListChecks, X } from 'lucide-react';
+import { User, Globe, Wallet, Tag, Plus, Send, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, ShieldCheck, Zap, ChevronDown, ListChecks, X, LogIn } from 'lucide-react';
 import { ApplicationFormData, CardCategory } from '../../../types';
 import { YEMEN_GOVERNORATES } from '../../../data/yemenLocations';
 import { CardCategoryItem } from '../../common/CardCategoryItem';
@@ -682,6 +682,15 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
               >
                 إلغاء التعديل والعودة
               </button>
+            </div>
+          )}
+
+          {!onCancelEdit && (
+            <div className={`mt-8 pt-6 border-t flex flex-col items-center gap-4 relative z-10 ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
+              <a href="/owner/login" className={`text-sm font-bold transition-colors flex items-center gap-1.5 ${isDarkMode ? 'text-indigo-400 hover:text-white' : 'text-indigo-600 hover:text-indigo-800'}`}>
+                <LogIn className="w-4 h-4" />
+                <span>لديك حساب بالفعل؟ تسجيل الدخول</span>
+              </a>
             </div>
           )}
         </div>

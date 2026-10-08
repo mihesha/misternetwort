@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../../context/AppContext';
-import { CheckCircle2, Clock, XCircle, Search, DollarSign } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Search, DollarSign, Trash2 } from 'lucide-react';
 
 export default function AppDepositsPage() {
   const { isDarkMode } = useAppContext();
   const [deposits, setDeposits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteModal, setDeleteModal] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchDeposits = async () => {
     setLoading(true);
@@ -43,6 +45,27 @@ export default function AppDepositsPage() {
       }
     } catch (e) {
       alert('فشل الاتصال بالخادم');
+    }
+  };
+
+  const handleDeleteDeposit = async () => {
+    if (!deleteModal) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/app-deposits/${deleteModal.id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setDeleteModal(null);
+        fetchDeposits();
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || 'حدث خطأ أثناء الحذف');
+      }
+    } catch (e) {
+      alert('فشل الاتصال بالخادم');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -138,6 +161,15 @@ export default function AppDepositsPage() {
                             إلغاء التأكيد
                           </button>
                         )}
+                        {d.status !== 'confirmed' && d.status !== 'used' && (
+                          <button
+                            onClick={() => setDeleteModal(d)}
+                            className="p-1.5 bg-red-600/10 hover:bg-red-600 hover:text-white text-red-500 rounded-lg transition-colors"
+                            title="حذف الإيداع نهائياً"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -147,6 +179,42 @@ export default function AppDepositsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`${isDarkMode ? 'bg-[#121927] border-slate-700' : 'bg-white border-slate-200'} border rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200`}>
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center border border-red-500/30">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className={`font-bold text-lg mb-1 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>تأكيد الحذف الفعلي</h3>
+                <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  هل أنت متأكد من رغبتك في حذف الإيداع ذو المرجع <span className="font-bold text-red-500" dir="ltr">{deleteModal.reference_number}</span> نهائياً؟
+                  <br/>لا يمكن التراجع عن هذا الإجراء.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 w-full pt-2">
+                <button
+                  onClick={() => setDeleteModal(null)}
+                  disabled={isDeleting}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={handleDeleteDeposit}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition-all shadow-lg shadow-red-900/30 cursor-pointer disabled:opacity-50"
+                >
+                  {isDeleting ? 'جاري الحذف...' : 'نعم، احذف'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

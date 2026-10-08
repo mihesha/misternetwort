@@ -32,7 +32,7 @@ try {
     const match = envContent.match(/^SSH_PASSWORD=(.*)$/m);
     if (match) sshPassword = match[1].trim().replace(/['"]/g, '');
   }
-} catch (e) {}
+} catch (e) { }
 
 if (!sshPassword) {
   console.error('❌ كلمة مرور السيرفر مفقودة. ضع SSH_PASSWORD=... في ملف .env');

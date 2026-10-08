@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Moon, Sun, Key, Eye, EyeOff, Loader2, RefreshCw, Phone, Lock, ArrowRight } from 'lucide-react';
+import { Moon, Sun, Key, Eye, EyeOff, Loader2, RefreshCw, Phone, Lock, ArrowRight, Sparkles } from 'lucide-react';
 
 interface LoginPageProps {
   isDarkMode: boolean;
@@ -237,6 +237,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               )}
             </button>
           </form>
+
+          <div className={`mt-8 pt-6 border-t flex flex-col items-center gap-4 relative z-10 ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
+            <button type="button" onClick={onBackToRegister} className={`text-sm font-bold transition-colors flex items-center gap-1.5 ${isDarkMode ? 'text-indigo-400 hover:text-white' : 'text-indigo-600 hover:text-indigo-800'}`}>
+              <Sparkles className="w-4 h-4" />
+              <span>ليس لديك حساب؟ انضم كمالك شبكة</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

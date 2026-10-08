@@ -1,7 +1,8 @@
 /* eslint-disable tailwindcss/no-contradicting-classname, tailwindcss/no-custom-classname */
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../../context/AppContext';
-import { Users, Search, Filter, ShieldCheck, Mail, Phone, MapPin, Network, DollarSign, Percent, TrendingUp, MoreVertical, Edit, Lock, Trash2, ExternalLink, Plus, Receipt, Wallet } from 'lucide-react';
+import { useAdminContext } from '../../../context/AdminContext';
+import { Users, Search, Filter, ShieldCheck, Mail, Phone, MapPin, Network, DollarSign, Percent, TrendingUp, MoreVertical, Edit, Lock, Trash2, ExternalLink, Plus, Receipt, Wallet, KeyRound } from 'lucide-react';
 
 export const AgentsView = () => {
   const { isDarkMode } = useAppContext();
@@ -15,6 +16,42 @@ export const AgentsView = () => {
   const [editCommissionModal, setEditCommissionModal] = useState<any>(null);
   const [newCommissionRate, setNewCommissionRate] = useState<string>('');
   const [savingCommission, setSavingCommission] = useState(false);
+  
+  const { setWhatsappModalData } = useAdminContext();
+  const [confirmReset, setConfirmReset] = useState<any>(null);
+
+  const handleRegenerateAgentPassword = async (agent: any) => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('admin_auth_token') : null;
+      const res = await fetch(`/api/admin/agents/${agent.id}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        const loginLink = `${baseUrl}/agent/login`;
+        
+        setWhatsappModalData({
+          ownerName: agent.name,
+          ownerPhone: agent.phone,
+          tempPassword: data.tempPassword,
+          networkName: 'وكيل',
+          loginUrl: loginLink,
+          networkCode: 'AGENT',
+          isReset: true,
+          isAgent: true
+        });
+      } else {
+        alert('❌ حدث خطأ أثناء إعادة تعيين كلمة المرور');
+      }
+    } catch (e) {
+      alert('❌ فشل الاتصال بالخادم');
+    }
+  };
   
   const fetchAgentDetails = async (id: string) => {
     setLoadingDetails(true);
@@ -226,6 +263,9 @@ export const AgentsView = () => {
                       <button onClick={() => fetchAgentDetails(agent.id)} className={`p-2 rounded-xl transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`} title="عرض البروفايل التفصيلي">
                         <ExternalLink className="w-4 h-4" />
                       </button>
+                      <button onClick={() => setConfirmReset(agent)} className={`p-2 rounded-xl transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`} title="توليد وإرسال كلمة مرور جديدة">
+                        <KeyRound className="w-4 h-4 text-amber-400" />
+                      </button>
                     </div>
                   </div>
                   
@@ -348,6 +388,9 @@ export const AgentsView = () => {
                           </button>
                           <button onClick={() => fetchAgentDetails(agent.id)} className={`p-2 rounded-xl transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`} title="عرض التفاصيل">
                             <ExternalLink className="w-4 h-4 mx-auto" />
+                          </button>
+                          <button onClick={() => setConfirmReset(agent)} className={`p-2 rounded-xl transition-colors ${isDarkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`} title="توليد وإرسال كلمة مرور جديدة">
+                            <KeyRound className="w-4 h-4 mx-auto text-amber-400" />
                           </button>
                         </div>
                       </td>
@@ -543,6 +586,43 @@ export const AgentsView = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Custom Confirmation Modal */}
+      {confirmReset && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#121927] border border-slate-700 rounded-3xl p-6 max-w-sm w-full shadow-2xl shadow-black/80 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center border border-amber-500/30">
+                <KeyRound className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-lg mb-1">إعادة تعيين كلمة المرور</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  هل أنت متأكد من رغبتك في إعادة تعيين كلمة المرور للوكيل <span className="font-bold text-amber-400">{confirmReset.name}</span>؟
+                  <br/>سيتم إرسال كلمة مرور مؤقتة جديدة للوكيل.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 w-full pt-2">
+                <button
+                  onClick={() => setConfirmReset(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={() => {
+                    handleRegenerateAgentPassword(confirmReset);
+                    setConfirmReset(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-all shadow-lg shadow-amber-900/30 cursor-pointer"
+                >
+                  نعم، متأكد
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

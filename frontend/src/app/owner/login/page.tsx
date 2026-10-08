@@ -68,7 +68,7 @@ export default function LoginRoute() {
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}
         onLoginSuccess={handleLoginSubmit}
         onBackToRegister={() => {
-          if (typeof window !== 'undefined') window.location.href = '/';
+          if (typeof window !== 'undefined') window.location.href = '/join';
         }}
       />
     </div>
