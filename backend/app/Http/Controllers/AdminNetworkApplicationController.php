@@ -52,8 +52,8 @@ class AdminNetworkApplicationController extends Controller
 
         if ($request->status === 'approved') {
             if ($app->application_type === 'agent') {
-                // Find by phone first to avoid unique email constraint crash
-                $user = User::where('phone', $app->owner_phone)->first();
+                // Find by phone and role
+                $user = User::where('phone', $app->owner_phone)->where('role', 'agent')->first();
 
                 if ($user) {
                     // Update existing user
@@ -66,7 +66,9 @@ class AdminNetworkApplicationController extends Controller
                     $user->city = $app->city;
                     // Only update email if it's not taken by another user
                     $emailTaken = User::where('email', $app->owner_identity)
-                        ->where('phone', '!=', $app->owner_phone)
+                        ->where(function($q) use ($app) {
+                            $q->where('phone', '!=', $app->owner_phone)->orWhere('role', '!=', 'agent');
+                        })
                         ->exists();
                     if (!$emailTaken) {
                         $user->email = $app->owner_identity;
@@ -97,12 +99,11 @@ class AdminNetworkApplicationController extends Controller
 
             // Normal network application
             $user = User::updateOrCreate(
-                ['phone' => $app->owner_identity],
+                ['phone' => $app->owner_phone, 'role' => 'network_owner'],
                 [
                     'name' => $app->owner_name,
                     'email' => $app->owner_identity . '@example.com',
                     'password' => Hash::make($request->tempPassword ?? '12345678'),
-                    'role' => 'network_owner',
                     'must_change_password' => true
                 ]
             );

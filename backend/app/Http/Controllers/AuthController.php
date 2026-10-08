@@ -9,12 +9,36 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function checkPhone(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'role' => 'required|string',
+        ]);
+
+        $exists = User::where('phone', $request->phone)
+            ->where('role', $request->role)
+            ->exists();
+
+        if (!$exists) {
+             $appType = $request->role === 'network_owner' ? 'network' : ($request->role === 'agent' ? 'agent' : null);
+             if ($appType) {
+                 $existsInApps = \App\Models\NetworkApplication::where('owner_phone', $request->phone)
+                     ->where('application_type', $appType)
+                     ->where('status', 'pending')
+                     ->exists();
+                 $exists = $exists || $existsInApps;
+             }
+        }
+
+        return response()->json(['exists' => $exists]);
+    }
     public function register(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone' => 'required|string|unique:users',
+            'email' => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users')->where(fn ($query) => $query->where('role', 'network_owner'))],
+            'phone' => ['required', 'string', \Illuminate\Validation\Rule::unique('users')->where(fn ($query) => $query->where('role', 'network_owner'))],
             'password' => 'required|string|min:8|confirmed',
         ]);
 
@@ -36,7 +60,7 @@ class AuthController extends Controller
     public function customerRegister(Request $request)
     {
         $validated = $request->validate([
-            'phone' => 'required|string|unique:users',
+            'phone' => ['required', 'string', \Illuminate\Validation\Rule::unique('users')->where(fn ($query) => $query->where('role', 'customer'))],
             'password' => 'required|string|min:6',
         ]);
 
@@ -231,9 +255,25 @@ class AuthController extends Controller
             ]);
         }
 
-        $user = User::where('phone', $request->phone)->first();
+        $query = User::where('phone', $request->phone);
+        if ($request->has('role')) {
+            if (is_array($request->role)) {
+                $query->whereIn('role', $request->role);
+            } else {
+                $query->where('role', $request->role);
+            }
+        }
+        $users = $query->get();
+        $user = null;
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        foreach ($users as $u) {
+            if (Hash::check($request->password, $u->password)) {
+                $user = $u;
+                break;
+            }
+        }
+
+        if (!$user) {
             throw ValidationException::withMessages([
                 'phone' => ['رقم الهاتف أو كلمة المرور غير صحيحة.'],
             ]);

@@ -23,7 +23,7 @@ export default function LoginRoute() {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: ownerId, password, captcha, captcha_key: captchaKey })
+      body: JSON.stringify({ phone: ownerId, password, captcha, captcha_key: captchaKey, role: 'network_owner' })
     });
 
     const data = await res.json();

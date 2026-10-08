@@ -50,6 +50,21 @@ export default function AgentJoinPage() {
     setErrors({});
     
     try {
+      // First check if phone exists
+      const checkRes = await fetch('/api/check-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: formData.phone.trim(), role: 'agent' })
+      });
+      const checkData = await checkRes.json();
+      if (checkData.exists) {
+        setErrors({ phone: 'رقم الهاتف مسجل مسبقاً في النظام. يرجى إضافة أي رقم في نهايته لتمييزه.' });
+        setIsSubmitting(false);
+        // scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
       const res = await fetch('/api/requests/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

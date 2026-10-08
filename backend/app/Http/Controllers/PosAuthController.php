@@ -14,7 +14,7 @@ class PosAuthController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string',
-            'phone' => 'required|string|unique:users',
+            'phone' => ['required', 'string', \Illuminate\Validation\Rule::unique('users')->where(fn ($query) => $query->where('role', 'pos'))],
             'password' => 'required|string|min:6',
             'shop_name' => 'required|string',
             'address' => 'nullable|string',

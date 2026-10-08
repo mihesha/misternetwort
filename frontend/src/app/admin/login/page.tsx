@@ -55,7 +55,8 @@ export default function AdminLoginPage() {
           phone, 
           password,
           captcha: captchaInput,
-          captcha_key: captchaKey
+          captcha_key: captchaKey,
+          role: ['admin', 'super_admin']
         })
       });
 

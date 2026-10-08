@@ -52,7 +52,7 @@ export default function AgentLoginPage() {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, password, captcha: captchaInput, captcha_key: captchaKey })
+        body: JSON.stringify({ phone, password, captcha: captchaInput, captcha_key: captchaKey, role: 'agent' })
       });
 
       const data = await res.json();

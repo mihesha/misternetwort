@@ -27,6 +27,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
   onCancelEdit,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false);
   const totalSteps = 5;
 
   const [ownerName, setOwnerName] = useState(initialData?.owner.ownerName || '');
@@ -150,8 +151,28 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
     return true;
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (validateStep(currentStep)) {
+      if (currentStep === 1) {
+        setIsCheckingPhone(true);
+        try {
+          const res = await fetch('/api/check-phone', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: contactNumber.trim(), role: 'network_owner' })
+          });
+          const data = await res.json();
+          if (data.exists) {
+            setErrors(prev => ({ ...prev, contactNumber: 'رقم الهاتف مسجل مسبقاً في النظام. يرجى إضافة أي رقم في نهايته لتمييزه.' }));
+            scrollToFirstError();
+            setIsCheckingPhone(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to check phone', err);
+        }
+        setIsCheckingPhone(false);
+      }
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
     }
   };
@@ -615,10 +636,20 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
               <button
                 type="button"
                 onClick={nextStep}
-                className="w-full md:w-auto flex justify-center items-center gap-2 px-10 py-3.5 rounded-xl text-sm font-black text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+                disabled={isCheckingPhone}
+                className="w-full md:w-auto flex justify-center items-center gap-2 px-10 py-3.5 rounded-xl text-sm font-black text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                <span>متابعة للخطوة التالية</span>
-                <ChevronLeft className="w-4 h-4" />
+                {isCheckingPhone ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>جاري التحقق...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>متابعة للخطوة التالية</span>
+                    <ChevronLeft className="w-4 h-4" />
+                  </>
+                )}
               </button>
             ) : (
               <button
