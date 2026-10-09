@@ -41,7 +41,7 @@ export default function OwnerDashboardPage() {
     if (!network?.id) return;
     setLoadingTx(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
       const res = await fetch(`/api/networks/${network.id}/transactions`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });

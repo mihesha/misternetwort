@@ -76,7 +76,7 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
   React.useEffect(() => {
     const fetchNetworkData = async () => {
       try {
-        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
         const res = await fetch('/api/networks', {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
@@ -826,7 +826,7 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
               <button 
                 onClick={async () => {
                    try {
-                     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+                     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
                      const res = await fetch(`/api/admin/networks/${networkData.id}/card-batches/${batchToDelete}`, {
                        method: 'DELETE',
                        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -874,7 +874,7 @@ export const NetworkDetailsView: React.FC<NetworkDetailsViewProps> = ({
               <button 
                 onClick={async () => {
                    try {
-                     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+                     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
                      const res = await fetch(`/api/admin/networks/${networkData.id}/cards/${cardToDelete}`, {
                        method: 'DELETE',
                        headers: token ? { 'Authorization': `Bearer ${token}` } : {}

@@ -277,7 +277,7 @@ export const NetworkAccountStatementView: React.FC<NetworkAccountStatementViewPr
   React.useEffect(() => {
     const fetchNetworkAndTransactions = async () => {
       try {
-        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
         const res = await fetch('/api/networks', {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });

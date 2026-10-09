@@ -52,7 +52,7 @@ export const WithdrawalRequestsListView: React.FC<WithdrawalRequestsListViewProp
   useEffect(() => {
     const fetchWithdrawals = async () => {
       try {
-        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
         const res = await fetch('/api/withdrawals', {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });

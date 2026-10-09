@@ -63,7 +63,7 @@ export default function AgentLoginPage() {
           setIsLoading(false);
           return;
         }
-        localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('agent_auth_token', data.token);
         localStorage.setItem('agent_user', JSON.stringify(data.user));
 
         if (data.user.must_change_password) {

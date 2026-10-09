@@ -5,7 +5,7 @@ export const useOwnerActions = () => {
 
   const fetchOwnerNetworks = async () => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
       if (!token) return; // Prevent polling if not logged in as owner
       
       const res = await fetch('/api/networks', {

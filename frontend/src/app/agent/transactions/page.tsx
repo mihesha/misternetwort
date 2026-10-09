@@ -12,7 +12,7 @@ export default function AgentTransactionsPage() {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('agent_auth_token');
         const res = await fetch('/api/agent/transactions', {
           headers: { 'Authorization': `Bearer ${token}` }
         });

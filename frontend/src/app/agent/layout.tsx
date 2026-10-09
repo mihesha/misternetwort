@@ -51,9 +51,9 @@ const AgentLayoutContent = ({ children }: { children: React.ReactNode }) => {
 
   useIdleTimeout(() => {
     if (!isAuthPage && isAuthenticated) {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('agent_auth_token') : null;
       if (token) fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }).catch(() => {});
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('agent_auth_token');
       localStorage.removeItem('agent_user');
       router.replace('/agent/login');
     }
@@ -65,7 +65,7 @@ const AgentLayoutContent = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('agent_auth_token') : null;
     const userStr = typeof window !== 'undefined' ? localStorage.getItem('agent_user') : null;
 
     if (!token || !userStr) {
@@ -160,7 +160,7 @@ const AgentLayoutContent = ({ children }: { children: React.ReactNode }) => {
                   <div className={`absolute top-full left-0 mt-3 w-48 rounded-2xl p-2 shadow-2xl z-50 border ${isDarkMode ? 'bg-[#141d2b] border-white/10 text-slate-200 shadow-black/40' : 'bg-white border-slate-200 text-slate-800 shadow-blue-900/5'}`}>
                     <button
                       onClick={() => {
-                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('agent_auth_token');
                         localStorage.removeItem('agent_user');
                         router.replace('/agent/login');
                       }}

@@ -18,7 +18,7 @@ export default function ChangePasswordRoute() {
   }, []);
 
   const handlePasswordChanged = async (newPassword: string) => {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('owner_auth_token');
     
     const res = await fetch('/api/change-password', {
       method: 'POST',

@@ -25,7 +25,7 @@ export default function AgentWithdrawalsPage() {
 
   const fetchWithdrawals = async () => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('agent_auth_token') : null;
       if (!token) return;
 
       const res = await fetch('/api/agent/withdrawals', {
@@ -57,7 +57,7 @@ export default function AgentWithdrawalsPage() {
     setFormError('');
     setSubmitting(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('agent_auth_token') : null;
       const res = await fetch('/api/agent/withdrawals', {
         method: 'POST',
         headers: { 

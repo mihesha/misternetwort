@@ -228,7 +228,7 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
     if (!networkId) return;
     setIsLoading(true);
     try {
-      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
       const headers: Record<string, string> = token ? { 'Authorization': `Bearer ${token}` } : {};
       
       // Fetch Network details to get Categories
@@ -274,7 +274,7 @@ export const CardsManagementView: React.FC<CardsManagementViewProps> = ({
     if (!cardToDelete || !networkId) return;
     setIsDeleting(true);
     try {
-      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
       const res = await fetch(`/api/admin/networks/${networkId}/cards/${cardToDelete}`, {
         method: 'DELETE',
         headers: token ? { 'Authorization': `Bearer ${token}` } : ({} as Record<string, string>)

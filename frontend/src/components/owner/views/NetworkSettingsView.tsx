@@ -94,7 +94,7 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
   React.useEffect(() => {
     const fetchNetworkData = async () => {
       try {
-        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
         const res = await fetch('/api/networks', {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
@@ -145,7 +145,7 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
   const handleSaveNotifications = async () => {
     setIsSavingNotifs(true);
     try {
-      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
       const res = await fetch(`/api/networks/${networkCode}/settings`, {
         method: 'PATCH',
         headers: {
@@ -195,7 +195,7 @@ export const NetworkSettingsView: React.FC<NetworkSettingsViewProps> = ({
   const handleSaveCategorySettings = async (id: string, categoryName: string) => {
     setSavingCategory(id);
     try {
-      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
       const category = categories.find(c => c.id === id);
       if (!category) return;
       

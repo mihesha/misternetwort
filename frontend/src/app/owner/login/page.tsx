@@ -33,7 +33,7 @@ export default function LoginRoute() {
     }
 
     if (data.user && data.user.role === 'network_owner') {
-      localStorage.setItem('auth_token', data.token); // using auth_token or owner_auth_token
+      localStorage.setItem('owner_auth_token', data.token); // using auth_token or owner_auth_token
       localStorage.setItem('owner_user', JSON.stringify(data.user));
       
       if (data.user.must_change_password || data.user.mustChangePassword) {

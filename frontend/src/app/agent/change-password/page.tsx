@@ -23,7 +23,7 @@ export default function AgentChangePasswordRoute() {
   }, []);
 
   const handlePasswordChanged = async (newPassword: string) => {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('agent_auth_token');
     
     const res = await fetch('/api/change-password', {
       method: 'POST',

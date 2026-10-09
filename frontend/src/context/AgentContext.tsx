@@ -28,7 +28,7 @@ export const AgentProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchStats = async () => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('agent_auth_token') : null;
       if (!token) return;
 
       const res = await fetch('/api/agent/stats', {

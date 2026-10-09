@@ -13,7 +13,7 @@ export default function AgentNetworksPage() {
   useEffect(() => {
     const fetchNetworks = async () => {
       try {
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('agent_auth_token');
         const res = await fetch('/api/agent/networks', {
           headers: { 'Authorization': `Bearer ${token}` }
         });

@@ -14,7 +14,7 @@ export default function AgentAddNetworkPage() {
   const handleSubmitForm = async (formData: ApplicationFormData) => {
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('agent_auth_token');
       const res = await fetch('/api/requests', {
         method: 'POST',
         headers: { 

@@ -48,7 +48,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const fetchDynamicData = async () => {
       try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const token = typeof window !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
         if (!token) return;
 
         const notifs: { id: string, title: string, message: string, type: 'error' | 'warning' | 'info' | 'success', date: string }[] = [];
@@ -223,11 +223,11 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
   // Auto Logout on Inactivity (15 minutes)
   useIdleTimeout(() => {
     if (!isAuthPage && isAuthenticated) {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
       if (token) {
         fetch('/api/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }).catch(() => { });
       }
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('owner_auth_token');
       localStorage.removeItem('owner_user');
       localStorage.removeItem('ownerActiveNetworkId');
       router.replace('/owner/login');
@@ -241,7 +241,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
     const userStr = typeof window !== 'undefined' ? localStorage.getItem('owner_user') : null;
 
     if (!token || !userStr) {
@@ -482,7 +482,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
                   <button
                     onClick={async () => {
                       setShowProfileMenu(false);
-                      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+                      const token = typeof window !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
                       if (token) {
                         try {
                           await fetch('/api/logout', {
@@ -491,7 +491,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
                           });
                         } catch (e) { }
                       }
-                      localStorage.removeItem('auth_token');
+                      localStorage.removeItem('owner_auth_token');
                       localStorage.removeItem('owner_user');
                       localStorage.removeItem('ownerActiveNetworkId');
                       router.replace('/owner/login');

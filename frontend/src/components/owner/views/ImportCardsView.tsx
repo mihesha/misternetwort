@@ -53,7 +53,7 @@ export const ImportCardsView: React.FC<ImportCardsViewProps> = ({
   React.useEffect(() => {
     const fetchNetworkData = async () => {
       try {
-        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
         const res = await fetch('/api/networks', {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
@@ -270,7 +270,7 @@ export const ImportCardsView: React.FC<ImportCardsViewProps> = ({
       const ext = selectedFile.name.split('.').pop()?.toUpperCase() || 'UNKNOWN';
       const file_type = ext;
 
-      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
       const response = await fetch(`/api/networks/${networkData.id}/import-cards`, {
         method: 'POST',
         headers: {
