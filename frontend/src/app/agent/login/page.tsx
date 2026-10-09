@@ -23,7 +23,7 @@ export default function AgentLoginPage() {
 
   const fetchCaptcha = async () => {
     try {
-      const res = await fetch('/api/captcha');
+      const res = await fetch('/api/captcha?_=' + Date.now());
       if (!res.ok) throw new Error('فشل تحميل الكابتشا');
       const data = await res.json();
       setCaptchaImg(data.img);

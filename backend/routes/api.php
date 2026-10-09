@@ -47,7 +47,8 @@ Route::get('/networks/{code}/packages', [NetworkController::class, 'getNetworkPa
 
 // Auth Endpoints
 Route::get('/captcha', function () {
-    return app('captcha')->create('professional', true);
+    return response()->json(app('captcha')->create('professional', true))
+        ->header('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
 })->middleware('throttle:30,1');
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
