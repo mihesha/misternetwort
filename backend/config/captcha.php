@@ -18,6 +18,7 @@ return [
         'angle' => 25,
         'blur' => 2,
         'sharpen' => 10,
+        'expire' => 300,
     ],
     'default' => [
         'length' => 6,
