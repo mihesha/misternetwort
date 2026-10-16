@@ -12,12 +12,23 @@ import {
   PlusCircle, Receipt, Download, Layers, Wallet, Bell, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { GlobalOwnerModals } from '../../components/owner/GlobalOwnerModals';
+import { NetworkSwitcher } from '../../components/owner/NetworkSwitcher';
+import { AddNetworkModal } from '../../components/owner/AddNetworkModal';
 
 const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
   const { isDarkMode, setIsDarkMode, isThemeLoaded } = useAppContext();
-  const { ownerName, networks, setGlobalUpdateTick, globalUpdateTick, isDataLoaded } = useOwnerContext();
+  const { 
+    ownerName, 
+    networks, 
+    activeNetwork, 
+    showAddNetworkModal, 
+    setShowAddNetworkModal, 
+    setGlobalUpdateTick, 
+    globalUpdateTick, 
+    isDataLoaded 
+  } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
-  const network = networks?.[0];
+  const network = activeNetwork || networks?.[0];
   const pathname = usePathname() || '';
   const router = useRouter();
 
@@ -171,6 +182,7 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
   const unreadCount = combinedNotifications.length;
 
   const isAuthPage = pathname.includes('/login') || pathname.includes('/change-password');
+  const isNetworksPage = pathname === '/owner/networks' || pathname === '/owner/networks/';
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   // Handle sidebar initial state and resize
@@ -358,20 +370,22 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
           {/* Header */}
           <header className={`fixed top-0 right-0 left-0 z-50 h-[72px] flex items-center justify-between px-4 md:px-8 transition-all duration-300 ${isDarkMode ? 'bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/20' : 'bg-white/80 backdrop-blur-xl border-b border-slate-200/80 shadow-sm'}`}>
             <div className="flex items-center gap-3">
-              <button
-                onClick={toggleSidebar}
-                onMouseEnter={(e) => {
-                  if (window.innerWidth >= 1024) {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setHoveredTooltip({ label: 'القائمة الجانبية', top: rect.bottom + 8, right: window.innerWidth - rect.right + rect.width / 2, placement: 'bottom' });
-                  }
-                }}
-                onMouseLeave={() => setHoveredTooltip(null)}
-                className={`p-2.5 rounded-xl transition-all active:scale-95 outline-none ${isDarkMode ? 'hover:bg-white/10 text-slate-300 hover:text-white' : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'}`}
-                aria-label="Toggle Menu"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
+              {!isNetworksPage && (
+                <button
+                  onClick={toggleSidebar}
+                  onMouseEnter={(e) => {
+                    if (window.innerWidth >= 1024) {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setHoveredTooltip({ label: 'القائمة الجانبية', top: rect.bottom + 8, right: window.innerWidth - rect.right + rect.width / 2, placement: 'bottom' });
+                    }
+                  }}
+                  onMouseLeave={() => setHoveredTooltip(null)}
+                  className={`p-2.5 rounded-xl transition-all active:scale-95 outline-none ${isDarkMode ? 'hover:bg-white/10 text-slate-300 hover:text-white' : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'}`}
+                  aria-label="Toggle Menu"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              )}
 
               <Link href="/owner" className="flex items-center gap-2.5 ml-2 cursor-pointer transition-opacity hover:opacity-80">
                 <div className="shrink-0 flex items-center justify-center">
@@ -388,6 +402,9 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
             </div>
 
             <div className="flex items-center gap-3 md:gap-4">
+              {/* Network Switcher */}
+              <NetworkSwitcher isDarkMode={isDarkMode} />
+
               {/* Notifications Dropdown */}
               <div className="relative" ref={notifRef}>
                 <button
@@ -522,120 +539,125 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
             </div>
           </header>
 
-          {/* Sidebar Overlay */}
-          <div
-            className={`fixed inset-0 bg-black/60 z-40 backdrop-blur-sm lg:hidden transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            onClick={() => setIsSidebarOpen(false)}
-          />
-
-          {/* Sidebar Menu */}
-          <aside
-            className={`fixed top-[72px] right-0 bottom-0 z-40 flex flex-col transition-all duration-300 ease-in-out
-              ${isSidebarOpen ? 'w-[280px] translate-x-0' : 'w-[280px] lg:w-[80px] translate-x-full lg:translate-x-0'} 
-              ${isDarkMode ? 'bg-[#0f172a] border-l border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.3)]' : 'bg-white border-l border-slate-200 shadow-[0_0_40px_rgba(0,0,0,0.05)]'}`}
-          >
-            <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar ${isSidebarOpen ? 'p-4' : 'py-4 px-2'}`}>
-              <div className={`mb-4 mt-2 px-3 transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-                <h3 className={`text-[11px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>القائمة الرئيسية</h3>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                {sidebarLinks.map((link, idx) => {
-                  const Icon = link.icon;
-                  const isActive = link.href === '/owner'
-                    ? pathname === '/owner' || pathname === '/owner/'
-                    : pathname.includes(link.href);
-
-                  return (
-                    <Link
-                      key={idx}
-                      href={link.href}
-                      onMouseEnter={(e) => {
-                        if (!isSidebarOpen && window.innerWidth >= 1024) {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setHoveredTooltip({ label: link.label, top: rect.top + rect.height / 2, right: window.innerWidth - rect.left + 12 });
-                        }
-                      }}
-                      onMouseLeave={() => setHoveredTooltip(null)}
-                      onClick={() => {
-                        if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                      }}
-                      className={`relative flex items-center ${isSidebarOpen ? 'gap-3.5 px-4 py-3.5 mx-0' : 'justify-center p-3 mx-1'} rounded-2xl transition-all duration-200 font-bold text-[13px] group overflow-hidden ${isActive
-                          ? (isDarkMode
-                            ? 'bg-gradient-to-l from-blue-600/20 to-transparent text-blue-400 border border-blue-500/20 shadow-inner'
-                            : 'bg-gradient-to-l from-blue-50 to-transparent text-blue-700 border border-blue-100')
-                          : (isDarkMode
-                            ? 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900')
-                        }`}
-                    >
-                      {/* Active Indicator Line */}
-                      {isActive && (
-                        <div className={`absolute right-0 top-0 bottom-0 w-1 bg-blue-500 ${isSidebarOpen ? 'rounded-l-full' : 'rounded-full'}`} />
-                      )}
-
-                      <div className={`p-2 rounded-xl transition-colors shrink-0 ${isActive ? (isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100') : (isDarkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-slate-100 group-hover:bg-slate-200')}`}>
-                        <Icon className={`w-5 h-5 transition-transform duration-200 ${!isSidebarOpen && 'group-hover:scale-110'} ${isActive ? 'text-blue-500' : (isDarkMode ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-700')}`} />
-                      </div>
-                      <span className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0 hidden'}`}>
-                        {link.label}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Sidebar Footer */}
-            <div className={`mt-auto border-t transition-all duration-300 flex flex-col gap-2 ${isSidebarOpen ? 'p-4' : 'p-2'} ${isDarkMode ? 'border-white/10' : 'border-slate-100'}`}>
+          {/* Sidebar Overlay and Menu */}
+          {!isNetworksPage && (
+            <>
+              {/* Sidebar Overlay */}
               <div
-                className={`relative flex items-center justify-center rounded-2xl transition-all duration-300 ${isSidebarOpen ? 'p-4' : 'py-4 px-2'} ${isDarkMode ? 'bg-white/5' : 'bg-slate-50'} text-center overflow-hidden group`}
-                onMouseEnter={(e) => {
-                  if (!isSidebarOpen && window.innerWidth >= 1024) {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setHoveredTooltip({ label: 'الدعم الفني', top: rect.top + rect.height / 2, right: window.innerWidth - rect.left + 12 });
-                  }
-                }}
-                onMouseLeave={() => setHoveredTooltip(null)}
-              >
-                <div className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>
-                  <div className={`text-xs font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>تحتاج إلى مساعدة؟</div>
-                  <div className={`text-[10px] mt-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>تواصل مع الدعم الفني</div>
-                </div>
-                {!isSidebarOpen && (
-                  <div className={`text-blue-500 cursor-pointer transition-transform duration-200 group-hover:scale-110`}>
-                    <Info className="w-5 h-5" />
-                  </div>
-                )}
-              </div>
+                className={`fixed inset-0 bg-black/60 z-40 backdrop-blur-sm lg:hidden transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => setIsSidebarOpen(false)}
+              />
 
-              {/* Toggle Button */}
-              <button
-                onClick={toggleSidebar}
-                onMouseEnter={(e) => {
-                  if (window.innerWidth >= 1024) {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setHoveredTooltip({ label: isSidebarOpen ? 'طي القائمة' : 'توسيع القائمة', top: rect.top + rect.height / 2, right: window.innerWidth - rect.left + 12 });
-                  }
-                }}
-                onMouseLeave={() => setHoveredTooltip(null)}
-                className={`hidden lg:flex items-center justify-center mt-2 group outline-none ${isSidebarOpen ? 'self-end' : 'mx-auto'}`}
+              {/* Sidebar Menu */}
+              <aside
+                className={`fixed top-[72px] right-0 bottom-0 z-40 flex flex-col transition-all duration-300 ease-in-out
+                  ${isSidebarOpen ? 'w-[280px] translate-x-0' : 'w-[280px] lg:w-[80px] translate-x-full lg:translate-x-0'} 
+                  ${isDarkMode ? 'bg-[#0f172a] border-l border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.3)]' : 'bg-white border-l border-slate-200 shadow-[0_0_40px_rgba(0,0,0,0.05)]'}`}
               >
-                <div className={`p-2 rounded-xl transition-colors shrink-0 ${isDarkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-slate-100 group-hover:bg-slate-200'}`}>
-                  {isSidebarOpen ? (
-                    <ChevronRight className={`w-5 h-5 transition-transform duration-200 ${isDarkMode ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-700'}`} />
-                  ) : (
-                    <ChevronLeft className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${isDarkMode ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-700'}`} />
-                  )}
+                <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar ${isSidebarOpen ? 'p-4' : 'py-4 px-2'}`}>
+                  <div className={`mb-4 mt-2 px-3 transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
+                    <h3 className={`text-[11px] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>القائمة الرئيسية</h3>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    {sidebarLinks.map((link, idx) => {
+                      const Icon = link.icon;
+                      const isActive = link.href === '/owner'
+                        ? pathname === '/owner' || pathname === '/owner/'
+                        : pathname.includes(link.href);
+
+                      return (
+                        <Link
+                          key={idx}
+                          href={link.href}
+                          onMouseEnter={(e) => {
+                            if (!isSidebarOpen && window.innerWidth >= 1024) {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setHoveredTooltip({ label: link.label, top: rect.top + rect.height / 2, right: window.innerWidth - rect.left + 12 });
+                            }
+                          }}
+                          onMouseLeave={() => setHoveredTooltip(null)}
+                          onClick={() => {
+                            if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                          }}
+                          className={`relative flex items-center ${isSidebarOpen ? 'gap-3.5 px-4 py-3.5 mx-0' : 'justify-center p-3 mx-1'} rounded-2xl transition-all duration-200 font-bold text-[13px] group overflow-hidden ${isActive
+                              ? (isDarkMode
+                                ? 'bg-gradient-to-l from-blue-600/20 to-transparent text-blue-400 border border-blue-500/20 shadow-inner'
+                                : 'bg-gradient-to-l from-blue-50 to-transparent text-blue-700 border border-blue-100')
+                              : (isDarkMode
+                                ? 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900')
+                            }`}
+                        >
+                          {/* Active Indicator Line */}
+                          {isActive && (
+                            <div className={`absolute right-0 top-0 bottom-0 w-1 bg-blue-500 ${isSidebarOpen ? 'rounded-l-full' : 'rounded-full'}`} />
+                          )}
+
+                          <div className={`p-2 rounded-xl transition-colors shrink-0 ${isActive ? (isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100') : (isDarkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-slate-100 group-hover:bg-slate-200')}`}>
+                            <Icon className={`w-5 h-5 transition-transform duration-200 ${!isSidebarOpen && 'group-hover:scale-110'} ${isActive ? 'text-blue-500' : (isDarkMode ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-700')}`} />
+                          </div>
+                          <span className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0 hidden'}`}>
+                            {link.label}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-              </button>
-            </div>
-          </aside>
+
+                {/* Sidebar Footer */}
+                <div className={`mt-auto border-t transition-all duration-300 flex flex-col gap-2 ${isSidebarOpen ? 'p-4' : 'p-2'} ${isDarkMode ? 'border-white/10' : 'border-slate-100'}`}>
+                  <div
+                    className={`relative flex items-center justify-center rounded-2xl transition-all duration-300 ${isSidebarOpen ? 'p-4' : 'py-4 px-2'} ${isDarkMode ? 'bg-white/5' : 'bg-slate-50'} text-center overflow-hidden group`}
+                    onMouseEnter={(e) => {
+                      if (!isSidebarOpen && window.innerWidth >= 1024) {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setHoveredTooltip({ label: 'الدعم الفني', top: rect.top + rect.height / 2, right: window.innerWidth - rect.left + 12 });
+                      }
+                    }}
+                    onMouseLeave={() => setHoveredTooltip(null)}
+                  >
+                    <div className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>
+                      <div className={`text-xs font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>تحتاج إلى مساعدة؟</div>
+                      <div className={`text-[10px] mt-1 ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>تواصل مع الدعم الفني</div>
+                    </div>
+                    {!isSidebarOpen && (
+                      <div className={`text-blue-500 cursor-pointer transition-transform duration-200 group-hover:scale-110`}>
+                        <Info className="w-5 h-5" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Toggle Button */}
+                  <button
+                    onClick={toggleSidebar}
+                    onMouseEnter={(e) => {
+                      if (window.innerWidth >= 1024) {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setHoveredTooltip({ label: isSidebarOpen ? 'طي القائمة' : 'توسيع القائمة', top: rect.top + rect.height / 2, right: window.innerWidth - rect.left + 12 });
+                      }
+                    }}
+                    onMouseLeave={() => setHoveredTooltip(null)}
+                    className={`hidden lg:flex items-center justify-center mt-2 group outline-none ${isSidebarOpen ? 'self-end' : 'mx-auto'}`}
+                  >
+                    <div className={`p-2 rounded-xl transition-colors shrink-0 ${isDarkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-slate-100 group-hover:bg-slate-200'}`}>
+                      {isSidebarOpen ? (
+                        <ChevronRight className={`w-5 h-5 transition-transform duration-200 ${isDarkMode ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-700'}`} />
+                      ) : (
+                        <ChevronLeft className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${isDarkMode ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-700'}`} />
+                      )}
+                    </div>
+                  </button>
+                </div>
+              </aside>
+            </>
+          )}
         </>
       )}
 
       {/* Main Content Area */}
-      <div className={`flex-1 transition-all duration-300 ${!isAuthPage ? 'pt-[72px]' : ''} ${!isAuthPage ? (isSidebarOpen ? 'lg:pr-[280px]' : 'lg:pr-[80px]') : ''}`}>
+      <div className={`flex-1 transition-all duration-300 ${!isAuthPage ? 'pt-[72px]' : ''} ${!isAuthPage && !isNetworksPage ? (isSidebarOpen ? 'lg:pr-[280px]' : 'lg:pr-[80px]') : ''}`}>
         {isAuthPage ? (
           <>{children}</>
         ) : (
@@ -647,6 +669,11 @@ const OwnerLayoutContent = ({ children }: { children: React.ReactNode }) => {
 
       {/* Global Modals overlay for the owner views */}
       <GlobalOwnerModals />
+      <AddNetworkModal
+        isOpen={showAddNetworkModal}
+        onClose={() => setShowAddNetworkModal(false)}
+        isDarkMode={isDarkMode}
+      />
 
       {/* Global Portal for Floating Tooltips */}
       {hoveredTooltip && (

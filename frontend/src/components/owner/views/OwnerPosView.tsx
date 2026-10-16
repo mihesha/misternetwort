@@ -14,9 +14,9 @@ const toEnglishDigits = (str: string) => {
 export const OwnerPosView: React.FC = () => {
   const router = useRouter();
   const { isDarkMode } = useAppContext();
-  const { networks, setGlobalUpdateTick } = useOwnerContext();
+  const { networks, activeNetwork, setGlobalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
-  const network = networks?.[0];
+  const network = activeNetwork || networks?.[0];
 
   const [memberships, setMemberships] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

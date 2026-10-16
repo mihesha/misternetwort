@@ -16,22 +16,38 @@ class AuthController extends Controller
             'role' => 'required|string',
         ]);
 
-        $exists = User::where('phone', $request->phone)
+        $user = User::where('phone', $request->phone)
             ->where('role', $request->role)
-            ->exists();
+            ->first();
 
-        if (!$exists) {
-             $appType = $request->role === 'network_owner' ? 'network' : ($request->role === 'agent' ? 'agent' : null);
-             if ($appType) {
-                 $existsInApps = \App\Models\NetworkApplication::where('owner_phone', $request->phone)
-                     ->where('application_type', $appType)
-                     ->where('status', 'pending')
-                     ->exists();
-                 $exists = $exists || $existsInApps;
-             }
+        if ($user) {
+            return response()->json([
+                'exists' => true,
+                'is_existing_owner' => $user->role === 'network_owner',
+                'owner_name' => $user->name,
+                'networks_count' => $user->networks()->count()
+            ]);
         }
 
-        return response()->json(['exists' => $exists]);
+        $appType = $request->role === 'network_owner' ? 'network' : ($request->role === 'agent' ? 'agent' : null);
+        if ($appType) {
+            $existsInApps = \App\Models\NetworkApplication::where('owner_phone', $request->phone)
+                ->where('application_type', $appType)
+                ->where('status', 'pending')
+                ->exists();
+            if ($existsInApps) {
+                return response()->json([
+                    'exists' => true,
+                    'is_pending_app' => true,
+                    'is_existing_owner' => false
+                ]);
+            }
+        }
+
+        return response()->json([
+            'exists' => false,
+            'is_existing_owner' => false
+        ]);
     }
     public function register(Request $request)
     {
@@ -279,9 +295,21 @@ class AuthController extends Controller
             ]);
         }
 
+        $networksCount = 0;
+        $firstNetworkId = null;
+        if ($user->role === 'network_owner') {
+            $networks = $user->networks()->get();
+            $networksCount = $networks->count();
+            if ($networksCount > 0) {
+                $firstNetworkId = $networks->first()->id;
+            }
+        }
+
         return response()->json([
             'message' => 'تم تسجيل الدخول بنجاح',
             'user' => $user,
+            'networks_count' => $networksCount,
+            'first_network_id' => $firstNetworkId,
             'token' => $user->createToken('auth_token')->plainTextToken,
         ]);
     }

@@ -39,9 +39,25 @@ export default function LoginRoute() {
       if (data.user.must_change_password || data.user.mustChangePassword) {
         window.location.href = '/owner/change-password';
       } else {
+        if (data.first_network_id) {
+          localStorage.setItem('ownerActiveNetworkId', data.first_network_id.toString());
+        }
+
         const params = new URLSearchParams(window.location.search);
-        const redirectUrl = params.get('redirect') || '/owner';
-        window.location.href = redirectUrl;
+        const explicitRedirect = params.get('redirect');
+
+        if (explicitRedirect && explicitRedirect !== '/owner' && explicitRedirect !== '/owner/' && explicitRedirect !== '/owner/networks') {
+          window.location.href = explicitRedirect;
+        } else {
+          // If owner has 2 or more networks: redirect to /owner/networks
+          // If owner has 1 (or 0) network: redirect directly to main dashboard /owner
+          const networksCount = typeof data.networks_count === 'number' ? data.networks_count : 1;
+          if (networksCount >= 2) {
+            window.location.href = '/owner/networks';
+          } else {
+            window.location.href = '/owner';
+          }
+        }
       }
     } else {
       throw new Error('عفواً، هذا الحساب غير مسجل كمالك شبكة');

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle2, XCircle, MessageCircle, Users, Globe, CreditCard, FileEdit } from 'lucide-react';
+import { X, CheckCircle2, XCircle, MessageCircle, Users, Globe, CreditCard, FileEdit, ShieldCheck } from 'lucide-react';
 import { useAdminContext } from '../../../context/AdminContext';
 import { useAdminActions } from '../../../hooks/useAdminActions';
 import { useAppContext } from '../../../context/AppContext';
@@ -86,11 +86,27 @@ export const InspectApplicationModal = () => {
           <div className="bg-[#121927] border border-slate-800 rounded-3xl p-6 max-w-3xl w-full my-8 space-y-5 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-black text-white text-lg">{inspectApp.applicationType === 'agent' ? `طلب انضمام وكيل: ${inspectApp.formData.owner.ownerName}` : inspectApp.formData.network.networkName}</h3>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
                     {inspectApp.status === 'pending' ? 'قيد المراجعة' : inspectApp.status === 'approved' ? 'معتمد' : inspectApp.status}
                   </span>
+                  {inspectApp.isExistingOwner && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-xs">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>إضافة شبكة لحساب معتمد</span>
+                      {inspectApp.existingOwner?.networksCount !== undefined && (
+                        <span className="bg-emerald-500/30 px-1.5 py-0.2 rounded text-[10px] font-mono">
+                          {inspectApp.existingOwner.networksCount} شبكات حالية
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {inspectApp.agentName && (
+                    <span className="text-[11px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">
+                      عبر الوكيل: {inspectApp.agentName}
+                    </span>
+                  )}
                 </div>
                 <span className="font-mono text-xs text-indigo-400">مرجع الطلب: {inspectApp.referenceNumber} • {new Date(inspectApp.createdAt).toLocaleDateString('ar-YE')}</span>
               </div>
@@ -179,10 +195,14 @@ export const InspectApplicationModal = () => {
             <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-3 border-t border-slate-800">
               <button
                 onClick={() => handleApproveAndProvision(inspectApp)}
-                className="flex-1 w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/30 cursor-pointer flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+                className={`flex-1 w-full py-3 rounded-2xl text-white font-bold text-xs shadow-lg cursor-pointer flex items-center justify-center gap-2 transition-all hover:scale-[1.01] ${
+                  inspectApp.isExistingOwner
+                    ? 'bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-900/40 ring-2 ring-emerald-500/30'
+                    : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/30'
+                }`}
               >
                 <CheckCircle2 className="w-4.5 h-4.5" />
-                <span>قبول واعتماد الطلب وإرسال التفعيل عبر واتساب</span>
+                <span>{inspectApp.isExistingOwner ? 'تفعيل وإضافة الشبكة لحساب المالك المعتمد (بدون تغيير كلمة المرور)' : 'قبول واعتماد الطلب وإرسال التفعيل عبر واتساب'}</span>
               </button>
               <button
                 onClick={() => {

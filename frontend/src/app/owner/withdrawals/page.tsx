@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOwnerContext } from '../../../context/OwnerContext';
 import { useAppContext } from '../../../context/AppContext';
@@ -8,14 +8,14 @@ import { WithdrawalRequestsListView } from '../../../components/owner/views/With
 
 export default function WithdrawalRequestsListViewPage() {
   const router = useRouter();
-  const [idStr, setIdStr] = React.useState<string | null>(null);
+  const [idStr, setIdStr] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setIdStr(localStorage.getItem('ownerActiveNetworkId'));
   }, []);
 
-  const { isDarkMode, setIsDarkMode } = useAppContext();
-  const { ownerName, networks, globalUpdateTick } = useOwnerContext();
+  const { isDarkMode } = useAppContext();
+  const { ownerName, networks, activeNetwork, globalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
 
   useEffect(() => {
@@ -24,29 +24,20 @@ export default function WithdrawalRequestsListViewPage() {
     }
   }, [networks.length]);
 
-  
-
-  const network = networks.find((n) => n.id.toString() === idStr) || networks[0];
-
-  
+  const network = activeNetwork || networks.find((n) => n.id.toString() === idStr) || networks[0];
 
   if (!network) {
     return <div className="p-8 text-center text-slate-500 font-bold">جاري تحميل بيانات الشبكة...</div>;
   }
 
-  
-
   return (
-    <>
-      
-      <WithdrawalRequestsListView
-        isDarkMode={isDarkMode}
-        ownerName={ownerName}
-        networkName={network.name}
-        globalUpdateTick={globalUpdateTick}
-        onNewRequest={() => router.push(`/owner/new-withdrawal`)}
-        
-      />
-    </>
+    <WithdrawalRequestsListView
+      isDarkMode={isDarkMode}
+      ownerName={ownerName}
+      networkId={network.id}
+      networkName={network.name}
+      globalUpdateTick={globalUpdateTick}
+      onNewRequest={() => router.push(`/owner/new-withdrawal`)}
+    />
   );
 }

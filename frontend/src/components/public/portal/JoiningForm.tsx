@@ -9,6 +9,7 @@ interface JoiningFormProps {
   onSubmit: (data: ApplicationFormData) => void;
   isDarkMode: boolean;
   isSubmitting?: boolean;
+  isAgentMode?: boolean;
   initialData?: ApplicationFormData;
   referenceNumber?: string;
   adminNotes?: string;
@@ -21,6 +22,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
   onSubmit,
   isDarkMode,
   isSubmitting = false,
+  isAgentMode = false,
   initialData,
   referenceNumber,
   adminNotes,
@@ -29,6 +31,9 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [isCheckingPhone, setIsCheckingPhone] = useState(false);
   const totalSteps = 5;
+
+  const isAgent = isAgentMode || (typeof window !== 'undefined' && !!localStorage.getItem('agent_auth_token'));
+  const [existingOwnerInfo, setExistingOwnerInfo] = useState<{ name: string; networksCount: number } | null>(null);
 
   const [ownerName, setOwnerName] = useState(initialData?.owner.ownerName || '');
   const [ownerId, setOwnerId] = useState(initialData?.owner.ownerId || '');
@@ -156,17 +161,30 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
       if (currentStep === 1) {
         setIsCheckingPhone(true);
         try {
+          const phoneToCheck = contactNumber.trim() || ownerId.trim();
           const res = await fetch('/api/check-phone', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: contactNumber.trim(), role: 'network_owner' })
+            body: JSON.stringify({ phone: phoneToCheck, role: 'network_owner' })
           });
           const data = await res.json();
           if (data.exists) {
-            setErrors(prev => ({ ...prev, contactNumber: 'رقم الهاتف مسجل مسبقاً في النظام. يرجى إضافة أي رقم في نهايته لتمييزه.' }));
-            scrollToFirstError();
-            setIsCheckingPhone(false);
-            return;
+            if (isAgent && data.is_existing_owner) {
+              setExistingOwnerInfo({
+                name: data.owner_name || ownerName,
+                networksCount: data.networks_count || 1
+              });
+              if (!ownerName.trim() && data.owner_name) {
+                setOwnerName(data.owner_name);
+              }
+            } else {
+              setErrors(prev => ({ ...prev, contactNumber: 'رقم الهاتف مسجل مسبقاً في النظام. يرجى إضافة أي رقم في نهايته لتمييزه.' }));
+              scrollToFirstError();
+              setIsCheckingPhone(false);
+              return;
+            }
+          } else {
+            setExistingOwnerInfo(null);
           }
         } catch (err) {
           console.error('Failed to check phone', err);
@@ -312,6 +330,19 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
                   <input type="number" value={contactNumber} onChange={(e) => { setContactNumber(e.target.value); if(errors.contactNumber) setErrors({...errors, contactNumber: ''}) }} placeholder="رقم متاح للتواصل والدعم الفني" className={`w-full px-4 py-3 text-right rounded-xl text-sm transition-all focus:outline-none focus:ring-2 border ${errors.contactNumber ? 'border-rose-500 focus:ring-rose-500 bg-rose-50 dark:bg-rose-500/10' : isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-indigo-500'}`} />
                   {errors.contactNumber && <p className="text-xs font-bold text-rose-500 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.contactNumber}</p>}
                 </div>
+
+                {existingOwnerInfo && (
+                  <div className="md:col-span-2 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
+                    <div className="text-xs space-y-1">
+                      <div className="font-black text-sm">حساب مالك معتمد موجود مسبقاً</div>
+                      <p className="leading-relaxed">
+                        الرقم المدخل يتبع المالك: <strong>{existingOwnerInfo.name}</strong> (يمتلك حالياً {existingOwnerInfo.networksCount} شبكة).
+                        سيتم إرسال هذا الطلب كـ <strong>"إضافة شبكة لحساب معتمد"</strong> لربطه بحسابه القائم فور اعتماد الإدارة دون الحاجة لتغيير كلمة مروره أو إرسال رمز تحقق.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -517,6 +548,14 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
                       <span className="text-slate-500 dark:text-slate-400">التواصل</span>
                       <span className="text-slate-800 dark:text-white font-bold" dir="ltr">{contactNumber}</span>
                     </div>
+                    {existingOwnerInfo && (
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/50">
+                        <span className="text-slate-500 dark:text-slate-400">نوع الطلب</span>
+                        <span className="text-emerald-500 font-bold inline-flex items-center gap-1">
+                          <ShieldCheck className="w-3.5 h-3.5" /> إضافة لحساب معتمد ({existingOwnerInfo.networksCount} شبكات)
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

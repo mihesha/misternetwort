@@ -8,44 +8,27 @@ import { MikrotikSetupWizardView } from '../../../components/owner/views/Mikroti
 
 export default function MikrotikSetupWizardViewPage() {
   const router = useRouter();
-  const [idStr, setIdStr] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    setIdStr(localStorage.getItem('ownerActiveNetworkId'));
-  }, []);
-
-  const { isDarkMode, setIsDarkMode } = useAppContext();
-  const { ownerName, networks } = useOwnerContext();
+  const { isDarkMode } = useAppContext();
+  const { ownerName, networks, activeNetwork: contextActiveNetwork } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
 
   useEffect(() => {
     if (networks.length === 0) {
       fetchOwnerNetworks();
     }
-  }, [networks.length]);
+  }, [networks.length, fetchOwnerNetworks]);
 
-  
-
-  const network = networks.find((n) => n.id.toString() === idStr) || networks[0];
-
-  
+  const network = contextActiveNetwork || networks[0];
 
   if (!network) {
     return <div className="p-8 text-center text-slate-500 font-bold">جاري تحميل بيانات الشبكة...</div>;
   }
 
-  
-
   return (
-    <>
-      
-      <MikrotikSetupWizardView
-        isDarkMode={isDarkMode}
-        ownerName={ownerName}
-        networkName={network.name}
-        
-        
-      />
-    </>
+    <MikrotikSetupWizardView
+      isDarkMode={isDarkMode}
+      ownerName={ownerName}
+      networkName={network.name}
+    />
   );
 }

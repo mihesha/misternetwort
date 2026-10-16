@@ -1,16 +1,23 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 
 export interface OwnerNetworkCard {
-  id: string;
+  id: string | number;
   name: string;
+  english_name?: string;
   code: string;
+  external_link?: string;
+  owner_phone?: string;
+  governorate?: string;
+  city?: string;
+  neighborhood?: string;
+  jaib_wallet?: string;
   balance: number;
   total_sales: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'suspended';
   notif_out_of_stock?: boolean;
   notif_low_stock?: boolean;
-  categories: { id: string | number; value: string; remaining: number; min_threshold: number }[];
+  categories: { id: string | number; name?: string; value: string; remaining: number; min_threshold: number }[];
 }
 
 interface OwnerContextProps {
@@ -19,6 +26,15 @@ interface OwnerContextProps {
   networks: OwnerNetworkCard[];
   setNetworks: (networks: OwnerNetworkCard[]) => void;
   
+  // Active scoped network
+  activeNetwork: OwnerNetworkCard | null;
+  activeNetworkId: string | null;
+  setActiveNetworkId: (id: string | number) => void;
+  
+  // Add network modal state
+  showAddNetworkModal: boolean;
+  setShowAddNetworkModal: (show: boolean) => void;
+
   // Modals / Overlays state
   detailedNetwork: OwnerNetworkCard | null;
   setDetailedNetwork: (net: OwnerNetworkCard | null) => void;
@@ -50,9 +66,12 @@ const OwnerContext = createContext<OwnerContextProps | undefined>(undefined);
 export const OwnerProvider = ({ children }: { children: ReactNode }) => {
   const [ownerName, setOwnerName] = useState<string>('صاحب شبكة');
   const [networks, setNetworks] = useState<OwnerNetworkCard[]>([]);
+  const [activeNetworkId, setActiveNetworkIdState] = useState<string | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
+  const [showAddNetworkModal, setShowAddNetworkModal] = useState<boolean>(false);
 
-  React.useEffect(() => {
+  // Load user name and active network ID from localStorage on mount
+  useEffect(() => {
     try {
       const userStr = typeof window !== 'undefined' ? localStorage.getItem('owner_user') : null;
       if (userStr) {
@@ -61,28 +80,45 @@ export const OwnerProvider = ({ children }: { children: ReactNode }) => {
           setOwnerName(user.name);
         }
       }
+      const savedId = typeof window !== 'undefined' ? localStorage.getItem('ownerActiveNetworkId') : null;
+      if (savedId) {
+        setActiveNetworkIdState(savedId);
+      }
     } catch (e) {
-      console.error('Failed to load owner name from localStorage:', e);
+      console.error('Failed to load initial owner data from localStorage:', e);
     }
   }, []);
 
-  React.useEffect(() => {
+  // Synchronize active network ID when networks change
+  useEffect(() => {
     if (networks.length > 0) {
-      try {
-        const savedId = typeof window !== 'undefined' ? localStorage.getItem('ownerActiveNetworkId') : null;
-        const isValid = networks.some(n => n.id.toString() === savedId);
-        if (!isValid) {
-          localStorage.setItem('ownerActiveNetworkId', networks[0].id.toString());
-          // Dispatch a custom event to notify components that might be using the ID
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('ownerActiveNetworkIdChanged'));
-          }
+      const currentValid = networks.some(n => n.id.toString() === activeNetworkId);
+      if (!currentValid) {
+        const fallbackId = networks[0].id.toString();
+        setActiveNetworkIdState(fallbackId);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('ownerActiveNetworkId', fallbackId);
+          window.dispatchEvent(new Event('ownerActiveNetworkIdChanged'));
         }
-      } catch (e) {
-        console.error('Failed to update ownerActiveNetworkId:', e);
       }
     }
-  }, [networks]);
+  }, [networks, activeNetworkId]);
+
+  const setActiveNetworkId = (id: string | number) => {
+    const stringId = id.toString();
+    setActiveNetworkIdState(stringId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ownerActiveNetworkId', stringId);
+      window.dispatchEvent(new Event('ownerActiveNetworkIdChanged'));
+    }
+  };
+
+  // Memoized active network
+  const activeNetwork = useMemo(() => {
+    if (networks.length === 0) return null;
+    if (!activeNetworkId) return networks[0];
+    return networks.find(n => n.id.toString() === activeNetworkId) || networks[0];
+  }, [networks, activeNetworkId]);
 
   // Modals
   const [detailedNetwork, setDetailedNetwork] = useState<OwnerNetworkCard | null>(null);
@@ -99,6 +135,8 @@ export const OwnerProvider = ({ children }: { children: ReactNode }) => {
       value={{
         ownerName, setOwnerName,
         networks, setNetworks,
+        activeNetwork, activeNetworkId, setActiveNetworkId,
+        showAddNetworkModal, setShowAddNetworkModal,
         detailedNetwork, setDetailedNetwork,
         importCardsNetwork, setImportCardsNetwork,
         editDataNetwork, setEditDataNetwork,

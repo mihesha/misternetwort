@@ -79,6 +79,20 @@ export const useAdminActions = () => {
   const handleApproveAndProvision = async (app: NetworkApplication) => {
     const ownerPhone = app.applicationType === 'agent' ? app.formData.owner.contactNumber : app.formData.owner.ownerId;
     
+    // If the network belongs to an existing approved owner, activate directly without credentials overwrite or verification code
+    if (app.isExistingOwner) {
+      try {
+        await onUpdateStatus(app.id, 'approved');
+        await fetchAdminData();
+        setInspectApp(null);
+        alert(`✅ تم اعتماد وتفعيل الشبكة (${app.formData.network.networkName}) وإضافتها بنجاح لحساب المالك المعتمد: ${app.existingOwner?.name || app.formData.owner.ownerName}`);
+      } catch (err) {
+        console.error('Failed to approve network for existing owner', err);
+        alert('حدث خطأ أثناء تفعيل الشبكة');
+      }
+      return;
+    }
+
     // Find if we already generated a credential for this owner
     const existingCred = ownerCredentials.find((c) => c.ownerPhone === ownerPhone);
     const generatedTempPass = existingCred ? existingCred.tempPassword : `${Math.floor(100000 + Math.random() * 900000)}`;

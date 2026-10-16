@@ -28,6 +28,7 @@ import {
 interface WithdrawalRequestsListViewProps {
   isDarkMode: boolean;
   ownerName?: string;
+  networkId?: string | number;
   networkName?: string;
   globalUpdateTick?: number;
   onNewRequest: () => void;
@@ -37,6 +38,7 @@ interface WithdrawalRequestsListViewProps {
 export const WithdrawalRequestsListView: React.FC<WithdrawalRequestsListViewProps> = ({
   isDarkMode,
   ownerName = 'هشام محمد الجايفي',
+  networkId,
   networkName = 'برق نت',
   globalUpdateTick = 0,
   onNewRequest,
@@ -53,13 +55,17 @@ export const WithdrawalRequestsListView: React.FC<WithdrawalRequestsListViewProp
     const fetchWithdrawals = async () => {
       try {
         const token = typeof localStorage !== 'undefined' ? localStorage.getItem('owner_auth_token') : null;
-        const res = await fetch('/api/withdrawals', {
+        const url = networkId ? `/api/withdrawals?network_id=${networkId}` : '/api/withdrawals';
+        const res = await fetch(url, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         if (res.ok) {
           const data = await res.json();
-          // Filter for the current network owner
-          const myWithdrawals = data.filter((w: any) => w.networkName === networkName);
+          // Filter for the current network
+          const myWithdrawals = data.filter((w: any) => 
+            (networkId && w.networkId && w.networkId.toString() === networkId.toString()) ||
+            (networkName && w.networkName === networkName)
+          );
           setWithdrawals(myWithdrawals);
         }
       } catch (err) {

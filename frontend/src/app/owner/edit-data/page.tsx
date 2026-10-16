@@ -8,45 +8,30 @@ import { EditNetworkDataView } from '../../../components/owner/views/EditNetwork
 
 export default function EditNetworkDataViewPage() {
   const router = useRouter();
-  const [idStr, setIdStr] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    setIdStr(localStorage.getItem('ownerActiveNetworkId'));
-  }, []);
-
-  const { isDarkMode, setIsDarkMode } = useAppContext();
-  const { ownerName, networks, globalUpdateTick } = useOwnerContext();
+  const { isDarkMode } = useAppContext();
+  const { ownerName, networks, activeNetwork, globalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
 
   useEffect(() => {
     if (networks.length === 0) {
       fetchOwnerNetworks();
     }
-  }, [networks.length]);
+  }, [networks.length, fetchOwnerNetworks]);
 
-  
-
-  const network = networks.find((n) => n.id.toString() === idStr) || networks[0];
-
-  
+  const network = activeNetwork || networks[0];
 
   if (!network) {
     return <div className="p-8 text-center text-slate-500 font-bold">جاري تحميل بيانات الشبكة...</div>;
   }
 
-  
-
   return (
-    <>
-      
-      <EditNetworkDataView
-        isDarkMode={isDarkMode}
-        ownerName={ownerName}
-        networkName={network.name}
-        networkCode={network.code}
-        globalUpdateTick={globalUpdateTick}
-        
-      />
-    </>
+    <EditNetworkDataView
+      isDarkMode={isDarkMode}
+      ownerName={ownerName}
+      networkName={network.name}
+      networkCode={network.code}
+      networkId={network.id}
+      globalUpdateTick={globalUpdateTick}
+    />
   );
 }

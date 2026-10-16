@@ -41,6 +41,16 @@ export interface NetworkApplication {
   createdAt: string;
   status: ApplicationStatus;
   applicationType?: 'network' | 'agent';
+  agentId?: number | string | null;
+  agentName?: string | null;
+  agentPhone?: string | null;
+  isExistingOwner?: boolean;
+  existingOwner?: {
+    id: number;
+    name: string;
+    phone: string;
+    networksCount: number;
+  } | null;
   formData: ApplicationFormData;
   notes?: string;
   tempPassword?: string;
@@ -126,6 +136,7 @@ export interface CentralAuditLog {
 export interface NetworkDataEditRequest {
   id: string;
   referenceNumber: string;
+  network_id?: number | string;
   networkCode: string;
   networkName: string;
   englishName?: string;

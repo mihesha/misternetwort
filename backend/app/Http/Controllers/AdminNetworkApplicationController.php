@@ -13,7 +13,24 @@ class AdminNetworkApplicationController extends Controller
 {
     public function getApplications()
     {
-        $apps = NetworkApplication::orderBy('created_at', 'desc')->get()->map(function ($app) {
+        $apps = NetworkApplication::with('agent')->orderBy('created_at', 'desc')->get()->map(function ($app) {
+            $existingOwner = null;
+            if ($app->application_type !== 'agent') {
+                $ownerUser = User::where('role', 'network_owner')
+                    ->where(function($q) use ($app) {
+                        $q->where('phone', $app->owner_phone)
+                          ->orWhere('phone', $app->owner_identity);
+                    })->first();
+                if ($ownerUser) {
+                    $existingOwner = [
+                        'id' => $ownerUser->id,
+                        'name' => $ownerUser->name,
+                        'phone' => $ownerUser->phone,
+                        'networksCount' => $ownerUser->networks()->count(),
+                    ];
+                }
+            }
+
             return [
                 'id' => $app->id,
                 'referenceNumber' => $app->reference_number,
@@ -22,6 +39,9 @@ class AdminNetworkApplicationController extends Controller
                 'applicationType' => $app->application_type,
                 'agentId' => $app->agent_id,
                 'agentName' => $app->agent ? $app->agent->name : null,
+                'agentPhone' => $app->agent ? $app->agent->phone : null,
+                'isExistingOwner' => !is_null($existingOwner),
+                'existingOwner' => $existingOwner,
                 'formData' => [
                     'owner' => [
                         'ownerName' => $app->owner_name, 
@@ -98,26 +118,41 @@ class AdminNetworkApplicationController extends Controller
             }
 
             // Normal network application
-            $user = User::updateOrCreate(
-                ['phone' => $app->owner_phone, 'role' => 'network_owner'],
-                [
+            // Check if user already exists
+            $user = User::where('role', 'network_owner')
+                ->where(function($q) use ($app) {
+                    $q->where('phone', $app->owner_phone)
+                      ->orWhere('phone', $app->owner_identity);
+                })->first();
+
+            $isExistingOwner = !is_null($user);
+
+            if (!$user) {
+                // Only create new user if not already existing
+                $user = User::create([
                     'name' => $app->owner_name,
+                    'phone' => $app->owner_phone,
                     'email' => $app->owner_identity . '@example.com',
                     'password' => Hash::make($request->tempPassword ?? '12345678'),
+                    'role' => 'network_owner',
                     'must_change_password' => true
-                ]
-            );
+                ]);
+            }
 
-            $network = Network::where('user_id', $user->id)->first();
+            $network = Network::where('english_name', $app->english_name)->first();
             
             if (!$network) {
-                $network = clone Network::create([
+                do {
+                    $netCode = '8' . rand(1000, 9999);
+                } while (Network::where('network_code', $netCode)->exists());
+
+                $network = Network::create([
                     'user_id' => $user->id,
                     'agent_id' => $app->agent_id, // Link to agent if it came from one
                     'name' => $app->network_name,
                     'english_name' => $app->english_name,
                     'external_link' => $app->external_link,
-                    'network_code' => '8' . rand(1000, 9999), 
+                    'network_code' => $netCode, 
                     'governorate' => $app->governorate,
                     'city' => $app->city ?? null,
                     'neighborhood' => $app->neighborhood ?? null,
@@ -146,6 +181,7 @@ class AdminNetworkApplicationController extends Controller
             return response()->json([
                 'message' => 'Status updated successfully',
                 'network_code' => $network->network_code,
+                'is_existing_owner' => $isExistingOwner,
                 'type' => 'network'
             ]);
         }

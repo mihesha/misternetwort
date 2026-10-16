@@ -86,6 +86,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/change-password', [AuthController::class, 'changePassword']);
     
     Route::get('/networks', [NetworkController::class, 'index']);
+    Route::post('/networks', [NetworkController::class, 'store']);
+    Route::get('/owner/pending-applications', function (Request $request) {
+        $user = $request->user();
+        if ($user->role !== 'network_owner') return response()->json([]);
+        $apps = \App\Models\NetworkApplication::where('status', 'pending')
+            ->where(function($q) use ($user) {
+                $q->where('owner_phone', $user->phone)
+                  ->orWhere('owner_identity', $user->phone);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return response()->json($apps);
+    });
     Route::get('/networks/{network}', [NetworkController::class, 'show']);
 
     Route::patch('/categories/{id}/settings', function ($id, Request $request) {

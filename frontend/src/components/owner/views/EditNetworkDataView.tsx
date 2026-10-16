@@ -37,6 +37,7 @@ interface EditNetworkDataViewProps {
   ownerName?: string;
   networkName?: string;
   networkCode?: string;
+  networkId?: string | number;
   onNavigateView?: (view: string) => void;
   globalUpdateTick?: number;
   onSubmitEditRequest?: (req: NetworkDataEditRequest) => void;
@@ -47,6 +48,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
   ownerName,
   networkName,
   networkCode,
+  networkId,
   onNavigateView,
   globalUpdateTick = 0,
   onSubmitEditRequest,
@@ -78,6 +80,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
         if (res.ok) {
           const networks = await res.json();
           const found = networks.find((n: any) =>
+            (networkId && n.id.toString() === networkId.toString()) ||
             (networkCode && n.network_code === networkCode) ||
             (networkName && n.name === networkName)
           ) || networks[0];
@@ -188,6 +191,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
     const newReq: NetworkDataEditRequest = {
       id: `EDIT-${Date.now()}`,
       referenceNumber: `MOD-${Math.floor(1000 + Math.random() * 9000)}`,
+      network_id: networkId,
       networkCode: networkCode || '',
       networkName: netName,
       englishName: englishName,

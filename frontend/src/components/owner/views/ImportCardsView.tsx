@@ -21,6 +21,7 @@ import * as XLSX from 'xlsx';
 interface ImportCardsViewProps {
   isDarkMode: boolean;
   ownerName?: string;
+  networkId?: string | number;
   networkName?: string;
   onNavigateView?: (view: string) => void;
   globalUpdateTick?: number;
@@ -28,6 +29,7 @@ interface ImportCardsViewProps {
 
 export const ImportCardsView: React.FC<ImportCardsViewProps> = ({
   isDarkMode,
+  networkId,
   networkName = 'برق نت',
   globalUpdateTick = 0,
 }) => {
@@ -59,7 +61,10 @@ export const ImportCardsView: React.FC<ImportCardsViewProps> = ({
         });
         if (res.ok) {
           const data = await res.json();
-          const found = data.find((n: any) => n.name === networkName);
+          const found = data.find((n: any) => 
+            (networkId && n.id.toString() === networkId.toString()) ||
+            n.name === networkName
+          );
           if (found) {
             setNetworkData(found);
             setCategories((found.card_categories || []).filter((c: any) => c.status !== 'inactive'));

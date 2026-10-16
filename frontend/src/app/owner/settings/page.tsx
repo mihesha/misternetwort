@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOwnerContext } from '../../../context/OwnerContext';
 import { useAppContext } from '../../../context/AppContext';
@@ -8,14 +8,8 @@ import { NetworkSettingsView } from '../../../components/owner/views/NetworkSett
 
 export default function OwnerSettingsPage() {
   const router = useRouter();
-  const [idStr, setIdStr] = useState<string | null>(null);
-
-  useEffect(() => {
-    setIdStr(localStorage.getItem('ownerActiveNetworkId'));
-  }, []);
-
   const { isDarkMode } = useAppContext();
-  const { ownerName, networks, setMikrotikNetwork, globalUpdateTick } = useOwnerContext();
+  const { ownerName, networks, activeNetwork: contextActiveNetwork, setMikrotikNetwork, globalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
 
   useEffect(() => {
@@ -24,23 +18,22 @@ export default function OwnerSettingsPage() {
     }
   }, [networks.length, fetchOwnerNetworks]);
 
-  const activeNetwork = networks.find(n => n.id.toString() === idStr) || networks[0];
+  const activeNetwork = contextActiveNetwork || networks[0];
 
-  
-  if (!activeNetwork) return <div className="p-8 text-center text-slate-500 font-bold">جاري تحميل إعدادات الشبكة...</div>;
+  if (!activeNetwork) {
+    return <div className="p-8 text-center text-slate-500 font-bold">جاري تحميل إعدادات الشبكة...</div>;
+  }
 
   return (
-    <>
-      <NetworkSettingsView
-        isDarkMode={isDarkMode}
-        ownerName={ownerName}
-        networkName={activeNetwork.name}
-        networkCode={activeNetwork.code}
-        onOpenMikrotikWizard={() => {
-          setMikrotikNetwork(activeNetwork);
-        }}
-        globalUpdateTick={globalUpdateTick}
-      />
-    </>
+    <NetworkSettingsView
+      isDarkMode={isDarkMode}
+      ownerName={ownerName}
+      networkName={activeNetwork.name}
+      networkCode={activeNetwork.code}
+      onOpenMikrotikWizard={() => {
+        setMikrotikNetwork(activeNetwork);
+      }}
+      globalUpdateTick={globalUpdateTick}
+    />
   );
 }

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOwnerContext } from '../../../context/OwnerContext';
 import { useAppContext } from '../../../context/AppContext';
@@ -8,14 +8,14 @@ import { NewWithdrawalRequestView } from '../../../components/owner/views/NewWit
 
 export default function NewWithdrawalRequestViewPage() {
   const router = useRouter();
-  const [idStr, setIdStr] = React.useState<string | null>(null);
+  const [idStr, setIdStr] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setIdStr(localStorage.getItem('ownerActiveNetworkId'));
   }, []);
 
-  const { isDarkMode, setIsDarkMode } = useAppContext();
-  const { ownerName, networks } = useOwnerContext();
+  const { isDarkMode } = useAppContext();
+  const { ownerName, networks, activeNetwork } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
 
   useEffect(() => {
@@ -24,26 +24,20 @@ export default function NewWithdrawalRequestViewPage() {
     }
   }, [networks.length]);
 
-  
-
-  const network = networks.find((n) => n.id.toString() === idStr) || networks[0];
-
-  
+  const network = activeNetwork || networks.find((n) => n.id.toString() === idStr) || networks[0];
 
   if (!network) {
     return <div className="p-8 text-center text-slate-500 font-bold">جاري تحميل بيانات الشبكة...</div>;
   }
 
-  
-
   return (
-    <>
-      <NewWithdrawalRequestView
-        isDarkMode={isDarkMode}
-        ownerName={ownerName}
-        networkName={network.name}
-        availableBalance={network.balance || 0}
-      />
-    </>
+    <NewWithdrawalRequestView
+      isDarkMode={isDarkMode}
+      ownerName={ownerName}
+      networkId={network.id}
+      networkCode={network.code}
+      networkName={network.name}
+      availableBalance={network.balance || 0}
+    />
   );
 }

@@ -44,7 +44,7 @@ export default function AgentAddNetworkPage() {
       <div>
         <h1 className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>إضافة شبكة جديدة</h1>
         <p className={`text-sm mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-          قم بتعبئة بيانات الشبكة لمالكها ليتم ربطها بحسابك كوكيل واحتساب عمولاتك.
+          قم بتعبئة بيانات الشبكة لمالك جديد، أو إضافتها لحساب مالك معتمد مسبقاً ليتم ربطها بحسابه واحتساب عمولاتك.
         </p>
       </div>
 
@@ -54,6 +54,7 @@ export default function AgentAddNetworkPage() {
           onSubmit={handleSubmitForm}
           isDarkMode={isDarkMode}
           isSubmitting={isSubmitting}
+          isAgentMode={true}
         />
       </div>
 

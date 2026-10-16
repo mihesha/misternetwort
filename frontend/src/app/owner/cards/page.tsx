@@ -15,7 +15,7 @@ export default function CardsManagementPage() {
   }, []);
 
   const { isDarkMode } = useAppContext();
-  const { ownerName, networks, globalUpdateTick } = useOwnerContext();
+  const { ownerName, networks, activeNetwork: contextActiveNetwork, globalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
 
   useEffect(() => {
@@ -24,10 +24,7 @@ export default function CardsManagementPage() {
     }
   }, [networks.length, fetchOwnerNetworks]);
 
-  
-  const activeNetwork = networks.find(n => n.id.toString() === idStr) || networks[0];
-
-  
+  const activeNetwork = contextActiveNetwork || networks.find(n => n.id.toString() === idStr) || networks[0];
 
   if (!activeNetwork) {
     return <div className="p-8 text-center text-slate-500 font-bold">جاري تحميل بيانات الشبكة...</div>;
@@ -44,4 +41,3 @@ export default function CardsManagementPage() {
     />
   );
 }
-

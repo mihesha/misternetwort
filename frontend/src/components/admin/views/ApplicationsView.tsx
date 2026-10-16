@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Filter, CheckCircle2, Clock, FileEdit, XCircle, Eye, Trash2, Phone, MessageCircle } from 'lucide-react';
+import { Filter, CheckCircle2, Clock, FileEdit, XCircle, Eye, Trash2, Phone, MessageCircle, ShieldCheck } from 'lucide-react';
 import { NetworkApplication, ApplicationStatus } from '../../../types';
 
 interface ApplicationsViewProps {
@@ -126,12 +126,35 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
             >
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 pb-4 border-b border-slate-800/60">
                 <div>
-                  <div className="flex items-center gap-3 mb-1">
+                  <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
                     <span className="font-mono font-bold text-lg text-indigo-400">{app.referenceNumber}</span>
                     <span className="text-xs text-slate-400">{new Date(app.createdAt).toLocaleString('ar-YE')}</span>
+
+                    {app.isExistingOwner && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-xs shadow-emerald-500/20">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>إضافة شبكة لحساب معتمد</span>
+                        {app.existingOwner?.networksCount !== undefined && (
+                          <span className="bg-emerald-500/30 px-1.5 py-0.5 rounded-md text-[10px] font-mono">
+                            {app.existingOwner.networksCount} شبكات حالية
+                          </span>
+                        )}
+                      </span>
+                    )}
+
+                    {app.agentName && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-lg border border-indigo-500/20">
+                        <span>عبر الوكيل: {app.agentName}</span>
+                      </span>
+                    )}
                   </div>
-                  <h3 className="font-extrabold text-lg text-white">
-                    {app.formData.network.networkName}
+                  <h3 className="font-extrabold text-lg text-white flex items-center gap-2">
+                    <span>{app.formData.network.networkName}</span>
+                    {app.isExistingOwner && (
+                      <span className="text-xs font-medium text-slate-400">
+                        (المالك: <strong className="text-emerald-400">{app.existingOwner?.name || app.formData.owner.ownerName}</strong>)
+                      </span>
+                    )}
                   </h3>
                 </div>
 
@@ -139,13 +162,16 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                   <button
                     onClick={() => handleApproveAndProvision(app)}
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                      app.status === 'approved' || app.status === 'activated'
+                      app.isExistingOwner
+                        ? 'bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-900/30 ring-2 ring-emerald-500/30 hover:scale-105 active:scale-95'
+                        : app.status === 'approved' || app.status === 'activated'
                         ? 'bg-emerald-600 text-white shadow-md'
                         : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
                     }`}
+                    title={app.isExistingOwner ? 'تفعيل مباشر وربط بحساب المالك الحالي دون تغيير كلمة المرور' : 'اعتماد وتوليد بيانات الدخول'}
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>اعتماد وتفعيل كشبكة نشطة</span>
+                    <span>{app.isExistingOwner ? 'تفعيل وإضافة لحساب المالك' : 'اعتماد وتفعيل كشبكة نشطة'}</span>
                   </button>
 
                   <button

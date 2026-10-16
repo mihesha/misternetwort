@@ -9,9 +9,15 @@ use Illuminate\Http\Request;
 
 class AdminWithdrawalController extends Controller
 {
-    public function getWithdrawals()
+    public function getWithdrawals(Request $request)
     {
-        $withdrawals = Withdrawal::with(['network.user', 'user'])->orderBy('created_at', 'desc')->get();
+        $query = Withdrawal::with(['network.user', 'user'])->orderBy('created_at', 'desc');
+
+        if ($request->has('network_id')) {
+            $query->where('network_id', $request->network_id);
+        }
+
+        $withdrawals = $query->get();
         return response()->json($withdrawals->map(function($w) {
             return [
                 'id' => (string) $w->id,
@@ -74,10 +80,24 @@ class AdminWithdrawalController extends Controller
             
             return response()->json($wd);
         } else {
-            $network = Network::where('user_id', $user->id)->first();
-            if (!$network) return response()->json(['error' => 'Network not found'], 404);
+            $netId = $request->network_id ?? $request->networkId;
+            $netCode = $request->networkCode ?? $request->network_code;
+            $netName = $request->networkName;
+
+            $network = null;
+            if ($netId) {
+                $network = $user->networks()->where('id', $netId)->first();
+            } elseif ($netCode) {
+                $network = $user->networks()->where('network_code', $netCode)->first();
+            } elseif ($netName) {
+                $network = $user->networks()->where('name', $netName)->first();
+            } else {
+                $network = $user->networks()->first();
+            }
+
+            if (!$network) return response()->json(['error' => 'الشبكة غير موجودة أو غير تابعة لك'], 404);
             if ($network->balance < $validated['amount']) {
-                return response()->json(['error' => 'Insufficient balance'], 400);
+                return response()->json(['error' => 'الرصيد المتاح في هذه الشبكة غير كافٍ لإتمام طلب السحب'], 400);
             }
 
             $wd = Withdrawal::create([
@@ -90,7 +110,7 @@ class AdminWithdrawalController extends Controller
                 'notes' => $validated['notes'] ?? null
             ]);
             
-            // Deduct immediately
+            // Deduct immediately from the specific network balance
             $network->balance -= $validated['amount'];
             $network->save();
             

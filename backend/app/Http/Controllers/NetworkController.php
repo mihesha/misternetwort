@@ -113,6 +113,64 @@ class NetworkController extends Controller
         return response()->json($request->user()->networks()->with('cardCategories')->get());
     }
 
+    public function store(Request $request)
+    {
+        $user = $request->user();
+        if (!$user || $user->role !== 'network_owner') {
+            return response()->json(['error' => 'غير مصرح لك بإضافة شبكة'], 403);
+        }
+
+        $validated = $request->validate([
+            'networkName' => 'required|string|max:255',
+            'englishName' => 'required|string|max:255',
+            'externalLink' => 'required|string|max:255',
+            'networkPhone' => 'nullable|string|max:50',
+            'governorate' => 'required|string|max:100',
+            'city' => 'required|string|max:100',
+            'neighborhood' => 'nullable|string|max:100',
+            'jaibWalletNumber' => 'required|string|max:50',
+            'cardCategories' => 'required|array|min:1',
+        ]);
+
+        // Generate unique slug
+        $baseSlug = Str::slug($validated['englishName']);
+        $slug = $baseSlug;
+        $counter = 1;
+        while (Network::where('english_name', $slug)->exists() || NetworkApplication::where('english_name', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+
+        $application = NetworkApplication::create([
+            'reference_number' => 'REQ-' . date('Y') . '-' . rand(1000, 9999),
+            'owner_name' => $user->name,
+            'owner_identity' => $user->phone,
+            'owner_phone' => !empty($validated['networkPhone']) ? $validated['networkPhone'] : $user->phone,
+            'network_name' => $validated['networkName'],
+            'english_name' => $slug,
+            'external_link' => $validated['externalLink'],
+            'network_phone' => $validated['networkPhone'] ?? null,
+            'governorate' => $validated['governorate'],
+            'city' => $validated['city'],
+            'neighborhood' => $validated['neighborhood'] ?? null,
+            'jaib_wallet' => $validated['jaibWalletNumber'],
+            'card_categories_json' => json_encode($validated['cardCategories']),
+            'status' => 'pending',
+            'application_type' => 'network',
+            'agent_id' => $user->agent_id ?? null,
+        ]);
+
+        return response()->json([
+            'message' => 'تم إرسال طلب إضافة الشبكة بنجاح وهو قيد المراجعة والاعتماد من قبل الإدارة',
+            'application' => [
+                'id' => $application->id,
+                'reference_number' => $application->reference_number,
+                'network_name' => $application->network_name,
+                'status' => 'pending'
+            ]
+        ], 201);
+    }
+
     public function show(Network $network)
     {
         $network->load('cardCategories');
@@ -221,8 +279,19 @@ class NetworkController extends Controller
     public function storeEditRequest(Request $request)
     {
         $user = $request->user();
-        $network = Network::where('user_id', $user->id)->first();
-        if (!$network) return response()->json(['error' => 'Network not found'], 404);
+        $code = $request->networkCode ?? $request->network_code;
+        $netId = $request->networkId ?? $request->network_id;
+
+        $network = null;
+        if ($code) {
+            $network = $user->networks()->where('network_code', $code)->first();
+        } elseif ($netId) {
+            $network = $user->networks()->where('id', $netId)->first();
+        } else {
+            $network = $user->networks()->first();
+        }
+
+        if (!$network) return response()->json(['error' => 'الشبكة غير موجودة أو غير تابعة لك'], 404);
 
         $request->validate([
             'networkName' => 'required|string',

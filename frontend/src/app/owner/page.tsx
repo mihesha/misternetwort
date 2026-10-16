@@ -21,7 +21,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 export default function OwnerDashboardPage() {
   const { isDarkMode } = useAppContext();
-  const { ownerName, networks, globalUpdateTick } = useOwnerContext();
+  const { ownerName, networks, activeNetwork, setActiveNetworkId, globalUpdateTick } = useOwnerContext();
   const { fetchOwnerNetworks } = useOwnerActions();
   const router = useRouter();
 
@@ -29,8 +29,7 @@ export default function OwnerDashboardPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTx, setLoadingTx] = useState(true);
 
-
-  const network = networks[0];
+  const network = activeNetwork || networks[0];
 
   useEffect(() => {
     setMounted(true);

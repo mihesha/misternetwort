@@ -24,6 +24,8 @@ import {
 interface NewWithdrawalRequestViewProps {
   isDarkMode: boolean;
   ownerName?: string;
+  networkId?: string | number;
+  networkCode?: string;
   networkName?: string;
   availableBalance?: number;
   onNavigateView?: (view: string) => void;
@@ -32,6 +34,8 @@ interface NewWithdrawalRequestViewProps {
 export const NewWithdrawalRequestView: React.FC<NewWithdrawalRequestViewProps> = ({
   isDarkMode,
   ownerName = 'هشام محمد الجايفي',
+  networkId,
+  networkCode,
   networkName = 'برق نت',
   availableBalance = 0,
   onNavigateView,
@@ -69,6 +73,8 @@ export const NewWithdrawalRequestView: React.FC<NewWithdrawalRequestViewProps> =
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
+          network_id: networkId,
+          networkCode,
           networkName,
           amount: numAmount,
           provider,
