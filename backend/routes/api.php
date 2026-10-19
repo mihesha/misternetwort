@@ -72,6 +72,7 @@ Route::get('/admin/customers', [AdminCustomerController::class, 'getCustomers'])
 Route::get('/admin/customers/{id}/details', [AdminCustomerController::class, 'getCustomerDetails']);
 
 // Public Requests (Joining Form)
+Route::get('/referral/verify/{code}', [NetworkController::class, 'verifyReferralCode'])->middleware('throttle:60,1');
 Route::post('/check-phone', [AuthController::class, 'checkPhone']);
 Route::post('/requests', [NetworkController::class, 'submitApplication']);
 Route::post('/requests/agent', [NetworkController::class, 'submitAgentApplication']);

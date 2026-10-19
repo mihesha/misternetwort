@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'phone', 'role', 'must_change_password', 'password', 'wallet_balance', 'otp_code', 'jaib_wallet', 'governorate', 'city'])]
+#[Fillable(['name', 'email', 'phone', 'role', 'must_change_password', 'password', 'wallet_balance', 'otp_code', 'jaib_wallet', 'governorate', 'city', 'referral_code', 'agent_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -29,6 +29,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public static function generateReferralCode(): string
+    {
+        do {
+            $code = 'AGT-' . rand(1000, 9999);
+        } while (static::where('referral_code', $code)->exists());
+
+        return $code;
     }
 
     public function networks(): \Illuminate\Database\Eloquent\Relations\HasMany
@@ -54,5 +63,15 @@ class User extends Authenticatable
     public function agentNetworks(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Network::class, 'agent_id');
+    }
+
+    public function referrerAgent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'agent_id');
+    }
+
+    public function referredUsers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(User::class, 'agent_id');
     }
 }

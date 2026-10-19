@@ -63,11 +63,16 @@ export default function App() {
       setCurrentView('admin_dashboard');
     }
 
-    if (refParam && applications.length > 0) {
-      const found = applications.find((a) => a.referenceNumber === refParam || a.id === refParam);
-      if (found) {
-        setEditingApp(found);
+    if (refParam) {
+      if (refParam.startsWith('AGT-')) {
+        // Agent referral: ensure view is register
         setCurrentView('register');
+      } else if (applications.length > 0) {
+        const found = applications.find((a) => a.referenceNumber === refParam || a.id === refParam);
+        if (found) {
+          setEditingApp(found);
+          setCurrentView('register');
+        }
       }
     }
   }, [applications]);

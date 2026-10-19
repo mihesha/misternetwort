@@ -1,6 +1,6 @@
 /* eslint-disable tailwindcss/no-contradicting-classname */
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Globe, Wallet, Tag, Plus, Send, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, ShieldCheck, Zap, ChevronDown, ListChecks, X, LogIn } from 'lucide-react';
+import { User, Globe, Wallet, Tag, Plus, Send, AlertCircle, ChevronLeft, ChevronRight, CheckCircle2, ShieldCheck, Zap, ChevronDown, ListChecks, X, LogIn, Sparkles } from 'lucide-react';
 import { ApplicationFormData, CardCategory } from '../../../types';
 import { YEMEN_GOVERNORATES } from '../../../data/yemenLocations';
 import { CardCategoryItem } from '../../common/CardCategoryItem';
@@ -10,6 +10,8 @@ interface JoiningFormProps {
   isDarkMode: boolean;
   isSubmitting?: boolean;
   isAgentMode?: boolean;
+  referralCode?: string;
+  referrerAgentName?: string;
   initialData?: ApplicationFormData;
   referenceNumber?: string;
   adminNotes?: string;
@@ -23,6 +25,8 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
   isDarkMode,
   isSubmitting = false,
   isAgentMode = false,
+  referralCode,
+  referrerAgentName,
   initialData,
   referenceNumber,
   adminNotes,
@@ -31,6 +35,36 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [isCheckingPhone, setIsCheckingPhone] = useState(false);
   const totalSteps = 5;
+
+  const [activeReferral, setActiveReferral] = useState<{ code: string; agentName: string } | null>(
+    referralCode && referrerAgentName ? { code: referralCode, agentName: referrerAgentName } : null
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const codeFromUrl = params.get('ref') || params.get('agent');
+    const savedCode = sessionStorage.getItem('cardbox_referral_code');
+    const savedName = sessionStorage.getItem('cardbox_referrer_name');
+
+    const code = codeFromUrl || savedCode;
+    if (code && code !== referenceNumber) {
+      if (savedName && code === savedCode) {
+        setActiveReferral({ code, agentName: savedName });
+      } else {
+        fetch(`/api/referral/verify/${encodeURIComponent(code)}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data && data.valid) {
+              setActiveReferral({ code: data.referral_code, agentName: data.agent_name });
+              sessionStorage.setItem('cardbox_referral_code', data.referral_code);
+              sessionStorage.setItem('cardbox_referrer_name', data.agent_name);
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }, [referenceNumber]);
 
   const isAgent = isAgentMode || (typeof window !== 'undefined' && !!localStorage.getItem('agent_auth_token'));
   const [existingOwnerInfo, setExistingOwnerInfo] = useState<{ name: string; networksCount: number } | null>(null);
@@ -213,6 +247,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
       network: { networkName: networkName.trim(), englishName: englishName.trim(), externalLink: externalLink.trim(), networkPhone: networkPhone.trim(), governorate, city, neighborhood: neighborhood.trim() },
       jaibWalletNumber: jaibWalletNumber.trim(),
       cardCategories,
+      referral_code: activeReferral?.code || referralCode || undefined,
     };
     onSubmit(formData);
   };
@@ -228,6 +263,34 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
   return (
     <div className="w-full max-w-4xl mx-auto pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
+      {/* Referral Trust Banner */}
+      {activeReferral && (
+        <div className="mb-6 p-4 md:p-5 rounded-3xl bg-linear-to-r from-indigo-500/15 via-purple-500/10 to-indigo-500/15 border border-indigo-500/30 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-3 duration-500 shadow-xl shadow-indigo-500/5">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                  دعوة معتمدة
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-bold" dir="ltr">
+                  {activeReferral.code}
+                </span>
+              </div>
+              <p className="text-sm md:text-base font-black text-slate-800 dark:text-white mt-1">
+                أهلاً بك! أنت تنضم بدعوة كريمة من الوكيل المعتمد: <span className="text-indigo-600 dark:text-indigo-400">{activeReferral.agentName}</span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3.5 py-2 rounded-xl border border-emerald-200 dark:border-emerald-500/20 shrink-0 self-stretch sm:self-center justify-center">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>ربط تلقائي بالوكيل فور الاعتماد</span>
+          </div>
+        </div>
+      )}
+
       {/* Compact Modern Responsive Hero Header */}
       <div className="relative mb-10 overflow-hidden rounded-4xl shadow-xl group">
         <div className="absolute inset-0 bg-linear-to-r from-indigo-600 to-violet-500 opacity-95 transition-all duration-700" />
@@ -553,6 +616,14 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
                         <span className="text-slate-500 dark:text-slate-400">نوع الطلب</span>
                         <span className="text-emerald-500 font-bold inline-flex items-center gap-1">
                           <ShieldCheck className="w-3.5 h-3.5" /> إضافة لحساب معتمد ({existingOwnerInfo.networksCount} شبكات)
+                        </span>
+                      </div>
+                    )}
+                    {activeReferral && (
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/50">
+                        <span className="text-slate-500 dark:text-slate-400">إحالة الوكيل</span>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-bold inline-flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5" /> {activeReferral.agentName} ({activeReferral.code})
                         </span>
                       </div>
                     )}

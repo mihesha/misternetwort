@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../../context/AppContext';
 import { Network, Activity, Calendar, Search } from 'lucide-react';
 import Link from 'next/link';
+import { AgentReferralCard } from '../../../components/agent/AgentReferralCard';
 
 export default function AgentNetworksPage() {
   const { isDarkMode } = useAppContext();
@@ -53,6 +54,9 @@ export default function AgentNetworksPage() {
           <Search className={`absolute right-3 top-3 w-4 h-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`} />
         </div>
       </div>
+
+      {/* Referral Link Card */}
+      <AgentReferralCard compact={true} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredNetworks.map(net => (

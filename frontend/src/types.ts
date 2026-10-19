@@ -31,6 +31,7 @@ export interface ApplicationFormData {
   network: NetworkInfo;
   jaibWalletNumber: string; // رقم محفظة جيب
   cardCategories: CardCategory[];
+  referral_code?: string;
 }
 
 export type ApplicationStatus = 'pending' | 'under_review' | 'approved' | 'rejected' | 'activated' | 'needs_modification';

@@ -16,13 +16,24 @@ class AgentController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
+        if (!$user->referral_code) {
+            $user->referral_code = \App\Models\User::generateReferralCode();
+            $user->save();
+        }
+
         $totalNetworks = Network::where('agent_id', $user->id)->count();
+        $pendingNetworks = \App\Models\NetworkApplication::where('agent_id', $user->id)
+            ->where('status', 'pending')
+            ->count();
         $totalEarnings = AgentTransaction::where('agent_id', $user->id)->where('type', 'commission')->sum('amount');
         
         return response()->json([
             'balance' => (float) $user->wallet_balance,
             'total_networks' => $totalNetworks,
-            'total_earnings' => (float) $totalEarnings
+            'pending_networks' => $pendingNetworks,
+            'total_earnings' => (float) $totalEarnings,
+            'referral_code' => $user->referral_code,
+            'agent_name' => $user->name,
         ]);
     }
 

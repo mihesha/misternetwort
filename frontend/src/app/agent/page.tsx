@@ -3,6 +3,7 @@ import React from 'react';
 import { useAgentContext } from '../../context/AgentContext';
 import { useAppContext } from '../../context/AppContext';
 import { Wallet, Network, TrendingUp, Sparkles, PlusCircle, ArrowUpRight } from 'lucide-react';
+import { AgentReferralCard } from '../../components/agent/AgentReferralCard';
 import Link from 'next/link';
 
 export default function AgentDashboard() {
@@ -26,7 +27,7 @@ export default function AgentDashboard() {
       darkColor: 'text-indigo-400 bg-indigo-500/20 border-indigo-500/30'
     },
     {
-      title: 'الشبكات المضافة',
+      title: 'الشبكات المعتمدة',
       value: stats?.total_networks || 0,
       icon: Network,
       lightColor: 'text-blue-600 bg-blue-100 border-blue-200',
@@ -66,6 +67,9 @@ export default function AgentDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Agent Referral Card (Top Prominence) */}
+      <AgentReferralCard />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

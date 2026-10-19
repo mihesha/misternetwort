@@ -84,6 +84,9 @@ class AdminNetworkApplicationController extends Controller
                     $user->jaib_wallet = $app->jaib_wallet;
                     $user->governorate = $app->governorate;
                     $user->city = $app->city;
+                    if (!$user->referral_code) {
+                        $user->referral_code = User::generateReferralCode();
+                    }
                     // Only update email if it's not taken by another user
                     $emailTaken = User::where('email', $app->owner_identity)
                         ->where(function($q) use ($app) {
@@ -104,6 +107,7 @@ class AdminNetworkApplicationController extends Controller
                         'email'               => $emailTaken ? ($app->owner_phone . '@agent.local') : $app->owner_identity,
                         'password'            => Hash::make($request->tempPassword ?? '12345678'),
                         'role'                => 'agent',
+                        'referral_code'       => User::generateReferralCode(),
                         'must_change_password'=> true,
                         'jaib_wallet'         => $app->jaib_wallet,
                         'governorate'         => $app->governorate,
@@ -135,8 +139,12 @@ class AdminNetworkApplicationController extends Controller
                     'email' => $app->owner_identity . '@example.com',
                     'password' => Hash::make($request->tempPassword ?? '12345678'),
                     'role' => 'network_owner',
+                    'agent_id' => $app->agent_id,
                     'must_change_password' => true
                 ]);
+            } else if (!$user->agent_id && $app->agent_id) {
+                $user->agent_id = $app->agent_id;
+                $user->save();
             }
 
             $network = Network::where('english_name', $app->english_name)->first();

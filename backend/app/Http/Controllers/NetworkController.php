@@ -9,6 +9,27 @@ use Illuminate\Support\Str;
 
 class NetworkController extends Controller
 {
+    public function verifyReferralCode($code)
+    {
+        $code = trim($code);
+        $agent = \App\Models\User::where('role', 'agent')
+            ->where('referral_code', $code)
+            ->first();
+
+        if (!$agent) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'كود الإحالة غير صالح أو غير موجود'
+            ], 404);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'referral_code' => $agent->referral_code,
+            'agent_name' => $agent->name,
+        ]);
+    }
+
     public function submitApplication(Request $request)
     {
         $validated = $request->validate([
@@ -24,7 +45,20 @@ class NetworkController extends Controller
             'network.neighborhood' => 'nullable|string',
             'jaibWalletNumber' => 'required|string',
             'cardCategories' => 'required|array',
+            'referral_code' => 'nullable|string|max:50',
         ]);
+
+        $agentId = null;
+        if ($request->user('sanctum') && $request->user('sanctum')->role === 'agent') {
+            $agentId = $request->user('sanctum')->id;
+        } elseif (!empty($validated['referral_code'])) {
+            $agent = \App\Models\User::where('role', 'agent')
+                ->where('referral_code', trim($validated['referral_code']))
+                ->first();
+            if ($agent) {
+                $agentId = $agent->id;
+            }
+        }
 
         $baseSlug = Str::slug($validated['network']['englishName']);
         $slug = $baseSlug;
@@ -50,7 +84,7 @@ class NetworkController extends Controller
             'card_categories_json' => json_encode($validated['cardCategories']),
             'status' => 'pending',
             'application_type' => 'network',
-            'agent_id' => ($request->user('sanctum') && $request->user('sanctum')->role === 'agent') ? $request->user('sanctum')->id : null,
+            'agent_id' => $agentId,
         ]);
 
         return response()->json([

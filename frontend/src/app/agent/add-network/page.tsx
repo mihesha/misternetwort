@@ -4,6 +4,7 @@ import { useAppContext } from '../../../context/AppContext';
 import { JoiningForm } from '../../../components/public/portal/JoiningForm';
 import { RequestSuccessModal } from '../../../components/public/portal/RequestSuccessModal';
 import { ApplicationFormData, NetworkApplication } from '../../../types';
+import { AgentReferralCard } from '../../../components/agent/AgentReferralCard';
 
 export default function AgentAddNetworkPage() {
   const { isDarkMode } = useAppContext();
@@ -44,9 +45,12 @@ export default function AgentAddNetworkPage() {
       <div>
         <h1 className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>إضافة شبكة جديدة</h1>
         <p className={`text-sm mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-          قم بتعبئة بيانات الشبكة لمالك جديد، أو إضافتها لحساب مالك معتمد مسبقاً ليتم ربطها بحسابه واحتساب عمولاتك.
+          يمكنك إرسال رابط الإحالة للمالك ليسجل بنفسه، أو تعبئة بيانات الشبكة يدوياً في النموذج أدناه.
         </p>
       </div>
+
+      {/* Quick Referral Option */}
+      <AgentReferralCard compact={true} />
 
       <div className={`p-6 md:p-8 rounded-4xl border ${isDarkMode ? 'bg-[#141d2b] border-white/5 shadow-xl shadow-black/20' : 'bg-white border-slate-100 shadow-xl shadow-blue-900/5'}`}>
         <JoiningForm
