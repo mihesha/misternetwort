@@ -31,9 +31,12 @@ class AuthController extends Controller
 
         $appType = $request->role === 'network_owner' ? 'network' : ($request->role === 'agent' ? 'agent' : null);
         if ($appType) {
-            $existsInApps = \App\Models\NetworkApplication::where('owner_phone', $request->phone)
-                ->where('application_type', $appType)
+            $existsInApps = \App\Models\NetworkApplication::where('application_type', $appType)
                 ->where('status', 'pending')
+                ->where(function ($q) use ($request) {
+                    $q->where('owner_identity', $request->phone)
+                      ->orWhere('owner_phone', $request->phone);
+                })
                 ->exists();
             if ($existsInApps) {
                 return response()->json([

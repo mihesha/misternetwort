@@ -16,11 +16,10 @@ class AdminNetworkApplicationController extends Controller
         $apps = NetworkApplication::with('agent')->orderBy('created_at', 'desc')->get()->map(function ($app) {
             $existingOwner = null;
             if ($app->application_type !== 'agent') {
+                $ownerLoginPhone = !empty($app->owner_identity) ? trim($app->owner_identity) : trim($app->owner_phone);
                 $ownerUser = User::where('role', 'network_owner')
-                    ->where(function($q) use ($app) {
-                        $q->where('phone', $app->owner_phone)
-                          ->orWhere('phone', $app->owner_identity);
-                    })->first();
+                    ->where('phone', $ownerLoginPhone)
+                    ->first();
                 if ($ownerUser) {
                     $existingOwner = [
                         'id' => $ownerUser->id,
@@ -122,21 +121,30 @@ class AdminNetworkApplicationController extends Controller
             }
 
             // Normal network application
-            // Check if user already exists
+            // The owner's personal login phone is owner_identity (or owner_phone if not provided)
+            $ownerLoginPhone = !empty($app->owner_identity) ? trim($app->owner_identity) : trim($app->owner_phone);
+            $networkContactPhone = trim($app->owner_phone);
+
+            // Check if user already exists by their login phone
             $user = User::where('role', 'network_owner')
-                ->where(function($q) use ($app) {
-                    $q->where('phone', $app->owner_phone)
-                      ->orWhere('phone', $app->owner_identity);
-                })->first();
+                ->where('phone', $ownerLoginPhone)
+                ->first();
 
             $isExistingOwner = !is_null($user);
 
             if (!$user) {
-                // Only create new user if not already existing
+                // Ensure email uniqueness to avoid collisions
+                $baseEmail = $ownerLoginPhone . '@example.com';
+                $email = $baseEmail;
+                if (User::where('email', $email)->exists()) {
+                    $email = $ownerLoginPhone . '_' . rand(100, 999) . '@example.com';
+                }
+
+                // Create new network owner user with their personal login phone
                 $user = User::create([
                     'name' => $app->owner_name,
-                    'phone' => $app->owner_phone,
-                    'email' => $app->owner_identity . '@example.com',
+                    'phone' => $ownerLoginPhone,
+                    'email' => $email,
                     'password' => Hash::make($request->tempPassword ?? '12345678'),
                     'role' => 'network_owner',
                     'agent_id' => $app->agent_id,

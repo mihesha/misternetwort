@@ -195,7 +195,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
       if (currentStep === 1) {
         setIsCheckingPhone(true);
         try {
-          const phoneToCheck = contactNumber.trim() || ownerId.trim();
+          const phoneToCheck = ownerId.trim();
           const res = await fetch('/api/check-phone', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -212,7 +212,7 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
                 setOwnerName(data.owner_name);
               }
             } else {
-              setErrors(prev => ({ ...prev, contactNumber: 'رقم الهاتف مسجل مسبقاً في النظام. يرجى إضافة أي رقم في نهايته لتمييزه.' }));
+              setErrors(prev => ({ ...prev, ownerId: 'رقم المالك مسجل مسبقاً في النظام. يرجى تسجيل الدخول بحسابك أو استخدام رقم مالك آخر.' }));
               scrollToFirstError();
               setIsCheckingPhone(false);
               return;
