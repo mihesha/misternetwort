@@ -135,11 +135,26 @@ export const EditNetworkModal = () => {
               </div>
 
               <div>
-                <label className="block text-slate-300 mb-1 font-bold">رقم محفظة جيب:</label>
+                <label className="block text-slate-300 mb-1 font-bold">البوابة المعتمدة:</label>
+                <select
+                  value={editNetworkModal.gateway || 'north'}
+                  onChange={(e) => setEditNetworkModal({ ...editNetworkModal, gateway: e.target.value as 'north' | 'south' })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#1d273a] border border-slate-700 text-white font-bold"
+                >
+                  <option value="north">بوابة الشمال (العملة القديمة)</option>
+                  <option value="south">بوابة الجنوب (العملة الجديدة)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 mb-1 font-bold">
+                  {editNetworkModal.gateway === 'south' ? 'رقم محفظة شلن:' : 'رقم محفظة جيب:'}
+                </label>
                 <input
                   type="text"
                   value={editNetworkModal.jaibWalletNumber}
                   onChange={(e) => setEditNetworkModal({ ...editNetworkModal, jaibWalletNumber: e.target.value })}
+                  placeholder={editNetworkModal.gateway === 'south' ? 'رقم محفظة شلن' : 'رقم محفظة جيب'}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#1d273a] border border-slate-700 text-white font-mono"
                 />
               </div>

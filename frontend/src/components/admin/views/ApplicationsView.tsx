@@ -130,6 +130,14 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                     <span className="font-mono font-bold text-lg text-indigo-400">{app.referenceNumber}</span>
                     <span className="text-xs text-slate-400">{new Date(app.createdAt).toLocaleString('ar-YE')}</span>
 
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                      (app.formData.gateway || app.formData.network.gateway) === 'south'
+                        ? 'bg-sky-500/20 text-sky-400 border-sky-500/30'
+                        : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                    }`}>
+                      {(app.formData.gateway || app.formData.network.gateway) === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}
+                    </span>
+
                     {app.isExistingOwner && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-xs shadow-emerald-500/20">
                         <ShieldCheck className="w-3.5 h-3.5" />
@@ -258,7 +266,9 @@ export const ApplicationsView: React.FC<ApplicationsViewProps> = ({
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-500/30">
-                  <span className="text-slate-300 block mb-1">محفظة جيب المعتمدة:</span>
+                  <span className="text-slate-300 block mb-1">
+                    {(app.formData.gateway || app.formData.network.gateway) === 'south' ? 'محفظة شلن المعتمدة:' : 'محفظة جيب المعتمدة:'}
+                  </span>
                   <p className="font-mono font-black text-emerald-400 text-base mb-2" dir="ltr">
                     {app.formData.jaibWalletNumber}
                   </p>

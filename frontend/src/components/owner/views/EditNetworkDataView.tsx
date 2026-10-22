@@ -65,6 +65,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
   const [governorate, setGovernorate] = useState('');
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
+  const [gateway, setGateway] = useState<'north' | 'south'>('north');
   const [jaibWallet, setJaibWallet] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -104,6 +105,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
             setGovernorate(found.governorate || '');
             setCity(found.city || '');
             setDistrict(found.neighborhood || '');
+            setGateway(found.gateway || 'north');
             setJaibWallet(found.jaib_wallet || '');
             setCategories(mappedCats);
 
@@ -116,6 +118,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
               governorate: found.governorate || '',
               city: found.city || '',
               district: found.neighborhood || '',
+              gateway: found.gateway || 'north',
               jaibWallet: found.jaib_wallet || '',
               categories: mappedCats,
             });
@@ -156,7 +159,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
   // Store original values from API for previousData comparison
   const [originalData, setOriginalData] = useState<{
     networkName: string; englishName: string; externalLink: string; contactPhone: string; governorate: string;
-    city: string; district: string; jaibWallet: string;
+    city: string; district: string; gateway?: 'north' | 'south'; jaibWallet: string;
     categories: CategoryItem[];
   } | null>(null);
 
@@ -201,6 +204,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
       governorate: governorate,
       city: city,
       district: district,
+      gateway: gateway,
       jaibWallet: jaibWallet,
       adminNotes: adminNotes,
       categories: categories,
@@ -213,6 +217,7 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
         governorate: originalData.governorate,
         city: originalData.city,
         district: originalData.district,
+        gateway: originalData.gateway,
         jaibWallet: originalData.jaibWallet,
         categories: originalData.categories,
       } : undefined,
@@ -272,8 +277,15 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
                 <FileEdit className="w-6 h-6" />
                 <span>طلب تعديل بيانات الشبكة</span>
               </h2>
-              <div className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                {netName} • {networkCode}
+              <div className={`text-xs font-bold flex items-center justify-center md:justify-start gap-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                <span>{netName} • {networkCode}</span>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                  gateway === 'south' 
+                    ? 'bg-sky-500/10 text-sky-400 border border-sky-500/30' 
+                    : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                }`}>
+                  {gateway === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}
+                </span>
               </div>
             </div>
 
@@ -414,23 +426,31 @@ export const EditNetworkDataView: React.FC<EditNetworkDataViewProps> = ({
 
             {/* Section 2: Wallet Numbers */}
             <div className="space-y-4 text-right pt-2 border-t border-slate-700/40">
-              <h3 className={`text-sm md:text-base font-extrabold flex items-center gap-2 border-r-4 border-amber-500 pr-2 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+              <h3 className={`text-sm md:text-base font-extrabold flex items-center gap-2 border-r-4 ${gateway === 'south' ? 'border-sky-500' : 'border-amber-500'} pr-2 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                 <span>💳</span>
-                <span>أرقام المحافظ *</span>
+                <span>{gateway === 'south' ? 'المحفظة المالية (شلن) *' : 'المحفظة المالية (جيب) *'}</span>
               </h3>
 
               <div>
-                <label className="block text-xs font-bold mb-1.5 opacity-80">رقم محفظة جيب *</label>
+                <label className="block text-xs font-bold mb-1.5 opacity-80">
+                  {gateway === 'south' ? 'رقم محفظة شلن *' : 'رقم محفظة جيب *'}
+                </label>
                 <input
                   type="text"
                   value={jaibWallet}
                   onChange={(e) => setJaibWallet(e.target.value)}
+                  placeholder={gateway === 'south' ? 'أدخل رقم محفظة شلن' : 'أدخل رقم محفظة جيب'}
                   className={`w-full rounded-xl py-2.5 px-3.5 text-xs md:text-sm text-right font-mono font-medium focus:outline-none transition-all ${
                     isDarkMode
                       ? 'bg-[#1b2536] text-white border border-slate-700 focus:border-blue-500'
                       : 'bg-slate-50 text-slate-900 border border-slate-300 focus:border-blue-600'
                   }`}
                 />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {gateway === 'south'
+                    ? 'هذه الشبكة معتمدة على بوابة الجنوب، ويتم استقبال المبالغ والسحب عبر محفظة شلن.'
+                    : 'هذه الشبكة معتمدة على بوابة الشمال، ويتم استقبال المبالغ والسحب عبر محفظة جيب.'}
+                </p>
               </div>
             </div>
 

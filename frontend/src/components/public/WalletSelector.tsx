@@ -9,13 +9,15 @@ interface WalletSelectorProps {
   onSelectWallet: (wallet: WalletOption) => void;
   totalAmount: number;
   user?: UserAccount | null;
+  networkDomain?: string;
 }
 
 export const WalletSelector: React.FC<WalletSelectorProps> = ({
   selectedWallet,
   onSelectWallet,
   totalAmount,
-  user
+  user,
+  networkDomain,
 }) => {
   const [wallets, setWallets] = useState<WalletOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,7 +25,17 @@ export const WalletSelector: React.FC<WalletSelectorProps> = ({
   useEffect(() => {
     const fetchWallets = async () => {
       try {
-        const res = await fetch('/api/bank-wallets');
+        let domainToUse = networkDomain;
+        if (!domainToUse && typeof window !== 'undefined') {
+          const match = window.location.pathname.match(/\/n\/([^\/]+)/);
+          if (match && match[1]) {
+            domainToUse = match[1];
+          }
+        }
+        const url = domainToUse 
+          ? `/api/bank-wallets?network=${encodeURIComponent(domainToUse)}`
+          : '/api/bank-wallets';
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           // Map DB wallets to WalletOption interface

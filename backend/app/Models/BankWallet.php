@@ -14,6 +14,7 @@ class BankWallet extends Model
         'input_label',
         'steps',
         'is_active',
+        'gateway',
     ];
 
     protected $casts = [

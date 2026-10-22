@@ -31,6 +31,7 @@ class AdminEditRequestController extends Controller
             'governorate' => $request->governorate,
             'city' => $request->city,
             'district' => $request->district,
+            'gateway' => $request->gateway ?? ($network ? $network->gateway : 'north') ?? 'north',
             'jaib_wallet' => $request->jaibWallet,
             'admin_notes' => $request->adminNotes,
             'categories' => json_encode($request->categories ?? []),
@@ -57,6 +58,7 @@ class AdminEditRequestController extends Controller
                 'governorate' => $r->governorate,
                 'city' => $r->city,
                 'district' => $r->district ?? '',
+                'gateway' => $r->gateway ?? 'north',
                 'jaibWallet' => $r->jaib_wallet,
                 'adminNotes' => $r->admin_notes ?? '',
                 'categories' => is_string($r->categories) ? json_decode($r->categories, true) : ($r->categories ?? []),
@@ -93,6 +95,9 @@ class AdminEditRequestController extends Controller
                 $network->governorate = $req->governorate;
                 $network->city = $req->city;
                 $network->neighborhood = $req->district;
+                if (!empty($req->gateway)) {
+                    $network->gateway = $req->gateway;
+                }
                 $network->owner_phone = $req->contact_phone;
                 $network->jaib_wallet = $req->jaib_wallet;
                 $network->save();

@@ -27,7 +27,7 @@ class CustomerPurchaseService
         
         [$overallTotalPrice, $processedCategories] = $this->validateStockAndCalculateTotals($network, $items);
         
-        [$isInternalWallet, $deposit, $overpayment] = $this->validatePayment($user, $data, $overallTotalPrice);
+        [$isInternalWallet, $deposit, $overpayment] = $this->validatePayment($user, $data, $overallTotalPrice, $network);
 
         DB::beginTransaction();
         try {
@@ -114,7 +114,7 @@ class CustomerPurchaseService
         return [$overallTotalPrice, $processedCategories];
     }
 
-    protected function validatePayment($user, array $data, float $overallTotalPrice): array
+    protected function validatePayment($user, array $data, float $overallTotalPrice, $network = null): array
     {
         $isInternalWallet = strtolower($data['wallet_type']) === 'internal_wallet';
         $deposit = null;
@@ -128,6 +128,16 @@ class CustomerPurchaseService
                 throw new \Exception('رصيد محفظتك غير كافٍ لإتمام العملية.');
             }
         } else {
+            // Check gateway compatibility if dynamic bank wallet ID provided
+            if ($network && !empty($network->gateway)) {
+                $bankWallet = \App\Models\BankWallet::find($data['wallet_type']);
+                if ($bankWallet && !empty($bankWallet->gateway) && $bankWallet->gateway !== 'all') {
+                    if ($bankWallet->gateway !== $network->gateway) {
+                        throw new \Exception('طريقة الدفع المختارة غير متوافقة مع بوابة هذه الشبكة.');
+                    }
+                }
+            }
+
             $deposit = $this->findDeposit($data);
             
             if (!$deposit) {

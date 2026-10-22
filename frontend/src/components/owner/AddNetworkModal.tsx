@@ -40,6 +40,7 @@ export const AddNetworkModal: React.FC<AddNetworkModalProps> = ({
   const [governorate, setGovernorate] = useState('');
   const [city, setCity] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
+  const [gateway, setGateway] = useState<'north' | 'south'>('north');
 
   // Wallet
   const [jaibWalletNumber, setJaibWalletNumber] = useState('');
@@ -116,7 +117,9 @@ export const AddNetworkModal: React.FC<AddNetworkModalProps> = ({
       if (!city) newErrors.city = 'يرجى اختيار المدينة';
     } else if (step === 2) {
       if (!jaibWalletNumber.trim() || jaibWalletNumber.trim().length < 9) {
-        newErrors.jaibWalletNumber = 'رقم محفظة جيب يجب أن لا يقل عن 9 أرقام';
+        newErrors.jaibWalletNumber = gateway === 'south'
+          ? 'رقم محفظة شلن يجب أن لا يقل عن 9 أرقام'
+          : 'رقم محفظة جيب يجب أن لا يقل عن 9 أرقام';
       }
     } else if (step === 3) {
       if (editingCategoryId) {
@@ -168,6 +171,7 @@ export const AddNetworkModal: React.FC<AddNetworkModalProps> = ({
         governorate,
         city,
         neighborhood: neighborhood.trim() || null,
+        gateway,
         jaibWalletNumber: jaibWalletNumber.trim(),
         cardCategories: cardCategories.map(c => ({
           name: c.name,
@@ -472,6 +476,66 @@ export const AddNetworkModal: React.FC<AddNetworkModalProps> = ({
                     </div>
                     {errors.networkPhone && <p className="text-xs text-rose-500 mt-1">{errors.networkPhone}</p>}
                   </div>
+
+                  {/* Gateway Selection */}
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-white/10">
+                    <label className="block text-xs font-bold mb-2">
+                      بوابة الشبكة الجغرافية والمالية <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setGateway('north')}
+                        className={`p-3.5 rounded-2xl border text-right transition-all flex items-start gap-3 cursor-pointer ${
+                          gateway === 'north'
+                            ? 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/20'
+                            : isDarkMode
+                            ? 'border-white/10 bg-white/5 hover:bg-white/10 text-slate-400'
+                            : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                          gateway === 'north' ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                        }`}>
+                          <Globe className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <div className={`text-xs font-black ${gateway === 'north' ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-200'}`}>
+                            بوابة الشمال
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                            مخصصة لشبكات محافظات الشمال وتتعامل بـ <strong className="text-slate-700 dark:text-slate-200">العملة القديمة</strong>، وتدعم المحافظ والحسابات البنكية والخدمات المالية المعتمدة في الشمال.
+                          </p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setGateway('south')}
+                        className={`p-3.5 rounded-2xl border text-right transition-all flex items-start gap-3 cursor-pointer ${
+                          gateway === 'south'
+                            ? 'border-sky-500 bg-sky-500/10 ring-2 ring-sky-500/20'
+                            : isDarkMode
+                            ? 'border-white/10 bg-white/5 hover:bg-white/10 text-slate-400'
+                            : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                          gateway === 'south' ? 'bg-sky-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                        }`}>
+                          <Globe className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <div className={`text-xs font-black ${gateway === 'south' ? 'text-sky-500' : 'text-slate-700 dark:text-slate-200'}`}>
+                            بوابة الجنوب
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                            مخصصة لشبكات محافظات الجنوب وتتعامل بـ <strong className="text-slate-700 dark:text-slate-200">العملة الجديدة</strong>، وتدعم المحافظ والحسابات البنكية والخدمات المالية المعتمدة في الجنوب.
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -479,25 +543,31 @@ export const AddNetworkModal: React.FC<AddNetworkModalProps> = ({
               {currentStep === 2 && (
                 <div className="space-y-5 animate-in fade-in duration-300">
                   <div className={`p-4 rounded-2xl border ${
-                    isDarkMode ? 'bg-blue-900/20 border-blue-500/30 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-800'
+                    gateway === 'south'
+                      ? isDarkMode ? 'bg-sky-900/20 border-sky-500/30 text-sky-200' : 'bg-sky-50 border-sky-200 text-sky-800'
+                      : isDarkMode ? 'bg-blue-900/20 border-blue-500/30 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-800'
                   } flex items-start gap-3`}>
-                    <Wallet className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <Wallet className={`w-5 h-5 shrink-0 mt-0.5 ${gateway === 'south' ? 'text-sky-500' : 'text-blue-500'}`} />
                     <div className="text-xs leading-relaxed">
-                      <span className="font-bold block mb-1">المحفظة المالية الخاصة بأرباح هذه الشبكة:</span>
-                      سيتم تحويل أرباح ومبيعات هذه الشبكة بشكل منفصل إلى هذا الحساب عند طلب السحب. يمكنك استخدام نفس محفظتك أو محفظة منفصلة لكل شبكة.
+                      <span className="font-bold block mb-1">
+                        {gateway === 'south' ? 'المحفظة المالية لبوابة الجنوب (محفظة شلن):' : 'المحفظة المالية لبوابة الشمال (محفظة جيب):'}
+                      </span>
+                      {gateway === 'south'
+                        ? 'سيتم تحويل أرباح ومبيعات هذه الشبكة إلى محفظة شلن المعتمدة للجنوب عند طلب السحب.'
+                        : 'سيتم تحويل أرباح ومبيعات هذه الشبكة إلى محفظة جيب المعتمدة للشمال عند طلب السحب.'}
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold mb-2">
-                      رقم محفظة جيب للشبكة <span className="text-rose-500">*</span>
+                      {gateway === 'south' ? 'رقم محفظة شلن للشبكة' : 'رقم محفظة جيب للشبكة'} <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="tel"
                       dir="ltr"
                       value={jaibWalletNumber}
                       onChange={(e) => setJaibWalletNumber(e.target.value)}
-                      placeholder="77XXXXXXX"
+                      placeholder={gateway === 'south' ? 'رقم محفظة شلن' : 'رقم محفظة جيب'}
                       className={`w-full px-4 py-3 rounded-xl text-sm transition-all border outline-none ${
                         errors.jaibWalletNumber 
                           ? 'border-rose-500 bg-rose-500/10' 
@@ -579,7 +649,8 @@ export const AddNetworkModal: React.FC<AddNetworkModalProps> = ({
                       <div><span className="text-slate-400">اسم الشبكة:</span> <span className="font-bold">{networkName}</span></div>
                       <div><span className="text-slate-400">الاسم المختصر:</span> <span className="font-mono font-bold">{englishName}</span></div>
                       <div><span className="text-slate-400">الموقع:</span> <span className="font-bold">{governorate} - {city}</span></div>
-                      <div><span className="text-slate-400">الرابط:</span> <span className="font-mono text-blue-400 truncate block">{externalLink}</span></div>
+                      <div><span className="text-slate-400">البوابة:</span> <span className="font-bold text-blue-500">{gateway === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}</span></div>
+                      <div className="col-span-2"><span className="text-slate-400">الرابط:</span> <span className="font-mono text-blue-400 truncate block">{externalLink}</span></div>
                     </div>
                   </div>
 
@@ -590,7 +661,9 @@ export const AddNetworkModal: React.FC<AddNetworkModalProps> = ({
                       <Wallet className="w-4 h-4" /> المحفظة المالية
                     </h4>
                     <div className="text-xs">
-                      <span className="text-slate-400">رقم محفظة جيب للشبكة:</span> <span className="font-mono font-bold">{jaibWalletNumber}</span>
+                      <span className="text-slate-400">
+                        {gateway === 'south' ? 'رقم محفظة شلن للشبكة:' : 'رقم محفظة جيب للشبكة:'}
+                      </span> <span className="font-mono font-bold">{jaibWalletNumber}</span>
                     </div>
                   </div>
 

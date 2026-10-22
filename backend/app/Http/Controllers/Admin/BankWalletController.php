@@ -34,10 +34,15 @@ class BankWalletController extends Controller
             'input_label' => 'nullable|string|max:255',
             'steps' => 'nullable|array',
             'is_active' => 'boolean',
+            'gateway' => 'nullable|string|in:north,south,all',
             'sources' => 'nullable|array',
             'sources.*' => 'string',
             'logo' => 'nullable|image|max:2048',
         ]);
+
+        if (empty($validated['gateway'])) {
+            $validated['gateway'] = 'north';
+        }
 
         if ($request->hasFile('logo')) {
             $validated['logo_path'] = $request->file('logo')->store('bank_wallets', 'public');
@@ -80,6 +85,7 @@ class BankWalletController extends Controller
             'input_label' => 'nullable|string|max:255',
             'steps' => 'nullable|array',
             'is_active' => 'boolean',
+            'gateway' => 'nullable|string|in:north,south,all',
             'sources' => 'nullable|array',
             'sources.*' => 'string',
             'logo' => 'nullable|image|max:2048',

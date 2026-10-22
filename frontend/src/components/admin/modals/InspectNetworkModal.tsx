@@ -183,6 +183,13 @@ export const InspectNetworkModal = () => {
                       <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                         كود: #{inspectNetwork.networkCode}
                       </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                        inspectNetwork.gateway === 'south'
+                          ? 'bg-sky-500/20 text-sky-300 border-sky-500/30'
+                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      }`}>
+                        {inspectNetwork.gateway === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}
+                      </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-1">
                       المالك: <strong className="text-slate-200">{inspectNetwork.ownerName}</strong> • {inspectNetwork.governorate} ({inspectNetwork.city})

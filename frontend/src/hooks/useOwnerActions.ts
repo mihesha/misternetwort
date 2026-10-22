@@ -26,6 +26,7 @@ export const useOwnerActions = () => {
           city: n.city,
           neighborhood: n.neighborhood,
           jaib_wallet: n.jaib_wallet,
+          gateway: n.gateway || 'north',
           balance: Number(n.balance) || 0,
           total_sales: Number(n.total_sales) || 0,
           status: n.status,

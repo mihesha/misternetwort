@@ -105,6 +105,8 @@ interface AdminContextType {
   setNewNetPhone: React.Dispatch<React.SetStateAction<string>>;
   newNetWallet: string;
   setNewNetWallet: React.Dispatch<React.SetStateAction<string>>;
+  newNetGateway: 'north' | 'south';
+  setNewNetGateway: React.Dispatch<React.SetStateAction<'north' | 'south'>>;
   newNetGov: string;
   setNewNetGov: React.Dispatch<React.SetStateAction<string>>;
   newNetCity: string;
@@ -210,6 +212,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [newNetOwner, setNewNetOwner] = useState('');
   const [newNetPhone, setNewNetPhone] = useState('');
   const [newNetWallet, setNewNetWallet] = useState('');
+  const [newNetGateway, setNewNetGateway] = useState<'north' | 'south'>('north');
   const [newNetGov, setNewNetGov] = useState('أمانة العاصمة (صنعاء)');
   const [newNetCity, setNewNetCity] = useState('السبعين');
   
@@ -421,6 +424,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         newNetOwner, setNewNetOwner,
         newNetPhone, setNewNetPhone,
         newNetWallet, setNewNetWallet,
+        newNetGateway, setNewNetGateway,
         newNetGov, setNewNetGov,
         newNetCity, setNewNetCity,
         cardBatchNetId, setCardBatchNetId,

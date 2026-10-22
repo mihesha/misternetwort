@@ -94,6 +94,14 @@ export const PayoutModal = () => {
             <div className="space-y-1 text-xs">
               <p className="text-slate-300">الشبكة: <span className="font-bold text-white">{payoutWdModal.networkName}</span></p>
               <p className="text-slate-300">المبلغ: <span className="font-mono font-bold text-emerald-400 text-base">{payoutWdModal.amount.toLocaleString()} ر.ي</span></p>
+              <p className="text-slate-300">
+                وسيلة السحب:{' '}
+                <span className="font-bold text-indigo-300">
+                  {payoutWdModal.payoutMethod === 'shilin' || payoutWdModal.payoutMethod === 'shilin_wallet' ? 'محفظة شلن (بوابة الجنوب)' :
+                   payoutWdModal.payoutMethod === 'jaib' || payoutWdModal.payoutMethod === 'jaib_wallet' ? 'محفظة جيب (بوابة الشمال)' :
+                   payoutWdModal.payoutMethod}
+                </span>
+              </p>
               <p className="text-slate-300">رقم المحفظة/الحساب: <span className="font-mono text-indigo-300" dir="ltr">{payoutWdModal.accountNumber}</span></p>
             </div>
 

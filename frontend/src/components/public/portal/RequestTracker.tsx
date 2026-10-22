@@ -152,7 +152,16 @@ export const RequestTracker: React.FC<RequestTrackerProps> = ({
                   </div>
                 </div>
 
-                <div>{getStatusBadge(app.status)}</div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-1 rounded-xl text-xs font-bold border ${
+                    (app.formData.gateway || app.formData.network.gateway) === 'south'
+                      ? 'bg-sky-500/15 text-sky-400 border-sky-500/30'
+                      : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                  }`}>
+                    {(app.formData.gateway || app.formData.network.gateway) === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}
+                  </span>
+                  {getStatusBadge(app.status)}
+                </div>
               </div>
 
               {/* Details Grid */}
@@ -180,7 +189,9 @@ export const RequestTracker: React.FC<RequestTrackerProps> = ({
                 <div className="p-3 rounded-2xl bg-indigo-950/40 border border-indigo-500/20 space-y-1">
                   <div className="flex items-center gap-1.5 text-slate-300">
                     <Wallet className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>محفظة جيب للرصيد:</span>
+                    <span>
+                      {(app.formData.gateway || app.formData.network.gateway) === 'south' ? 'محفظة شلن للرصيد:' : 'محفظة جيب للرصيد:'}
+                    </span>
                   </div>
                   <p className="font-mono font-bold text-emerald-400 text-base" dir="ltr">
                     {app.formData.jaibWalletNumber}

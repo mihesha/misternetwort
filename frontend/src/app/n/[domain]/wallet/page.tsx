@@ -21,6 +21,8 @@ import { UserAccount, WalletOption } from '@/types';
 import { useRouter } from 'next/navigation';
 
 export default function WalletPage({ params }: { params: Promise<{ domain: string }> }) {
+  const resolvedParams = React.use(params as any) as { domain: string };
+  const domain = resolvedParams.domain;
   const router = useRouter();
 
   const [user, setUser] = useState<UserAccount | null>(null);
@@ -47,7 +49,8 @@ export default function WalletPage({ params }: { params: Promise<{ domain: strin
   useEffect(() => {
     const fetchWallets = async () => {
       try {
-        const res = await fetch('/api/bank-wallets');
+        const url = domain ? `/api/bank-wallets?network=${encodeURIComponent(domain)}` : '/api/bank-wallets';
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           const mappedWallets: WalletOption[] = data.map((w: any) => ({

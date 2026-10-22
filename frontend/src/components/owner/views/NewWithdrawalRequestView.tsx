@@ -27,6 +27,7 @@ interface NewWithdrawalRequestViewProps {
   networkId?: string | number;
   networkCode?: string;
   networkName?: string;
+  networkGateway?: 'north' | 'south';
   availableBalance?: number;
   onNavigateView?: (view: string) => void;
 }
@@ -37,15 +38,21 @@ export const NewWithdrawalRequestView: React.FC<NewWithdrawalRequestViewProps> =
   networkId,
   networkCode,
   networkName = 'برق نت',
+  networkGateway = 'north',
   availableBalance = 0,
   onNavigateView,
 }) => {
   const router = useRouter();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [provider, setProvider] = useState('');
+  const isSouth = networkGateway === 'south';
+  const [provider, setProvider] = useState<'shilin' | 'jaib'>(isSouth ? 'shilin' : 'jaib');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
+
+  React.useEffect(() => {
+    setProvider(isSouth ? 'shilin' : 'jaib');
+  }, [isSouth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +84,7 @@ export const NewWithdrawalRequestView: React.FC<NewWithdrawalRequestViewProps> =
           networkCode,
           networkName,
           amount: numAmount,
-          provider,
+          provider: isSouth ? 'shilin' : 'jaib',
           notes
         })
       });
@@ -132,9 +139,18 @@ export const NewWithdrawalRequestView: React.FC<NewWithdrawalRequestViewProps> =
         >
           {/* Right side: Network Name */}
           <div className="text-right w-full md:w-auto">
-            <h3 className={`text-xl font-black ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-              {networkName}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className={`text-xl font-black ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                {networkName}
+              </h3>
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                isSouth
+                  ? 'bg-sky-500/10 text-sky-400 border border-sky-500/30'
+                  : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+              }`}>
+                {isSouth ? 'بوابة الجنوب' : 'بوابة الشمال'}
+              </span>
+            </div>
             <span className={`text-xs font-bold block mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
               الشبكة
             </span>
@@ -175,30 +191,58 @@ export const NewWithdrawalRequestView: React.FC<NewWithdrawalRequestViewProps> =
 
         {/* Form Container */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Field 1: Provider */}
-          <div className="space-y-1.5">
+          {/* Field 1: Provider (Pre-selected based on network gateway) */}
+          <div className="space-y-2">
             <label className={`block text-xs font-bold text-right ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-              المزود المالي <span className="text-red-500">*</span>
+              طريقة استلام الأرباح <span className="text-red-500">*</span>
             </label>
-            <select
-              value={provider}
-              onChange={(e) => setProvider(e.target.value)}
-              className={`w-full rounded-xl py-3 px-4 text-xs font-bold text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                isDarkMode
-                  ? 'bg-[#182232] text-slate-200 border border-slate-700'
-                  : 'bg-white text-slate-900 border border-slate-300 shadow-sm'
+
+            <div
+              className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between ${
+                isSouth
+                  ? isDarkMode
+                    ? 'border-sky-500/30 bg-sky-500/10 text-sky-200'
+                    : 'border-sky-200 bg-sky-50/70 text-sky-900'
+                  : isDarkMode
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
+                  : 'border-emerald-200 bg-emerald-50/70 text-emerald-900'
               }`}
             >
-              <option value="">-- اختر المزود --</option>
-              <option value="jaib">محفظة جيب</option>
-              <option value="saba_cash">محفظة سبأ كاش</option>
-              <option value="pace">محفظة بيس</option>
-              <option value="one_cash">محفظة ون كاش</option>
-              <option value="floosak">محفظة فلوسك</option>
-              <option value="ezy">محفظة ايزي</option>
-              <option value="cash">محفظة كاش</option>
-              <option value="jawali">محفظة جوالي</option>
-            </select>
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    isSouth
+                      ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+                      : 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                  }`}
+                >
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-sm font-black text-slate-800 dark:text-white block">
+                    {isSouth ? 'محفظة شلن' : 'محفظة جيب'}
+                  </span>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                    المحفظة المعتمدة لاستلام أرباح شبكتك.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold shrink-0 ${
+                  isSouth
+                    ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30'
+                    : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>محددة تلقائياً</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 pr-1">
+              يتم تحويل مبلغ السحب مباشرة إلى حساب {isSouth ? 'محفظة شلن' : 'محفظة جيب'} المسجل لشبكتك.
+            </p>
           </div>
 
           {/* Field 2: Amount */}

@@ -285,14 +285,42 @@ export const InspectDataEditReqModal = () => {
                       );
                     })()}
 
-                    {/* Row 6: Jaib Wallet */}
+                    {/* Row 5.5: Gateway */}
                     {(() => {
+                      const oldGateway = inspectDataEditReq.previousData?.gateway || inspectDataEditReq.gateway || 'north';
+                      const newGateway = inspectDataEditReq.gateway || 'north';
+                      const isChanged = oldGateway !== newGateway;
+                      return (
+                        <tr className={isChanged ? 'bg-amber-500/10 border-r-4 border-r-amber-500' : 'hover:bg-slate-800/30'}>
+                          <td className="p-3 font-bold text-slate-300">البوابة الجغرافية والمالية</td>
+                          <td className="p-3 font-medium text-slate-400">
+                            {oldGateway === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}
+                          </td>
+                          <td className="p-3 font-bold text-white">
+                            {newGateway === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}
+                          </td>
+                          <td className="p-3 text-center">
+                            {isChanged ? (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">✏️ تم التعديل</span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400">بدون تغيير</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })()}
+
+                    {/* Row 6: Wallet */}
+                    {(() => {
+                      const isSouth = (inspectDataEditReq.gateway || inspectDataEditReq.previousData?.gateway) === 'south';
                       const oldVal = inspectDataEditReq.previousData?.jaibWallet || inspectDataEditReq.jaibWallet;
                       const newVal = inspectDataEditReq.jaibWallet;
                       const isChanged = oldVal !== newVal;
                       return (
                         <tr className={isChanged ? 'bg-amber-500/10 border-r-4 border-r-amber-500' : 'hover:bg-slate-800/30'}>
-                          <td className="p-3 font-bold text-slate-300">رقم محفظة جيب للتحويلات</td>
+                          <td className="p-3 font-bold text-slate-300">
+                            {isSouth ? 'رقم محفظة شلن للتحويلات' : 'رقم محفظة جيب للتحويلات'}
+                          </td>
                           <td className="p-3 text-slate-400 font-mono" dir="ltr">{oldVal}</td>
                           <td className="p-3 font-mono font-bold text-emerald-400" dir="ltr">{newVal}</td>
                           <td className="p-3 text-center">

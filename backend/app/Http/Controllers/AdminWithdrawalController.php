@@ -30,6 +30,7 @@ class AdminWithdrawalController extends Controller
                 'payoutMethod' => $w->payout_method,
                 'accountNumber' => $w->account_number,
                 'recipientName' => $w->network && $w->network->user ? $w->network->user->name : ($w->user ? $w->user->name : ''),
+                'gateway' => $w->network ? ($w->network->gateway ?? 'north') : 'north',
                 'amount' => (float) $w->amount,
                 'status' => $w->status,
                 'requestedAt' => $w->created_at->toISOString(),
@@ -100,10 +101,28 @@ class AdminWithdrawalController extends Controller
                 return response()->json(['error' => 'الرصيد المتاح في هذه الشبكة غير كافٍ لإتمام طلب السحب'], 400);
             }
 
+            // Enforce gateway specific provider rules
+            $normalizedProvider = strtolower(trim($validated['provider']));
+            $isShilin = in_array($normalizedProvider, ['shilin', 'شلن', 'محفظة شلن']);
+            $isJaib = in_array($normalizedProvider, ['jaib', 'جيب', 'محفظة جيب']);
+
+            if ($network->gateway === 'south' && !$isShilin) {
+                return response()->json([
+                    'error' => 'هذه الشبكة مسجلة في بوابة الجنوب، مزود السحب المعتمد هو محفظة شلن حصراً ولا يمكن اختيار مزود آخر.'
+                ], 422);
+            }
+            if (($network->gateway === 'north' || empty($network->gateway)) && !$isJaib) {
+                return response()->json([
+                    'error' => 'هذه الشبكة مسجلة في بوابة الشمال، مزود السحب المعتمد هو محفظة جيب حصراً ولا يمكن اختيار مزود آخر.'
+                ], 422);
+            }
+
+            $payoutMethodFormatted = ($network->gateway === 'south') ? 'محفظة شلن' : 'محفظة جيب';
+
             $wd = Withdrawal::create([
                 'network_id' => $network->id,
                 'request_number' => 'WD-' . rand(1000, 9999) . '-' . time(),
-                'payout_method' => $validated['provider'],
+                'payout_method' => $payoutMethodFormatted,
                 'account_number' => $network->jaib_wallet ?? $network->owner_phone,
                 'amount' => $validated['amount'],
                 'status' => 'pending',

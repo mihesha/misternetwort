@@ -65,9 +65,18 @@ export const NetworksView: React.FC<NetworksViewProps> = ({
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   كود الشبكة: #{net.networkCode}
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300">
-                  {net.governorate}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    net.gateway === 'south'
+                      ? 'bg-sky-500/20 text-sky-300 border-sky-500/30'
+                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                  }`}>
+                    {net.gateway === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300">
+                    {net.governorate}
+                  </span>
+                </div>
               </div>
               <h4 className="font-extrabold text-lg text-white mb-1">{net.networkName}</h4>
               <p className="text-xs text-slate-300">المالك: {net.ownerName}</p>
@@ -76,7 +85,9 @@ export const NetworksView: React.FC<NetworksViewProps> = ({
             <div className="p-5 space-y-4 text-xs">
               <div className="p-3.5 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 flex items-center justify-between">
                 <div>
-                  <span className="text-slate-400 block text-[11px]">رصيد محفظة جيب المتاح:</span>
+                  <span className="text-slate-400 block text-[11px]">
+                    {net.gateway === 'south' ? 'رصيد محفظة شلن المتاح:' : 'رصيد محفظة جيب المتاح:'}
+                  </span>
                   <span className="font-mono font-black text-emerald-400 text-lg">
                     {(net.balance || 0).toLocaleString('en-US')} ر.ي
                   </span>
@@ -92,7 +103,9 @@ export const NetworksView: React.FC<NetworksViewProps> = ({
                   <span className="font-mono font-bold" dir="ltr">{net.contactNumber}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">محفظة جيب المعتمدة:</span>
+                  <span className="text-slate-400">
+                    {net.gateway === 'south' ? 'محفظة شلن المعتمدة:' : 'محفظة جيب المعتمدة:'}
+                  </span>
                   <span className="font-mono font-bold text-emerald-400" dir="ltr">{net.jaibWalletNumber}</span>
                 </div>
                 <div className="flex justify-between items-center">

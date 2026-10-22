@@ -68,6 +68,7 @@ export default function CheckoutPaymentPage({ params }: { params: Promise<{ doma
       <form className="space-y-6">
         <div className="space-y-3">
           <WalletSelector
+            networkDomain={domain}
             selectedWallet={null}
             onSelectWallet={(wallet) => {
               setSelectedWallet(wallet);

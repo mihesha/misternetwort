@@ -161,7 +161,11 @@ export const WithdrawalRequestsListView: React.FC<WithdrawalRequestsListViewProp
                     <tr key={req.id} className={`transition-colors ${isDarkMode ? 'hover:bg-[#182232]' : 'hover:bg-slate-50'}`}>
                       <td className={`px-6 py-4 font-mono font-bold text-xs ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{req.requestNumber}</td>
                       <td className="px-6 py-4 font-bold text-blue-500">{req.amount.toLocaleString()} ر.ي</td>
-                      <td className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{req.payoutMethod}</td>
+                      <td className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {req.payoutMethod === 'shilin' || req.payoutMethod === 'shilin_wallet' ? 'محفظة شلن' :
+                         req.payoutMethod === 'jaib' || req.payoutMethod === 'jaib_wallet' ? 'محفظة جيب' :
+                         req.payoutMethod}
+                      </td>
                       <td className="px-6 py-4 font-mono text-xs text-slate-400">{new Date(req.requestedAt).toLocaleDateString('ar-EG')}</td>
                       <td className="px-6 py-4 text-center">
                         <span className={`inline-flex items-center justify-center px-3 py-1 rounded-lg text-xs font-bold ${
@@ -194,7 +198,7 @@ export const WithdrawalRequestsListView: React.FC<WithdrawalRequestsListViewProp
             لا توجد طلبات سحب مسجلة حالياً
           </p>
           <p className="text-xs text-slate-400 mb-6 max-w-md">
-            يمكنك إنشاء طلب سحب أرصدتك إلى محفظة جيب، الكريمي، أو تداولات بسهولة وسرعة.
+            يمكنك إنشاء طلب سحب أرصدتك إلى محفظة جيب، محفظة شلن، أو حسابك المالي بسهولة وسرعة.
           </p>
 
           <button

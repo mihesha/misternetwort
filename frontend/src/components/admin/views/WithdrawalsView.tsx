@@ -54,7 +54,8 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({
                 <p className="text-xs text-slate-300">
                   وسيلة السحب:{' '}
                   <span className="text-indigo-300 font-bold">
-                    {wd.payoutMethod === 'jaib_wallet' ? 'محفظة جيب' :
+                    {wd.payoutMethod === 'jaib_wallet' || wd.payoutMethod === 'jaib' ? 'محفظة جيب' :
+                     wd.payoutMethod === 'shilin' || wd.payoutMethod === 'shilin_wallet' ? 'محفظة شلن' :
                      wd.payoutMethod === 'saba_cash' ? 'محفظة سبأ كاش' :
                      wd.payoutMethod === 'pace' ? 'محفظة بيس' :
                      wd.payoutMethod === 'one_cash' ? 'محفظة ون كاش' :

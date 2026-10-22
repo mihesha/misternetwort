@@ -37,6 +37,7 @@ export default function NewWithdrawalRequestViewPage() {
       networkId={network.id}
       networkCode={network.code}
       networkName={network.name}
+      networkGateway={network.gateway || 'north'}
       availableBalance={network.balance || 0}
     />
   );

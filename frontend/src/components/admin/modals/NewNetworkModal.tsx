@@ -39,6 +39,7 @@ export const NewNetworkModal = () => {
     newNetOwner, setNewNetOwner,
     newNetPhone, setNewNetPhone,
     newNetWallet, setNewNetWallet,
+    newNetGateway, setNewNetGateway,
     newNetGov, setNewNetGov,
     newNetCity, setNewNetCity,
     cardBatchNetId, setCardBatchNetId,
@@ -129,10 +130,24 @@ export const NewNetworkModal = () => {
               </div>
 
               <div>
-                <label className="block text-slate-300 mb-1 font-bold">رقم محفظة جيب المعتمدة:</label>
+                <label className="block text-slate-300 mb-1 font-bold">البوابة المعتمدة:</label>
+                <select
+                  value={newNetGateway}
+                  onChange={(e) => setNewNetGateway(e.target.value as 'north' | 'south')}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#1d273a] border border-slate-700 text-white font-bold"
+                >
+                  <option value="north">بوابة الشمال (العملة القديمة)</option>
+                  <option value="south">بوابة الجنوب (العملة الجديدة)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 mb-1 font-bold">
+                  {newNetGateway === 'south' ? 'رقم محفظة شلن المعتمدة:' : 'رقم محفظة جيب المعتمدة:'}
+                </label>
                 <input
                   type="text"
-                  placeholder="78XXXXXXX"
+                  placeholder={newNetGateway === 'south' ? 'رقم محفظة شلن' : '78XXXXXXX'}
                   value={newNetWallet}
                   onChange={(e) => setNewNetWallet(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#1d273a] border border-slate-700 text-white font-mono"

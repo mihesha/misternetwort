@@ -54,8 +54,10 @@ class AdminNetworkApplicationController extends Controller
                         'networkPhone' => $app->network_phone,
                         'governorate' => $app->governorate, 
                         'city' => $app->city,
-                        'neighborhood' => $app->neighborhood
+                        'neighborhood' => $app->neighborhood,
+                        'gateway' => $app->gateway ?? 'north'
                     ],
+                    'gateway' => $app->gateway ?? 'north',
                     'jaibWalletNumber' => $app->jaib_wallet,
                     'cardCategories' => json_decode($app->card_categories_json, true) ?? []
                 ]
@@ -172,6 +174,7 @@ class AdminNetworkApplicationController extends Controller
                     'governorate' => $app->governorate,
                     'city' => $app->city ?? null,
                     'neighborhood' => $app->neighborhood ?? null,
+                    'gateway' => $app->gateway ?? 'north',
                     'jaib_wallet' => $app->jaib_wallet ?? null,
                     'owner_phone' => $app->owner_phone,
                     'balance' => 0,

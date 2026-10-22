@@ -33,6 +33,7 @@ export const useAdminActions = () => {
     newNetOwner, setNewNetOwner,
     newNetPhone, setNewNetPhone,
     newNetWallet, setNewNetWallet,
+    newNetGateway, setNewNetGateway,
     newNetGov, setNewNetGov,
     newNetCity, setNewNetCity,
     cardBatchNetId, setCardBatchNetId,
@@ -331,6 +332,7 @@ export const useAdminActions = () => {
           networkName: newNetName,
           ownerName: newNetOwner,
           contactNumber: newNetPhone,
+          gateway: newNetGateway,
           jaibWalletNumber: newNetWallet || newNetPhone,
           governorate: newNetGov,
           city: newNetCity,
@@ -344,6 +346,7 @@ export const useAdminActions = () => {
         setNewNetOwner('');
         setNewNetPhone('');
         setNewNetWallet('');
+        setNewNetGateway('north');
         alert(`✅ تم إضافة الشبكة الجديدة "${newNetName}" بالمنظومة بنجاح!`);
       } else {
         alert('❌ حدث خطأ أثناء إضافة الشبكة');

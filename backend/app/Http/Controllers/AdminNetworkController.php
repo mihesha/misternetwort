@@ -24,6 +24,7 @@ class AdminNetworkController extends Controller
             'contactNumber' => 'required|string',
             'governorate' => 'required|string',
             'city' => 'required|string',
+            'gateway' => 'nullable|string|in:north,south',
             'jaibWalletNumber' => 'nullable|string'
         ]);
 
@@ -44,6 +45,7 @@ class AdminNetworkController extends Controller
             'network_code' => '8' . rand(1000, 9999),
             'governorate' => $validated['governorate'],
             'city' => $validated['city'],
+            'gateway' => $validated['gateway'] ?? 'north',
             'jaib_wallet' => $validated['jaibWalletNumber'],
             'owner_phone' => $validated['contactNumber'],
             'balance' => 0,
@@ -84,6 +86,7 @@ class AdminNetworkController extends Controller
             'city' => 'required|string',
             'ownerName' => 'required|string',
             'contactNumber' => 'required|string',
+            'gateway' => 'nullable|string|in:north,south',
             'jaibWalletNumber' => 'nullable|string'
         ]);
         
@@ -105,6 +108,9 @@ class AdminNetworkController extends Controller
         }
         $network->governorate = $validated['governorate'];
         $network->city = $validated['city'];
+        if (isset($validated['gateway'])) {
+            $network->gateway = $validated['gateway'];
+        }
         $network->owner_phone = $validated['contactNumber'];
         $network->jaib_wallet = $validated['jaibWalletNumber'];
         $network->save();

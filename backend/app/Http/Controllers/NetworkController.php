@@ -43,6 +43,8 @@ class NetworkController extends Controller
             'network.governorate' => 'required|string',
             'network.city' => 'required|string',
             'network.neighborhood' => 'nullable|string',
+            'network.gateway' => 'nullable|string|in:north,south',
+            'gateway' => 'nullable|string|in:north,south',
             'jaibWalletNumber' => 'required|string',
             'cardCategories' => 'required|array',
             'referral_code' => 'nullable|string|max:50',
@@ -80,6 +82,7 @@ class NetworkController extends Controller
             'governorate' => $validated['network']['governorate'],
             'city' => $validated['network']['city'],
             'neighborhood' => $validated['network']['neighborhood'] ?? null,
+            'gateway' => $validated['network']['gateway'] ?? $validated['gateway'] ?? 'north',
             'jaib_wallet' => $validated['jaibWalletNumber'],
             'card_categories_json' => json_encode($validated['cardCategories']),
             'status' => 'pending',
@@ -162,6 +165,7 @@ class NetworkController extends Controller
             'governorate' => 'required|string|max:100',
             'city' => 'required|string|max:100',
             'neighborhood' => 'nullable|string|max:100',
+            'gateway' => 'nullable|string|in:north,south',
             'jaibWalletNumber' => 'required|string|max:50',
             'cardCategories' => 'required|array|min:1',
         ]);
@@ -187,6 +191,7 @@ class NetworkController extends Controller
             'governorate' => $validated['governorate'],
             'city' => $validated['city'],
             'neighborhood' => $validated['neighborhood'] ?? null,
+            'gateway' => $validated['gateway'] ?? 'north',
             'jaib_wallet' => $validated['jaibWalletNumber'],
             'card_categories_json' => json_encode($validated['cardCategories']),
             'status' => 'pending',
@@ -222,6 +227,7 @@ class NetworkController extends Controller
         return response()->json([
             'network_code' => $network->network_code,
             'network_name' => $network->name,
+            'gateway' => $network->gateway ?? 'north',
             'governorate' => $network->governorate,
             'packages' => $network->cardCategories->where('status', '!==', 'inactive')->values(),
         ]);
@@ -366,6 +372,7 @@ class NetworkController extends Controller
             'governorate' => $request->governorate,
             'city' => $request->city,
             'district' => $request->district,
+            'gateway' => $request->gateway ?? $network->gateway ?? 'north',
             'jaib_wallet' => $request->jaibWallet,
             'categories' => json_encode($request->categories ?? []),
             'previous_data' => json_encode($request->previousData ?? []),

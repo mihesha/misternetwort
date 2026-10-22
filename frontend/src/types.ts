@@ -24,12 +24,14 @@ export interface NetworkInfo {
   governorate: string;  // المحافظة
   city: string;         // المدينة
   neighborhood: string; // المنطقة/الحي
+  gateway?: 'north' | 'south'; // بوابة الشمال / الجنوب
 }
 
 export interface ApplicationFormData {
   owner: OwnerInfo;
   network: NetworkInfo;
-  jaibWalletNumber: string; // رقم محفظة جيب
+  jaibWalletNumber: string; // رقم محفظة جيب أو شلن
+  gateway?: 'north' | 'south';
   cardCategories: CardCategory[];
   referral_code?: string;
 }
@@ -82,6 +84,7 @@ export interface ActiveNetwork {
   governorate: string;
   city: string;
   neighborhood?: string;
+  gateway?: 'north' | 'south';
   balance: number;
   status: 'active' | 'suspended' | 'pending_activation';
   createdAt: string;
@@ -101,6 +104,7 @@ export interface WithdrawalRequest {
   payoutMethod: string;
   accountNumber: string; // رقم الحساب / المحفظة
   recipientName: string;
+  gateway?: 'north' | 'south';
   amount: number;
   status: 'pending' | 'completed' | 'rejected';
   requestedAt: string;
@@ -147,6 +151,7 @@ export interface NetworkDataEditRequest {
   governorate: string;
   city: string;
   district: string;
+  gateway?: 'north' | 'south';
   jaibWallet: string;
   adminNotes: string;
   categories: {
@@ -168,6 +173,7 @@ export interface NetworkDataEditRequest {
     governorate?: string;
     city?: string;
     district?: string;
+    gateway?: 'north' | 'south';
     jaibWallet?: string;
     categories?: {
       id: string;
@@ -218,6 +224,7 @@ export interface WalletOption {
   accountName: string;
   steps: string[];
   inputLabel?: string;
+  gateway?: 'north' | 'south' | 'all';
 }
 
 export interface CartItem {
@@ -291,4 +298,5 @@ export interface PublicNetworkInfo {
   activeNodes: number;
   status: 'online' | 'maintenance';
   supportPhone?: string;
+  gateway?: 'north' | 'south';
 }

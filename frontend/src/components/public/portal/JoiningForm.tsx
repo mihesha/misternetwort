@@ -80,6 +80,9 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
   const [governorate, setGovernorate] = useState(initialData?.network.governorate || '');
   const [city, setCity] = useState(initialData?.network.city || '');
   const [neighborhood, setNeighborhood] = useState(initialData?.network.neighborhood || '');
+  const [gateway, setGateway] = useState<'north' | 'south'>(
+    initialData?.gateway || initialData?.network?.gateway || 'north'
+  );
 
   const [jaibWalletNumber, setJaibWalletNumber] = useState(initialData?.jaibWalletNumber || '');
 
@@ -168,7 +171,11 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
       if (!governorate) newErrors.governorate = 'يرجى اختيار المحافظة';
       if (!city) newErrors.city = 'يرجى اختيار المدينة';
     } else if (step === 3) {
-      if (!jaibWalletNumber.trim() || jaibWalletNumber.trim().length < 9) newErrors.jaibWalletNumber = 'رقم محفظة جيب يجب أن لا يقل عن 9 أرقام';
+      if (!jaibWalletNumber.trim() || jaibWalletNumber.trim().length < 9) {
+        newErrors.jaibWalletNumber = gateway === 'south'
+          ? 'رقم محفظة شلن يجب أن لا يقل عن 9 أرقام'
+          : 'رقم محفظة جيب يجب أن لا يقل عن 9 أرقام';
+      }
     } else if (step === 4) {
       if (editingCategoryId) {
          newErrors.categories = 'يرجى حفظ الفئة الحالية قبل المتابعة أو النقر على حفظ الفئة';
@@ -244,7 +251,8 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
 
     const formData: ApplicationFormData = {
       owner: { ownerName: ownerName.trim(), ownerId: ownerId.trim(), contactNumber: contactNumber.trim() },
-      network: { networkName: networkName.trim(), englishName: englishName.trim(), externalLink: externalLink.trim(), networkPhone: networkPhone.trim(), governorate, city, neighborhood: neighborhood.trim() },
+      network: { networkName: networkName.trim(), englishName: englishName.trim(), externalLink: externalLink.trim(), networkPhone: networkPhone.trim(), governorate, city, neighborhood: neighborhood.trim(), gateway },
+      gateway,
       jaibWalletNumber: jaibWalletNumber.trim(),
       cardCategories,
       referral_code: activeReferral?.code || referralCode || undefined,
@@ -479,6 +487,76 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">المنطقة أو الحي <span className="text-slate-400 font-normal">(اختياري)</span></label>
                   <input type="text" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} placeholder="اسم الحي أو الشارع لمزيد من الدقة" className={`w-full px-4 py-3 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 border ${isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-indigo-500' : 'bg-slate-50 border-slate-200 focus:ring-indigo-500'}`} />
                 </div>
+
+                {/* Gateway Selection */}
+                <div className="space-y-3 md:col-span-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    بوابة الشبكة الجغرافية والمالية <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setGateway('north')}
+                      className={`p-4 rounded-2xl border text-right transition-all flex items-start gap-3.5 relative overflow-hidden ${
+                        gateway === 'north'
+                          ? 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10'
+                          : isDarkMode
+                          ? 'border-slate-800 bg-[#1c2638]/50 hover:bg-[#1c2638] text-slate-400'
+                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        gateway === 'north' ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                      }`}>
+                        <Globe className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className={`text-sm font-black ${gateway === 'north' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-white'}`}>
+                            بوابة الشمال
+                          </span>
+                          {gateway === 'north' && (
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                          مخصصة لشبكات محافظات الشمال وتتعامل بـ <strong className="text-slate-700 dark:text-slate-200">العملة القديمة</strong>، وتدعم المحافظ والحسابات البنكية والخدمات المالية المعتمدة في الشمال.
+                        </p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setGateway('south')}
+                      className={`p-4 rounded-2xl border text-right transition-all flex items-start gap-3.5 relative overflow-hidden ${
+                        gateway === 'south'
+                          ? 'border-sky-500 bg-sky-500/10 ring-2 ring-sky-500/30 shadow-lg shadow-sky-500/10'
+                          : isDarkMode
+                          ? 'border-slate-800 bg-[#1c2638]/50 hover:bg-[#1c2638] text-slate-400'
+                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        gateway === 'south' ? 'bg-sky-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                      }`}>
+                        <Globe className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className={`text-sm font-black ${gateway === 'south' ? 'text-sky-600 dark:text-sky-400' : 'text-slate-800 dark:text-white'}`}>
+                            بوابة الجنوب
+                          </span>
+                          {gateway === 'south' && (
+                            <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                          مخصصة لشبكات محافظات الجنوب وتتعامل بـ <strong className="text-slate-700 dark:text-slate-200">العملة الجديدة</strong>، وتدعم المحافظ والحسابات البنكية والخدمات المالية المعتمدة في الجنوب.
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -487,31 +565,53 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
           {currentStep === 3 && (
             <div className="space-y-6 animate-in slide-in-from-right-8 fade-in duration-500">
               <div className="flex flex-col md:flex-row md:items-center gap-4 mb-2 pb-5 border-b border-slate-100 dark:border-slate-800">
-                <div className="w-12 h-12 bg-amber-50 dark:bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                  gateway === 'south'
+                    ? 'bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400'
+                    : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                }`}>
                   <Wallet className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-slate-800 dark:text-white">المحفظة المالية</h2>
+                  <h2 className="text-xl font-black text-slate-800 dark:text-white">
+                    المحفظة المالية ({gateway === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'})
+                  </h2>
                   <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">إعدادات الدفع واستقبال أرباحك بأمان</p>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20 mb-6 flex items-start gap-4 shadow-sm">
+              <div className={`p-4 rounded-2xl border mb-6 flex items-start gap-4 shadow-sm ${
+                gateway === 'south'
+                  ? 'bg-sky-50 dark:bg-sky-500/5 border-sky-100 dark:border-sky-500/20'
+                  : 'bg-indigo-50 dark:bg-indigo-500/5 border-indigo-100 dark:border-indigo-500/20'
+              }`}>
                 <div className="p-2 bg-white dark:bg-[#101726] rounded-xl shadow-sm shrink-0">
-                  <Zap className="w-6 h-6 text-indigo-500" />
+                  <Zap className={`w-6 h-6 ${gateway === 'south' ? 'text-sky-500' : 'text-indigo-500'}`} />
                 </div>
                 <p className="text-xs md:text-sm text-slate-700 dark:text-slate-300 font-semibold leading-relaxed">
-                  نحن نعتمد نظام <span className="font-bold text-indigo-600 dark:text-indigo-400">محفظة جيب</span> لتحويل كافة المبالغ والمبيعات لحسابك بشكل يومي وآمن. يرجى التأكد من كتابة الرقم بشكل صحيح.
+                  {gateway === 'south' ? (
+                    <>نحن نعتمد نظام <span className="font-bold text-sky-600 dark:text-sky-400">محفظة شلن</span> لبوابة الجنوب لتحويل كافة المبالغ والمبيعات لحسابك بشكل يومي وآمن. يرجى التأكد من كتابة الرقم بشكل صحيح.</>
+                  ) : (
+                    <>نحن نعتمد نظام <span className="font-bold text-indigo-600 dark:text-indigo-400">محفظة جيب</span> لبوابة الشمال لتحويل كافة المبالغ والمبيعات لحسابك بشكل يومي وآمن. يرجى التأكد من كتابة الرقم بشكل صحيح.</>
+                  )}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <label className={`block text-xs font-bold ${errors.jaibWalletNumber ? 'text-rose-500' : 'text-slate-700 dark:text-slate-300'}`}>رقم محفظة جيب (JAIB) <span className="text-rose-500">*</span></label>
+                <label className={`block text-xs font-bold ${errors.jaibWalletNumber ? 'text-rose-500' : 'text-slate-700 dark:text-slate-300'}`}>
+                  {gateway === 'south' ? 'رقم محفظة شلن' : 'رقم محفظة جيب'} <span className="text-rose-500">*</span>
+                </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                     <Wallet className="w-5 h-5" />
                   </div>
-                  <input type="number" value={jaibWalletNumber} onChange={(e) => { setJaibWalletNumber(e.target.value); if(errors.jaibWalletNumber) setErrors({...errors, jaibWalletNumber: ''}) }} placeholder="أدخل رقم محفظتك المعتمد" className={`w-full pr-12 pl-4 py-3.5 text-right rounded-xl text-base font-bold tracking-widest transition-all focus:outline-none focus:ring-2 border ${errors.jaibWalletNumber ? 'border-rose-500 focus:ring-rose-500 bg-rose-50 dark:bg-rose-500/10' : isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-indigo-500 shadow-inner' : 'bg-slate-50 border-slate-200 focus:ring-indigo-500'}`} />
+                  <input
+                    type="number"
+                    value={jaibWalletNumber}
+                    onChange={(e) => { setJaibWalletNumber(e.target.value); if(errors.jaibWalletNumber) setErrors({...errors, jaibWalletNumber: ''}) }}
+                    placeholder={gateway === 'south' ? 'أدخل رقم محفظة شلن المعتمد' : 'أدخل رقم محفظة جيب المعتمد'}
+                    className={`w-full pr-12 pl-4 py-3.5 text-right rounded-xl text-base font-bold tracking-widest transition-all focus:outline-none focus:ring-2 border ${errors.jaibWalletNumber ? 'border-rose-500 focus:ring-rose-500 bg-rose-50 dark:bg-rose-500/10' : isDarkMode ? 'bg-[#1c2638] text-white border-transparent focus:ring-indigo-500 shadow-inner' : 'bg-slate-50 border-slate-200 focus:ring-indigo-500'}`}
+                  />
                 </div>
                 {errors.jaibWalletNumber && <p className="text-xs font-bold text-rose-500 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> {errors.jaibWalletNumber}</p>}
               </div>
@@ -654,6 +754,16 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
                       <span className="text-slate-800 dark:text-white font-bold">{governorate} - {city}</span>
                     </div>
                     <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/50">
+                      <span className="text-slate-500 dark:text-slate-400">البوابة</span>
+                      <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold ${
+                        gateway === 'south'
+                          ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30'
+                          : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                      }`}>
+                        {gateway === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/50">
                       <span className="text-slate-500 dark:text-slate-400">هاتف آخر</span>
                       <span className="text-slate-800 dark:text-white font-bold" dir="ltr">{networkPhone || 'لا يوجد'}</span>
                     </div>
@@ -662,12 +772,15 @@ export const JoiningForm: React.FC<JoiningFormProps> = ({
 
                 {/* Summary Card: Wallet */}
                 <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#141d2e] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group md:col-span-2">
-                  <div className="absolute top-0 right-0 w-1.5 h-full bg-amber-500" />
+                  <div className={`absolute top-0 right-0 w-1.5 h-full ${gateway === 'south' ? 'bg-sky-500' : 'bg-amber-500'}`} />
                   <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
-                    <Wallet className="w-4 h-4 text-amber-500" /> حساب المحفظة
+                    <Wallet className={`w-4 h-4 ${gateway === 'south' ? 'text-sky-500' : 'text-amber-500'}`} />
+                    {gateway === 'south' ? 'حساب محفظة شلن' : 'حساب محفظة جيب'}
                   </h3>
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">رقم المحفظة المعتمد لاستقبال الأرباح:</p>
+                    <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">
+                      {gateway === 'south' ? 'رقم محفظة شلن المعتمد لاستقبال الأرباح:' : 'رقم محفظة جيب المعتمد لاستقبال الأرباح:'}
+                    </p>
                     <div className="px-5 py-2.5 bg-white dark:bg-[#1c2638] rounded-xl border border-slate-200 dark:border-slate-700 font-black text-lg tracking-widest text-slate-800 dark:text-white shadow-sm" dir="ltr">
                       {jaibWalletNumber}
                     </div>

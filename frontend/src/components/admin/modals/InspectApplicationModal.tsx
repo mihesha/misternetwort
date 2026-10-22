@@ -91,6 +91,13 @@ export const InspectApplicationModal = () => {
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
                     {inspectApp.status === 'pending' ? 'قيد المراجعة' : inspectApp.status === 'approved' ? 'معتمد' : inspectApp.status}
                   </span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                    (inspectApp.formData.gateway || inspectApp.formData.network.gateway) === 'south'
+                      ? 'bg-sky-500/20 text-sky-400 border-sky-500/30'
+                      : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                  }`}>
+                    {(inspectApp.formData.gateway || inspectApp.formData.network.gateway) === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}
+                  </span>
                   {inspectApp.isExistingOwner && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-xs">
                       <ShieldCheck className="w-3.5 h-3.5" />
@@ -145,7 +152,12 @@ export const InspectApplicationModal = () => {
                   {inspectApp.applicationType !== 'agent' && (
                     <p><span className="text-slate-400">هاتف الشبكة المعتمد:</span> <strong className="font-mono text-slate-300" dir="ltr">{inspectApp.formData.network.networkPhone || inspectApp.formData.owner.contactNumber}</strong></p>
                   )}
-                  <p><span className="text-slate-400">رقم محفظة جيب المعتمدة:</span> <strong className="text-emerald-400 font-mono font-bold">{inspectApp.formData.jaibWalletNumber}</strong></p>
+                  <p>
+                    <span className="text-slate-400">
+                      {(inspectApp.formData.gateway || inspectApp.formData.network.gateway) === 'south' ? 'رقم محفظة شلن المعتمدة:' : 'رقم محفظة جيب المعتمدة:'}
+                    </span>{' '}
+                    <strong className="text-emerald-400 font-mono font-bold">{inspectApp.formData.jaibWalletNumber}</strong>
+                  </p>
                 </div>
               </div>
             </div>

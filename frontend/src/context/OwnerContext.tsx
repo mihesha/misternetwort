@@ -12,6 +12,7 @@ export interface OwnerNetworkCard {
   city?: string;
   neighborhood?: string;
   jaib_wallet?: string;
+  gateway?: 'north' | 'south';
   balance: number;
   total_sales: number;
   status: 'active' | 'inactive' | 'suspended';

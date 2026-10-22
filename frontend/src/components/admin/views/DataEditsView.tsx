@@ -116,6 +116,13 @@ export const DataEditsView: React.FC<DataEditsViewProps> = ({
                       <span className="text-[11px] font-mono text-slate-400">
                         {req.referenceNumber}
                       </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        req.gateway === 'south'
+                          ? 'bg-sky-500/15 text-sky-400 border-sky-500/30'
+                          : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                      }`}>
+                        {req.gateway === 'south' ? 'بوابة الجنوب' : 'بوابة الشمال'}
+                      </span>
                     </div>
                     <p className="text-xs text-slate-400">المالك: <span className="text-slate-200 font-bold">{req.ownerName}</span> • هاتف: <span dir="ltr" className="font-mono text-slate-300">{req.contactPhone}</span></p>
                   </div>
@@ -155,7 +162,9 @@ export const DataEditsView: React.FC<DataEditsViewProps> = ({
                 </div>
 
                 <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1">
-                  <span className="text-slate-400 block font-bold">محفظة جيب والتواصل:</span>
+                  <span className="text-slate-400 block font-bold">
+                    {req.gateway === 'south' ? 'محفظة شلن والتواصل:' : 'محفظة جيب والتواصل:'}
+                  </span>
                   <p className="text-emerald-400 font-mono font-bold" dir="ltr">{req.jaibWallet}</p>
                   <p className="text-slate-300 font-mono" dir="ltr">{req.contactPhone}</p>
                 </div>

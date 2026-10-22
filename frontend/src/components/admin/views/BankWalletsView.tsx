@@ -15,6 +15,7 @@ interface BankWalletSource {
 interface BankWallet {
   id: number;
   name: string;
+  gateway?: 'north' | 'south' | 'all';
   logo_path: string | null;
   pos_number: string | null;
   pos_name: string | null;
@@ -36,6 +37,7 @@ export function BankWalletsView() {
   
   // Form State
   const [name, setName] = useState('');
+  const [gateway, setGateway] = useState<'north' | 'south' | 'all'>('north');
   const [posNumber, setPosNumber] = useState('');
   const [posName, setPosName] = useState('');
   const [inputLabel, setInputLabel] = useState('الرقم المرجعي');
@@ -68,6 +70,7 @@ export function BankWalletsView() {
 
   const resetForm = () => {
     setName('');
+    setGateway('north');
     setPosNumber('');
     setPosName('');
     setInputLabel('الرقم المرجعي');
@@ -82,6 +85,7 @@ export function BankWalletsView() {
     if (wallet) {
       setEditingWallet(wallet);
       setName(wallet.name);
+      setGateway(wallet.gateway || 'north');
       setPosNumber(wallet.pos_number || '');
       setPosName(wallet.pos_name || '');
       setInputLabel(wallet.input_label || 'الرقم المرجعي');
@@ -122,6 +126,7 @@ export function BankWalletsView() {
       const token = localStorage.getItem('admin_auth_token');
       const formData = new FormData();
       formData.append('name', name);
+      formData.append('gateway', gateway);
       if (posNumber) formData.append('pos_number', posNumber);
       if (posName) formData.append('pos_name', posName);
       formData.append('input_label', inputLabel);
@@ -245,9 +250,20 @@ export function BankWalletsView() {
                   )}
                   <div>
                     <h3 className="font-bold text-lg text-slate-900 dark:text-white">{wallet.name}</h3>
-                    <span className={`text-xs font-bold px-2 py-1 rounded-lg ${wallet.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                      {wallet.is_active ? 'نشط' : 'موقوف'}
-                    </span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${wallet.is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-slate-100 text-slate-500'}`}>
+                        {wallet.is_active ? 'نشط' : 'موقوف'}
+                      </span>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border ${
+                        wallet.gateway === 'south'
+                          ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20'
+                          : wallet.gateway === 'all'
+                          ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+                      }`}>
+                        {wallet.gateway === 'south' ? 'بوابة الجنوب' : wallet.gateway === 'all' ? 'كلا البوابتين' : 'بوابة الشمال'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -310,6 +326,20 @@ export function BankWalletsView() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input label="اسم المحفظة *" value={name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} required placeholder="مثال: محفظة جيب" />
               <div className="space-y-1.5">
+                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                  البوابة المعتمدة <span className="text-red-500">*</span>
+                </label>
+                <select 
+                  value={gateway}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setGateway(e.target.value as 'north' | 'south' | 'all')}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 dark:bg-slate-900 dark:border-slate-800 dark:text-white"
+                >
+                  <option value="north">بوابة الشمال (شمال)</option>
+                  <option value="south">بوابة الجنوب (جنوب)</option>
+                  <option value="all">كلا البوابتين (شمال وجنوب)</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">اسم حقل الإدخال للعميل</label>
                 <select 
                   value={inputLabel}
@@ -322,7 +352,9 @@ export function BankWalletsView() {
                 </select>
               </div>
               <Input label="رقم نقطة البيع (اختياري)" value={posNumber} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPosNumber(e.target.value)} placeholder="مثال: 123456" className="font-mono text-left dir-ltr" />
-              <Input label="اسم النقطة / باسم من (اختياري)" value={posName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPosName(e.target.value)} placeholder="بصمة العصر الحديث" />
+              <div className="md:col-span-2">
+                <Input label="اسم النقطة / باسم من (اختياري)" value={posName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPosName(e.target.value)} placeholder="بصمة العصر الحديث" />
+              </div>
             </div>
 
             {/* Sources Section */}
